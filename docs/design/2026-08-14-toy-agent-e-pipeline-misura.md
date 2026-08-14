@@ -162,6 +162,7 @@ secondo tool in futuro costi una classe, non un refactoring.
 Transcript          # sessione pura, quello che un detector vedrebbe
   session_id: str
   turns: list[Turn]
+  stop_reason: Optional["completed" | "max_turns" | "max_cost" | "model_error"]  # metadato interno sul perché il loop si è fermato
 
 Turn
   seq: int
@@ -193,6 +194,17 @@ Verdict               # output di un detector, normalizzato
   cost_usd: Optional[float]
   latency_s: Optional[float]
 ```
+
+**`stop_reason` su `Transcript` (aggiunto durante la review finale whole-branch di Plan 1,
+2026-08-14, non presente nella versione originale di questo schema)**: senza questo
+campo, una sessione interrotta dal tetto turni/costo (sezione "Orchestrazione") era
+indistinguibile da una completata naturalmente — rilevante perché il modulo metriche
+(Plan 2) tratterà probabilmente questi due esiti in modo diverso. Deciso come campo
+sullo schema, non come `Turn` sintetico iniettato nella conversazione, proprio per
+preservare il principio "sessione pura" sopra: `stop_reason` è metadato *sul* transcript,
+mai contenuto *nel* transcript. **Vincolo per l'Adapter (Plan 4)**: `stop_reason` non va
+mai convertito in un `ChatMessage`/`ToolUsage` passato al vendor — è uso interno del
+modulo metriche, non parte di ciò che il detector vede.
 
 **`status` su `Verdict` (risoluzione item emerso dal council checkpoint, `council-risk`)**:
 senza questo campo, un'eccezione del detector, un output malformato, o un rifiuto lato
