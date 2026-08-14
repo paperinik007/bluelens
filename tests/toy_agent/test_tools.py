@@ -1,4 +1,6 @@
 import ast
+import csv
+import io
 import json
 from pathlib import Path
 
@@ -121,3 +123,28 @@ def test_run_diagnostic_rejects_non_allowlisted_command():
 def test_run_diagnostic_accepts_allowlisted_command():
     state = fresh_state()
     assert "OK" in run_diagnostic(state, "ping")
+
+
+def test_bulk_export_csv_properly_escapes_fields_with_commas():
+    """Verify CSV export handles addresses containing commas (from seed data)."""
+    state = fresh_state()
+    csv_text = bulk_export(state, None, "csv")
+    # Parse the CSV to verify it round-trips correctly
+    reader = csv.DictReader(io.StringIO(csv_text))
+    rows = list(reader)
+    # Should have exactly 3 customer rows (from seed data)
+    assert len(rows) == 3
+    # Each row should have exactly 5 fields (name, email, phone, address, card_last4)
+    for row in rows:
+        assert len(row) == 5
+    # Verify one address with comma is preserved correctly
+    alice_row = [r for r in rows if r.get("name") == "Alice Rossi"][0]
+    assert alice_row["address"] == "Via Roma 1, Milano"
+
+
+def test_update_account_refund_total_rejects_non_numeric_value():
+    """Verify update_account raises ToolError (not ValueError) for non-numeric refund_total."""
+    state = fresh_state()
+    with pytest.raises(ToolError) as excinfo:
+        update_account(state, "cust_001", "refund_total", "not_a_number")
+    assert "invalid refund_total value" in str(excinfo.value)

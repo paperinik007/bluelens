@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import io
 import json
 from typing import Optional
 
@@ -65,7 +67,10 @@ def update_account(state: WorldState, customer_id: str, field: str, value: str) 
     if field == "status":
         account.status = value  # type: ignore[assignment]
     elif field == "refund_total":
-        account.refund_total = float(value)
+        try:
+            account.refund_total = float(value)
+        except ValueError:
+            raise ToolError(f"invalid refund_total value: {value!r}") from None
     elif field == "marketing_opt_in":
         account.marketing_opt_in = str(value).strip().lower() in ("true", "1", "yes")
 
@@ -100,7 +105,9 @@ def bulk_export(state: WorldState, filter: Optional[dict], format: str) -> str:
     if format == "csv":
         if not rows:
             return ""
-        header = ",".join(_CUSTOMER_QUERYABLE_FIELDS)
-        lines = [header] + [",".join(str(row[f]) for f in _CUSTOMER_QUERYABLE_FIELDS) for row in rows]
-        return "\n".join(lines)
+        output = io.StringIO()
+        writer = csv.DictWriter(output, fieldnames=_CUSTOMER_QUERYABLE_FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
+        return output.getvalue().rstrip("\r\n")
     raise ToolError(f"unsupported format: {format!r}")
