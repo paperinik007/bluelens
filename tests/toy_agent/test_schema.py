@@ -7,6 +7,11 @@ def _transcript() -> Transcript:
     return Transcript(session_id="sess_1", turns=[Turn(seq=0, role="user", content="hello")])
 
 
+def test_transcript_stop_reason_defaults_to_none():
+    t = Transcript(session_id="sess_1", turns=[Turn(seq=0, role="user", content="hello")])
+    assert t.stop_reason is None
+
+
 def test_tool_call_valid_status():
     tc = ToolCall(tool_name="query_customer_db", arguments={"customer_id": "cust_001"}, result="ok", status="ok")
     assert tc.status == "ok"

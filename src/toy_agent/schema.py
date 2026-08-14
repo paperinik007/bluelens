@@ -40,6 +40,7 @@ class Turn:
 class Transcript:
     session_id: str
     turns: list[Turn] = field(default_factory=list)
+    stop_reason: Optional[Literal["completed", "max_turns", "max_cost", "model_error"]] = None
 
 
 @dataclass

@@ -25,6 +25,8 @@ class ModelReply:
 class OpenRouterModelClient:
     def __init__(self, model: str = _DEFAULT_MODEL, api_key: str | None = None) -> None:
         self._model = model
+        if model not in _PRICING_PER_MILLION_TOKENS:
+            raise ValueError(f"no known pricing for model {model!r}")
         key = api_key if api_key is not None else os.environ.get("OPENROUTER_API_KEY")
         if not key:
             raise RuntimeError("OPENROUTER_API_KEY is not set")
@@ -40,7 +42,7 @@ class OpenRouterModelClient:
         usage = response.usage
         cost_usd = compute_cost_usd(self._model, usage.prompt_tokens, usage.completion_tokens)
         tool_calls = [
-            {"id": tc.id, "name": tc.function.name, "arguments": tc.function.arguments}
+            {"id": tc.id, "type": "function", "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
             for tc in (choice.tool_calls or [])
         ]
         return ModelReply(content=choice.content or "", tool_calls=tool_calls, cost_usd=cost_usd)

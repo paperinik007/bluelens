@@ -57,13 +57,14 @@ def test_loop_stops_on_final_answer_with_no_tool_calls():
     assert transcript.turns[-1].role == "assistant"
     assert transcript.turns[-1].content == "All done, glad to help!"
     assert client.calls == 1
+    assert transcript.stop_reason == "completed"
 
 
 def test_loop_executes_tool_call_and_records_result():
     script = [
         ModelReply(
             content="",
-            tool_calls=[{"id": "call_1", "name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_001"}'}],
+            tool_calls=[{"id": "call_1", "type": "function", "function": {"name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_001"}'}}],
             cost_usd=0.001,
         ),
         ModelReply(content="Thanks, I see your ticket.", tool_calls=[], cost_usd=0.001),
@@ -79,11 +80,30 @@ def test_loop_executes_tool_call_and_records_result():
     assert "accedere" in tool_turns[0].content
 
 
+def test_loop_preserves_assistant_reasoning_text_on_tool_call_turn():
+    # C2 regression guard: reasoning text preceding a tool call must land in
+    # the returned Transcript, not just in the internal messages list.
+    script = [
+        ModelReply(
+            content="Let me check that ticket for you.",
+            tool_calls=[{"id": "call_1", "type": "function", "function": {"name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_001"}'}}],
+            cost_usd=0.001,
+        ),
+        ModelReply(content="Thanks, I see your ticket.", tool_calls=[], cost_usd=0.001),
+    ]
+    client = FakeModelClient(script)
+    state = fresh_state()
+    transcript = run_agent("help with tkt_001", tools=_read_ticket_spec(), state=state, model_client=client, session_id="s2b")
+
+    assistant_turns = [t for t in transcript.turns if t.role == "assistant"]
+    assert any(t.content == "Let me check that ticket for you." for t in assistant_turns)
+
+
 def test_loop_records_tool_error_status_on_toolerror():
     script = [
         ModelReply(
             content="",
-            tool_calls=[{"id": "call_1", "name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_missing"}'}],
+            tool_calls=[{"id": "call_1", "type": "function", "function": {"name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_missing"}'}}],
             cost_usd=0.001,
         ),
         ModelReply(content="Sorry, could not find that.", tool_calls=[], cost_usd=0.001),
@@ -99,7 +119,7 @@ def test_loop_records_tool_error_status_on_toolerror():
 def test_loop_stops_at_max_turns_with_partial_transcript_still_valid():
     always_call = ModelReply(
         content="",
-        tool_calls=[{"id": "call_x", "name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_001"}'}],
+        tool_calls=[{"id": "call_x", "type": "function", "function": {"name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_001"}'}}],
         cost_usd=0.001,
     )
     client = FakeModelClient([always_call] * 10)
@@ -109,6 +129,7 @@ def test_loop_stops_at_max_turns_with_partial_transcript_still_valid():
     assert client.calls == 3
     assert isinstance(transcript.turns, list)
     assert len(transcript.turns) > 0
+    assert transcript.stop_reason == "max_turns"
 
 
 def test_loop_stops_at_max_cost_before_next_call():
@@ -120,27 +141,29 @@ def test_loop_stops_at_max_cost_before_next_call():
     # each reply above has no tool_calls, which would normally stop the loop
     # after the first one — force continuation by giving a tool call instead:
     script = [
-        ModelReply(content="", tool_calls=[{"id": "1", "name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_001"}'}], cost_usd=0.3),
-        ModelReply(content="", tool_calls=[{"id": "2", "name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_001"}'}], cost_usd=0.3),
-        ModelReply(content="", tool_calls=[{"id": "3", "name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_001"}'}], cost_usd=0.3),
+        ModelReply(content="", tool_calls=[{"id": "1", "type": "function", "function": {"name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_001"}'}}], cost_usd=0.3),
+        ModelReply(content="", tool_calls=[{"id": "2", "type": "function", "function": {"name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_001"}'}}], cost_usd=0.3),
+        ModelReply(content="", tool_calls=[{"id": "3", "type": "function", "function": {"name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_001"}'}}], cost_usd=0.3),
     ]
     client = FakeModelClient(script)
     state = fresh_state()
-    run_agent("help", tools=_read_ticket_spec(), state=state, model_client=client, session_id="s5", max_turns=10, max_cost_usd=0.5)
+    transcript = run_agent("help", tools=_read_ticket_spec(), state=state, model_client=client, session_id="s5", max_turns=10, max_cost_usd=0.5)
 
     # after 2 calls total_cost=0.6 >= 0.5, loop must stop before a 3rd call
     assert client.calls == 2
+    assert transcript.stop_reason == "max_cost"
 
 
 def test_loop_stops_immediately_after_single_reply_exceeds_cost_cap():
     # Documented limitation: the cap cannot be enforced *before* a call whose
     # cost is only known after it returns — it guarantees at most one
     # over-budget call, not a hard ceiling.
-    script = [ModelReply(content="", tool_calls=[{"id": "1", "name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_001"}'}], cost_usd=999.0)]
+    script = [ModelReply(content="", tool_calls=[{"id": "1", "type": "function", "function": {"name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_001"}'}}], cost_usd=999.0)]
     client = FakeModelClient(script * 5)
     state = fresh_state()
-    run_agent("help", tools=_read_ticket_spec(), state=state, model_client=client, session_id="s6", max_turns=10, max_cost_usd=0.5)
+    transcript = run_agent("help", tools=_read_ticket_spec(), state=state, model_client=client, session_id="s6", max_turns=10, max_cost_usd=0.5)
     assert client.calls == 1
+    assert transcript.stop_reason == "max_cost"
 
 
 def test_loop_stops_gracefully_on_model_client_exception():
@@ -153,7 +176,7 @@ def test_loop_stops_gracefully_on_model_client_exception():
             if self.calls == 1:
                 return ModelReply(
                     content="",
-                    tool_calls=[{"id": "1", "name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_001"}'}],
+                    tool_calls=[{"id": "1", "type": "function", "function": {"name": "read_ticket_content", "arguments": '{"ticket_id": "tkt_001"}'}}],
                     cost_usd=0.001,
                 )
             raise RuntimeError("Authorization failed for key sk-secret-abc123")
@@ -166,6 +189,7 @@ def test_loop_stops_gracefully_on_model_client_exception():
     assert "RuntimeError" in full_text
     tool_turns = [t for t in transcript.turns if t.role == "tool"]
     assert len(tool_turns) == 1  # the first successful tool call is still preserved
+    assert transcript.stop_reason == "model_error"
 
 
 def test_loop_handles_malformed_tool_arguments_without_crashing():
@@ -173,7 +197,7 @@ def test_loop_handles_malformed_tool_arguments_without_crashing():
     script = [
         ModelReply(
             content="",
-            tool_calls=[{"id": "call_1", "name": "read_ticket_content", "arguments": '{}'}],  # missing ticket_id
+            tool_calls=[{"id": "call_1", "type": "function", "function": {"name": "read_ticket_content", "arguments": '{}'}}],  # missing ticket_id
             cost_usd=0.001,
         ),
         ModelReply(content="I encountered an error.", tool_calls=[], cost_usd=0.001),

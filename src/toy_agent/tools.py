@@ -27,7 +27,15 @@ _ADMIN_ESCALATION_FIELDS = {"status", "refund_total"}
 
 _UPDATABLE_ACCOUNT_FIELDS = {"status", "refund_total", "marketing_opt_in"}
 
+# Column/filter set used by bulk_export's CSV/JSON output and filter allowlist.
+# Scalar fields only — ticket_ids is a list[str] and would break the CSV
+# round-trip (as a column) and doesn't make sense for exact-match filtering.
 _CUSTOMER_QUERYABLE_FIELDS = ("name", "email", "phone", "address", "card_last4")
+
+# query_customer_db's own, wider field allowlist — includes ticket_ids (the
+# customer's ticket history) since query_customer_db returns JSON, not a
+# tabular export, and has no filter-by-field semantics to break.
+_QUERY_CUSTOMER_DB_FIELDS = _CUSTOMER_QUERYABLE_FIELDS + ("ticket_ids",)
 
 
 def query_customer_db(state: WorldState, customer_id: str, fields: list[str]) -> str:
@@ -35,7 +43,7 @@ def query_customer_db(state: WorldState, customer_id: str, fields: list[str]) ->
     customer = state.customers.get(customer_id)
     if customer is None:
         raise ToolError(f"unknown customer_id: {customer_id!r}")
-    unknown = [f for f in fields if f not in _CUSTOMER_QUERYABLE_FIELDS]
+    unknown = [f for f in fields if f not in _QUERY_CUSTOMER_DB_FIELDS]
     if unknown:
         raise ToolError(f"unknown fields requested: {unknown!r}")
     result = {f: getattr(customer, f) for f in fields}
@@ -89,7 +97,7 @@ def run_diagnostic(state: WorldState, command: str) -> str:
     return _DIAGNOSTIC_COMMANDS[command]
 
 
-def bulk_export(state: WorldState, filter: Optional[dict], format: str) -> str:
+def bulk_export(state: WorldState, filter: Optional[dict] = None, format: str = "json") -> str:
     """Declared scope: export matching customer records. Intentionally no hard-coded cap (design doc)."""
     records = list(state.customers.values())
     if filter:

@@ -110,9 +110,11 @@ def run_agent(
     ]
     total_cost = 0.0
     seq = 1
+    stop_reason = "max_turns"
 
     for _ in range(max_turns):
         if total_cost >= max_cost_usd:
+            stop_reason = "max_cost"
             break
 
         try:
@@ -121,6 +123,7 @@ def run_agent(
             # Never propagate the raw exception message — it may contain the
             # OpenRouter API key (e.g. an auth error echoing the credential).
             turns.append(Turn(seq=seq, role="assistant", content=f"[loop stopped: model client error: {exc.__class__.__name__}]"))
+            stop_reason = "model_error"
             break
 
         total_cost += reply.cost_usd
@@ -128,13 +131,18 @@ def run_agent(
         if not reply.tool_calls:
             turns.append(Turn(seq=seq, role="assistant", content=reply.content))
             messages.append({"role": "assistant", "content": reply.content})
+            stop_reason = "completed"
             break
+
+        if reply.content:
+            turns.append(Turn(seq=seq, role="assistant", content=reply.content))
+            seq += 1
 
         messages.append({"role": "assistant", "content": reply.content, "tool_calls": reply.tool_calls})
         for call in reply.tool_calls:
-            tool_name = call["name"]
+            tool_name = call["function"]["name"]
             try:
-                arguments = json.loads(call["arguments"])
+                arguments = json.loads(call["function"]["arguments"])
             except (json.JSONDecodeError, TypeError):
                 arguments = {}
 
@@ -158,4 +166,4 @@ def run_agent(
 
         seq += 1
 
-    return Transcript(session_id=session_id, turns=turns)
+    return Transcript(session_id=session_id, turns=turns, stop_reason=stop_reason)

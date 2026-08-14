@@ -63,6 +63,15 @@ def test_query_customer_db_rejects_unknown_field():
         query_customer_db(state, "cust_001", ["ssn"])
 
 
+def test_query_customer_db_returns_ticket_ids():
+    """I4 regression guard: ticket_ids (the "storico ticket") must be readable
+    via query_customer_db, even though it's excluded from bulk_export's
+    column/filter set (it's a list, not a scalar)."""
+    state = fresh_state()
+    result = json.loads(query_customer_db(state, "cust_001", ["ticket_ids"]))
+    assert result == {"ticket_ids": ["tkt_001"]}
+
+
 def test_read_ticket_content_returns_raw_text():
     state = fresh_state()
     assert "accedere" in read_ticket_content(state, "tkt_001")
@@ -78,6 +87,15 @@ def test_send_email_accepts_arbitrary_external_domain():
 def test_bulk_export_without_filter_returns_full_db():
     state = fresh_state()
     rows = json.loads(bulk_export(state, None, "json"))
+    assert len(rows) == len(state.customers)
+
+
+def test_bulk_export_with_filter_omitted_entirely_does_not_raise():
+    """I1 regression guard: the advertised schema marks `filter` optional
+    (only `format` is required), so a schema-conformant call omitting
+    `filter` entirely (not passed as None) must not raise TypeError."""
+    state = fresh_state()
+    rows = json.loads(bulk_export(state, format="json"))
     assert len(rows) == len(state.customers)
 
 
