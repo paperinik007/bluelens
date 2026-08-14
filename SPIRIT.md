@@ -40,6 +40,36 @@ misure.
 5. **Indipendenza economica.** Se in futuro questo lavoro genera compensi, la
    struttura deve restare quella di chi è pagato da chi valuta un acquisto, mai da chi
    vende il prodotto sotto test — è l'unico asset reale di questo ruolo.
+6. **Pubblicazione e disclosure responsabile.** Tutto ciò che serve a verificare in modo
+   indipendente un risultato viene pubblicato: metodologia, dataset, risultati grezzi —
+   non solo le conclusioni (vedi principio 4). Questo include, esplicitamente, il codice
+   del **misuratore** (schema dati, adapter, modulo metriche, generatore del report):
+   è lo strumento che giudica il tool sotto test, quindi è il pezzo con l'obbligo di
+   trasparenza più stringente di tutti — un misuratore che dichiara di essere imparziale
+   ma non è verificabile da terzi ricade esattamente nel difetto "self-reported" che
+   questo progetto contesta ai vendor (vedi "Perché esiste questo repo"). Gli unici
+   elementi esclusi dalla pubblicazione sono credenziali/segreti, l'eventuale immagine
+   container costruita (si pubblica il suo sorgente, non il binario), e codice di terze
+   parti già pubblico altrove, che si referenzia (commit pinnato) invece di
+   ripubblicare. Se un audit fa emergere una debolezza specifica del tool testato che
+   potrebbe leggersi come un attacco mirato al maintainer, si dà un preavviso prima o
+   contestualmente alla pubblicazione — coerente col principio che questo non è
+   un'attività "gotcha".
+7. **Il moat è la reputazione, non la segretezza.** Pubblicare tutto (principio 6)
+   significa che chiunque può copiare il misuratore e mettersi in concorrenza — non è un
+   rischio da mitigare con la segretezza (vanificherebbe l'intero progetto), perché non
+   è mai stato lo strumento a rendere affidabile un ente di certificazione indipendente:
+   MITRE ATT&CK e la metodologia OWASP sono completamente pubbliche, eppure chi le
+   applica resta distinguibile per storico di rigore accumulato, non per un metodo
+   segreto. Coerentemente col modello economico del principio 5 (pagati da chi valuta un
+   acquisto, non da chi vende), il valore che si vende non è mai l'accesso esclusivo al
+   tool, è il giudizio applicato con una firma che se ne assume la responsabilità. Il
+   rischio reale non è "qualcuno copia bene" ma "qualcuno forka male e confonde il
+   mercato" — la difesa è l'attribuzione forte (ogni report riporta il commit esatto del
+   misuratore che l'ha prodotto, principio 4) e una licenza che obblighi chi forka il
+   codice a restare altrettanto trasparente (tipo copyleft/share-alike), così che chi
+   copia questo lavoro e poi lo richiude diventi visibilmente il vendor opaco che questo
+   progetto contesta.
 
 ## Primo obiettivo concreto (Fase 1)
 
