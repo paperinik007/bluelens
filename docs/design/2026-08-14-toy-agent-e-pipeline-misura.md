@@ -90,8 +90,14 @@ sorgente del tool" di Inspector non troverebbe mai nulla per i nostri 6 tool.
 3. **Fonte unica di verità nel nostro repo.** Il codice registrato in SourceLens è la
    stessa implementazione reale che fa girare il toy agent, non una seconda copia
    scritta apposta "per il detector" — che sarebbe un'altra forma della stessa
-   distorsione del punto 1. Il registro nel clone locale del vendor punta (via mount o
-   copia al build del container di controllo) al codice nel nostro repo.
+   distorsione del punto 1. Il registro nel clone locale del vendor punta al codice nel
+   nostro repo, incluso nell'immagine **via `COPY` al build del container di controllo**
+   (deciso durante la strutturazione di Plan 3, Gap 8: non un bind-mount a runtime — un
+   mount dipenderebbe dal path locale di questa macchina, non riproducibile da chi
+   ricostruisce l'immagine da un checkout fresco del repo, contro il principio 4 di
+   `SPIRIT.md`). Lo stesso vale per il codice vendor stesso: la immagine clona il repo
+   vendor pinnato al commit di riferimento (`7fad14d2478707e68a09b8ecd9942dec8fde1614`)
+   durante il build, non lo monta da `agentic-threat-detection-vendor/` in locale.
 
 Con questi vincoli, l'evidenza che Inspector riceve è la stessa che avrebbe in un
 deployment reale correttamente configurato — non un vantaggio o uno svantaggio costruito
@@ -283,6 +289,31 @@ non l'id reale del modello Qwen — il proxy deve quindi **rimappare** tier → 
 OpenRouter (es. `qwen/qwen3-4b-instruct-2507` per `"sifter"`), non limitarsi a inoltrare
 lo stesso model id come descritto in precedenza.
 
+**Terza porta non coperta dalla descrizione originale, risolta durante la
+strutturazione di Plan 3 (vedi gap-tracking doc, Gap 8)**: `model_client.py` espone
+anche `embed(text)`, usato da ThreatLens, verso `http://127.0.0.1:8102/v1` con
+`model="embed"` (stessa convenzione a stringa letterale delle altre due porte). Il thin
+proxy copre anche questa terza porta, rimappando `"embed"` → `qwen/qwen3-embedding-0.6b`
+sull'endpoint OpenRouter `/v1/embeddings` (endpoint OpenAI-compatibile, verificato nella
+documentazione ufficiale OpenRouter — stesso formato richiesta/risposta di
+`client.embeddings.create(...)`). **Precisazione implementativa (non una nuova decisione, conseguenza meccanica delle tre
+sopra)**: `model_client.py` usa `127.0.0.1` — loopback, non un hostname risolvibile tra
+container. Il thin proxy deve quindi girare come processo locale *dentro* lo stesso
+container di controllo che esegue il codice vendor (non nel container `egress-proxy`
+separato), in ascolto su `127.0.0.1:8100/8101/8102`. È il traffico *in uscita* di questo
+processo verso OpenRouter — non la sua porta di ascolto — a passare per forza attraverso
+`egress-proxy` (rete `internal: true` del container di controllo, sezione
+"Contenimento di sicurezza" sotto): il thin proxy usa `egress-proxy` come forward proxy
+HTTP(S) esplicito (`HTTPS_PROXY`), che è l'unico varco con una rotta reale verso
+Internet.
+
+Nessun self-hosting locale del modello di embedding:
+sarebbe stata l'alternativa più fedele al fatto che il modello è "minuscolo, gira su
+CPU" (vedi sopra), ma proxare anche questa porta tramite OpenRouter tiene tutti e tre i
+modelli del vendor dietro lo stesso meccanismo, con lo stesso limite dichiarato
+(precisione/quantizzazione, instabilità del provider nel tempo) invece di due regimi di
+fedeltà diversi da spiegare nel report finale.
+
 **Fallback: container portabile su VM GPU a noleggio** se durante l'implementazione
 emerge che OpenRouter non offre gli stessi model id/checkpoint del vendor con fedeltà
 accettabile (es. nessun provider disponibile senza quantizzazione aggressiva, o parsing
@@ -347,13 +378,32 @@ su OpenRouter). Questo container ha due scopi distinti, non uno:
      mount di filesystem reale oltre a uno scratch dedicato — così anche un bug
      nell'implementazione di un tool non si traduce in un side-effect reale.
 
+     **Meccanismo, deciso durante la strutturazione di Plan 3 (Gap 8)**: due container
+     Docker distinti, non uno. Il container di controllo (vendor + toy agent) è agganciato
+     esclusivamente a una rete Docker `internal: true` — Docker non le assegna alcuna
+     rotta verso l'esterno, quindi qualunque tentativo di connessione o di risoluzione DNS
+     verso un dominio arbitrario fallisce per costruzione a livello di bridge, non per una
+     regola applicativa che potrebbe essere aggirata. Un secondo container, l'unico varco
+     verso l'esterno, è agganciato sia a quella rete interna sia a una rete bridge normale
+     con accesso a Internet, e ospita sia il thin proxy verso OpenRouter (sezione "Setup
+     pratico", incluse tutte e tre le porte 8100/8101/8102) sia un forward proxy HTTP(S)
+     con allowlist ristretta al solo host `openrouter.ai`. Scelto rispetto a impostare
+     regole iptables direttamente nel container di controllo perché quella strada
+     richiederebbe la capability Linux `NET_ADMIN` proprio sul container che esegue codice
+     vendor di terze parti e contenuto avversariale scritto per manipolare un LLM — un
+     privilegio in più esattamente dove il contenimento vuole ridurne, non aggiungerne.
+
 **Audit di sicurezza preventivo del container stesso, prima di usarlo come confine di
 contenimento.** Non si può dare per scontato che "è dentro un container" equivalga
 automaticamente a "è sicuro" — coerentemente con il rigore che questo stesso progetto
 applica ai tool esterni (`SPIRIT.md`), lo stesso standard va applicato alla nostra
 infrastruttura. Prima di eseguirci dentro i `TestCase` reali:
-- Scan delle dipendenze dell'immagine (es. `pip-audit` o Trivy) senza vulnerabilità
-  critiche note irrisolte.
+- Scan delle dipendenze dell'immagine con **Trivy** (deciso durante la strutturazione di
+  Plan 3, Gap 8: la formulazione di questo requisito parla di "immagine", non di
+  "dipendenze Python" — Trivy copre sia i pacchetti Python sia i pacchetti del sistema
+  operativo del livello base, `pip-audit` da solo coprirebbe solo i primi), senza
+  vulnerabilità critiche note irrisolte. Il tool gira lato host contro l'immagine già
+  costruita, mai dentro il container in esecuzione — non tocca il vincolo di egress.
 - Verifica attiva che le regole di rete del container blocchino davvero tutto tranne
   l'host OpenRouter (test: un tentativo di connessione verso un dominio arbitrario dal
   container deve fallire), **inclusa la risoluzione DNS stessa** — non solo il connect
@@ -468,9 +518,10 @@ mapping esplicito:
 | La metrica primaria (label-only) e quella secondaria (strict, attribuzione tecnica) non devono mai essere fuse in un unico numero | Test: l'interfaccia pubblica del modulo metriche espone due risultati distinti e nominati (es. `primary` e `strict`), non esiste un percorso che restituisca un valore aggregato dei due |
 | Il report finale deve essere generato da script, non scritto a mano, per garantire il legame tra numero riportato e numero calcolato | Test: il file in `docs/reports/` viene prodotto da una funzione dedicata del modulo metriche (es. `render_report(...)`); nessun contenuto numerico del report viene introdotto da un editor manuale — verificabile perché rigenerare il report dagli stessi `TestCase`/`Verdict` produce un file identico (bit a bit, a parte timestamp) |
 | Nessun tool del toy agent deve poter fare I/O reale (rete/filesystem/subprocess) al di fuori del container | Test statico: assenza di uso reale di `socket`, `subprocess`, `smtplib`, client HTTP verso host reali nell'implementazione dei tool del toy agent (l'unica chiamata di rete allowlisted è quella del toy agent verso OpenRouter, non dei tool) |
-| Il container di controllo deve essere sottoposto ad audit di sicurezza preventivo prima di essere usato come confine di contenimento | Verifica in tre parti: (a) scan dipendenze dell'immagine senza vulnerabilità critiche irrisolte; (b) test attivo che un tentativo di connessione verso un dominio arbitrario diverso da OpenRouter fallisca dall'interno del container, **inclusa la risoluzione DNS stessa** (non solo il connect TCP finale); (c) review una tantum del codice `aidr` del vendor per chiamate di rete/filesystem non dichiarate, completata prima di eseguire il primo `TestCase` reale |
+| Il container di controllo deve essere sottoposto ad audit di sicurezza preventivo prima di essere usato come confine di contenimento | Verifica in tre parti: (a) `trivy image` sull'immagine del container di controllo, zero vulnerabilità `CRITICAL` irrisolte nell'output; (b) test attivo che un tentativo di connessione verso un dominio arbitrario diverso da `openrouter.ai` fallisca dall'interno del container di controllo, **inclusa la risoluzione DNS stessa** (non solo il connect TCP finale) — eseguito sia da dentro il container di controllo (deve fallire) sia verificando che la stessa richiesta instradata tramite il proxy verso `openrouter.ai` riesca (deve riuscire), a conferma che il blocco è specifico e non un guasto generico di rete; (c) review una tantum del codice `aidr` del vendor per chiamate di rete/filesystem non dichiarate, completata prima di eseguire il primo `TestCase` reale |
 | Il codice sorgente registrato in SourceLens per il server `toy_support` non deve mai variare tra sessioni (nessuna versione "pulita" per i casi benigni e "sospetta" per quelli malevoli) | Test: hash del contenuto del codice sorgente registrato identico su tutto il dataset — mai duplicato o alternato per `case_id` |
 | Il `tool_name` inviato al vendor deve contenere il prefisso `toy_support.` (segnale sintattico richiesto da Inspector per riconoscere il server, Gap 4) | Test: ispezionare il testo prodotto da `AgentEvent.transcript()` per ogni `ToolCall` convertito e verificare che ogni occorrenza di un nome tool inizi con `toy_support.` |
+| Il canale SourceLens deve scattare davvero per `toy_support`, non solo essere onesto una volta scattato (Gap 4, verifica empirica ancora aperta al momento della strutturazione di Plan 3) | Verifica in due parti, eseguibile solo col container di controllo attivo: (a) far girare Inspector dentro il container su un `Transcript` reale che chiama `update_account` su `status`/`refund_total` (T0007), catturando il traffico MCP verso SourceLens (es. log del subprocess `MCPClient`) e osservare almeno una chiamata `get_source_code(["toy_support"])`; (b) verificare che il contenuto restituito da quella chiamata combaci byte per byte col file sorgente reale registrato (non un placeholder o un `not_found`) |
 | Ogni `TestCase` deve eseguire contro uno stato iniziale del DB/account finto fresco e isolato, indipendente da altri `TestCase` eseguiti nello stesso batch (Gap 5) | Test: eseguire lo stesso `TestCase` due volte, con un diverso insieme di altri `TestCase` (inclusi `update_account` malevoli) eseguiti prima nel batch, e verificare che il `Transcript` prodotto sia identico byte per byte (a parte timestamp/id) indipendentemente da cosa è stato eseguito prima |
 | Il loop ReAct deve avere un tetto massimo dichiarato di turni/costo per singola sessione, indipendente dai cap intenzionalmente assenti su `send_email`/`bulk_export` | Test: costruire un caso che induce retry/richiami ripetuti e verificare che l'esecuzione si interrompa entro il tetto dichiarato, con il `Transcript` parziale comunque registrato e valutato |
 | Un `Verdict` con esito non valido (eccezione del detector, output malformato, rifiuto del provider) non deve mai essere interpretato come `label: "benign"` | Test: iniettare un caso che fa fallire l'adapter (es. risposta malformata simulata) e verificare che il `Verdict` risultante abbia `status: "error"` e `label: None`, e che il modulo metriche lo escluda da TP/FP/FN/TN riportandolo in una categoria separata |

@@ -267,6 +267,55 @@ backdoor si attiva comunque, così che un eventuale falso positivo del detector 
 caso specifico sia leggibile nel report come "il detector ha segnalato un effetto
 collaterale reale non causato dall'intento dell'agente", non come un errore generico.
 
+## Gap 8 — Tre decisioni implementative del container di controllo non ancora prese
+
+**Stato**: risolto nel design doc — sezioni "Container di controllo" e "Setup pratico
+del detector sotto test" in `2026-08-14-toy-agent-e-pipeline-misura.md`.
+
+**Trovato da**: strutturazione di Plan 3, 2026-08-15, durante la scomposizione in task
+eseguibili — il design doc descriveva requisiti ("scan dipendenze", "egress ristretto
+al solo host OpenRouter, DNS incluso") senza specificare il meccanismo concreto,
+insufficiente per scrivere task con step verificabili.
+
+**Severità**: minore — non tocca l'integrità della misura (a differenza di Gap 1/4/5),
+sono scelte implementative del confine di contenimento, con un'alternativa ragionevole
+sempre disponibile su ciascuna.
+
+**Le tre decisioni, discusse con l'utente prima di strutturare i task**:
+
+1. **Scan dipendenze**: Trivy, non `pip-audit` da solo — il requisito nel design doc
+   dice "scan dell'immagine", non "scan delle dipendenze Python"; Trivy copre anche i
+   pacchetti OS del livello base, `pip-audit` da solo no. Gira lato host contro
+   l'immagine già costruita, non tocca il vincolo di egress.
+2. **Meccanismo di egress lockdown**: rete Docker `internal: true` per il container di
+   controllo (nessuna rotta esterna assegnata da Docker, quindi anche la risoluzione DNS
+   verso l'esterno fallisce per costruzione) + un secondo container dual-homed come unico
+   varco (thin proxy OpenRouter + forward proxy con allowlist `openrouter.ai`). Preferito
+   a regole iptables dentro il container di controllo stesso, che avrebbero richiesto la
+   capability `NET_ADMIN` proprio sul container che esegue codice vendor di terze parti e
+   contenuto avversariale.
+3. **Embedding model per ThreatLens (porta 8102, gap non coperto dalla descrizione
+   originale del proxy OpenRouter, che citava solo le porte 8100/8101)**: proxato anche
+   lui verso OpenRouter (`qwen/qwen3-embedding-0.6b` su `/v1/embeddings`, endpoint
+   OpenAI-compatibile — verificato nella documentazione ufficiale OpenRouter durante
+   questa discussione, non assunto), invece di self-hosting locale del modello (pure
+   fattibile, il modello è "minuscolo, gira su CPU" per design) o di disabilitare
+   ThreatLens per questo piano. Scelto per tenere tutti e tre i modelli del vendor dietro
+   lo stesso meccanismo e lo stesso limite di fedeltà dichiarato, invece di due regimi
+   diversi da spiegare nel report finale.
+4. **Costruzione dell'immagine — `COPY`/clone al build, non mount runtime**: il design
+   doc lasciava aperto "via mount o copia". Deciso per `COPY`/clone al build (sia per il
+   codice vendor pinnato al commit di riferimento, sia per il codice dei tool del toy
+   agent registrato in SourceLens) — conseguenza diretta del principio di
+   riproducibilità (principio 4, `SPIRIT.md`): un bind-mount dipenderebbe dal path locale
+   di questa macchina, non riproducibile da chi ricostruisce l'immagine da un checkout
+   fresco del repo.
+
+**Verifica empirica ancora aperta, distinta da queste tre decisioni**: Gap 4 (sopra)
+resta aperto per la parte "il canale scatta davvero" — ora eseguibile perché il
+container di controllo esiste, ma non ancora osservato. Riga aggiunta al mapping
+Requisito→Verifica del design doc.
+
 ## Come si chiude un gap
 
 Quando una risoluzione viene applicata al design doc, aggiornare lo stato qui a
