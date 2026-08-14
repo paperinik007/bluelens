@@ -146,6 +146,10 @@ def run_agent(
                     result, status = spec.fn(state, **arguments), "ok"
                 except ToolError as exc:
                     result, status = str(exc), "error"
+                except Exception as exc:
+                    # Never propagate raw exception message — may contain credentials.
+                    # Record only the exception class name, matching model-client error handling.
+                    result, status = f"[tool error: {exc.__class__.__name__}]", "error"
 
             tool_call = ToolCall(tool_name=tool_name, arguments=arguments, result=result, status=status)
             turns.append(Turn(seq=seq, role="tool", content=result, tool_call=tool_call))

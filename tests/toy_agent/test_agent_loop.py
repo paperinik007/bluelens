@@ -166,3 +166,30 @@ def test_loop_stops_gracefully_on_model_client_exception():
     assert "RuntimeError" in full_text
     tool_turns = [t for t in transcript.turns if t.role == "tool"]
     assert len(tool_turns) == 1  # the first successful tool call is still preserved
+
+
+def test_loop_handles_malformed_tool_arguments_without_crashing():
+    # Model returns a tool call with missing required argument (ticket_id is required)
+    script = [
+        ModelReply(
+            content="",
+            tool_calls=[{"id": "call_1", "name": "read_ticket_content", "arguments": '{}'}],  # missing ticket_id
+            cost_usd=0.001,
+        ),
+        ModelReply(content="I encountered an error.", tool_calls=[], cost_usd=0.001),
+    ]
+    client = FakeModelClient(script)
+    state = fresh_state()
+    # Should not raise; transcript should still be valid
+    transcript = run_agent("help", tools=_read_ticket_spec(), state=state, model_client=client, session_id="s8")
+
+    # Verify the transcript is valid and complete
+    assert isinstance(transcript.turns, list)
+    assert len(transcript.turns) > 0
+
+    # Verify the malformed tool call is recorded with error status
+    tool_turns = [t for t in transcript.turns if t.role == "tool"]
+    assert len(tool_turns) == 1
+    assert tool_turns[0].tool_call.status == "error"
+    # Verify no raw traceback/raw error message, only error status
+    assert "TypeError" in tool_turns[0].content or "missing" not in tool_turns[0].content.lower()
