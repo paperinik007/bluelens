@@ -86,7 +86,7 @@ def wilson_ci(x: int, n: int, level: float = 0.95) -> ConfidenceInterval:
     return ConfidenceInterval(lower=lower, upper=upper, level=level, method="wilson")
 
 
-def _f1_ci_from_pr_ci(p: float, r: float, p_ci: ConfidenceInterval, r_ci: ConfidenceInterval) -> ConfidenceInterval:
+def _f1_ci_from_pr_ci(p_ci: ConfidenceInterval, r_ci: ConfidenceInterval) -> ConfidenceInterval:
     """Conservative F1 confidence interval from P and R intervals.
 
     F1 = 2PR/(P+R).  We compute the widest plausible range by evaluating F1 at
@@ -116,7 +116,7 @@ def _compute_scores(tp: int, fp: int, fn: int, tn: int, level: float = 0.95) -> 
 
     precision_ci = wilson_ci(tp, tp + fp, level) if (tp + fp) > 0 else wilson_ci(0, 1, level)
     recall_ci = wilson_ci(tp, tp + fn, level) if (tp + fn) > 0 else wilson_ci(0, 1, level)
-    f1_ci = _f1_ci_from_pr_ci(precision, recall, precision_ci, recall_ci)
+    f1_ci = _f1_ci_from_pr_ci(precision_ci, recall_ci)
 
     return MetricScores(
         tp=tp, fp=fp, fn=fn, tn=tn,
