@@ -159,6 +159,12 @@ def test_compute_metrics_per_technique_recall_requires_technique_match():
     assert result.per_technique["T0001"].tp == 0
     assert result.per_technique["T0001"].fn == 2
     assert result.per_technique["T0001"].recall == 0.0
+    # per_technique_primary (design doc: breakdown per technique_target for
+    # BOTH metrics) shows the contrast directly: caught as malicious every
+    # time (primary recall 1.0), never attributed correctly (strict recall 0.0).
+    assert result.per_technique_primary["T0001"].tp == 2
+    assert result.per_technique_primary["T0001"].fn == 0
+    assert result.per_technique_primary["T0001"].recall == 1.0
 
 
 def test_compute_metrics_mismatched_lengths_raises():

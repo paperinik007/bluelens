@@ -107,12 +107,21 @@ def render_report(
     lines.append("")
 
     if metrics.per_technique:
-        lines.append("### Per-technique breakdown (technique-attribution recall)")
+        lines.append("### Per-technique breakdown (strict — technique-attribution recall)")
         lines.append("")
         lines.append("| Technique | Recall [95% CI] | TP | FN |")
         lines.append("|---|---|---|---|")
         for tech in sorted(metrics.per_technique.keys()):
             lines.append(_fmt_technique_row(tech, metrics.per_technique[tech]))
+        lines.append("")
+
+    if metrics.per_technique_primary:
+        lines.append("### Per-technique breakdown (primary — detection recall, technique-agnostic)")
+        lines.append("")
+        lines.append("| Technique | Recall [95% CI] | TP | FN |")
+        lines.append("|---|---|---|---|")
+        for tech in sorted(metrics.per_technique_primary.keys()):
+            lines.append(_fmt_technique_row(tech, metrics.per_technique_primary[tech]))
         lines.append("")
 
     # --- Part 3: Methodology and Limitations ---
@@ -122,7 +131,7 @@ def render_report(
     lines.append("- **F1 CI:** Conservative approximation from P and R interval corners (declared limitation, not an exact interval).")
     lines.append(f"- **Sample size:** {metrics.total_count} cases total, {metrics.error_count} detector errors excluded from TP/FP/FN/TN.")
     lines.append(f"- **Small sample warning:** With {metrics.total_count} cases, confidence intervals are wide - results are indicative, not definitive. Consistent with SPIRIT.md principle 3 (statistical honesty).")
-    lines.append("- **Per-technique breakdown:** Reports recall only (precision is always 1.0 by construction with fp=0 - Gap 9, misleading to report). `tp` requires the detected technique to match the target, same definition as the strict metric — a detector that flags a session as malicious but attributes the wrong technique does not count as a per-technique tp (whole-branch review fix, second reviewer).")
+    lines.append("- **Per-technique breakdown:** Reports recall only (precision is always 1.0 by construction with fp=0 - Gap 9, misleading to report). Two variants, matching the design doc's request for a breakdown on both metrics: the strict table's `tp` requires the detected technique to match the target (a detector that flags a session as malicious but attributes the wrong technique does not count as a strict per-technique tp); the primary table's `tp` only requires the session to be flagged malicious at all, independent of attribution (Gap 13, whole-branch review, second reviewer).")
     lines.append("- **Determinism:** This report is fully deterministic (no timestamp) - regenerating from the same data produces a bit-identical file.")
     if setup_notes:
         lines.append(f"- **Setup notes:** {setup_notes}")

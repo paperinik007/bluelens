@@ -81,6 +81,16 @@ def test_report_contains_transcript_excerpt():
     assert "external@evil.com" in report  # transcript content visible
 
 
+def test_report_contains_both_per_technique_breakdowns():
+    # Gap 13: design doc asks for a per-technique breakdown for both metrics
+    cases = [_make_case("c1", "malicious", "T0001")]
+    verdicts = [_make_verdict("c1", "malicious", technique="T0009")]  # wrong technique
+    metrics = compute_metrics(cases, verdicts)
+    report = render_report(cases, verdicts, metrics)
+    assert "strict — technique-attribution recall" in report
+    assert "primary — detection recall, technique-agnostic" in report
+
+
 def test_report_is_deterministic():
     cases = [_make_case("c1", "malicious", "T0001"), _make_case("c2", "benign")]
     verdicts = [_make_verdict("c1", "malicious", technique="T0001"), _make_verdict("c2", "benign")]

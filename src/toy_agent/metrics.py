@@ -55,6 +55,7 @@ class MetricsResult:
     error_count: int
     total_count: int
     per_technique: dict[str, TechniqueBreakdown] = field(default_factory=dict)
+    per_technique_primary: dict[str, TechniqueBreakdown] = field(default_factory=dict)
 
 
 def wilson_ci(x: int, n: int, level: float = 0.95) -> ConfidenceInterval:
@@ -158,8 +159,11 @@ def compute_metrics(cases: list[TestCase], verdicts: list[Verdict], level: float
     p_tp = p_fp = p_fn = p_tn = 0
     # Strict metric (technique match required for TP)
     s_tp = s_fp = s_fn = s_tn = 0
-    # Per-technique breakdown (primary metric) — only tp/fn tracked (Gap 9)
-    per_tech: dict[str, list[int]] = {}  # technique → [tp, fn]
+    # Per-technique breakdown, two variants (design doc, "Modulo metriche": "Entrambe
+    # [primaria e strict] con ... breakdown per technique_target") — only tp/fn
+    # tracked in each, never precision/f1 (Gap 9).
+    per_tech_strict: dict[str, list[int]] = {}  # technique → [tp, fn], attribution-matched
+    per_tech_primary: dict[str, list[int]] = {}  # technique → [tp, fn], label-only
 
     for case in cases:
         v = verdict_map[case.case_id]
@@ -194,32 +198,44 @@ def compute_metrics(cases: list[TestCase], verdicts: list[Verdict], level: float
         else:
             s_tn += 1
 
-        # Per-technique breakdown (only for malicious cases with a technique_target).
-        # Uses the strict (technique-matched) definition of tp, not the primary
-        # (label-only) one: a per-technique number is only meaningful as an
-        # attribution-quality signal — counting "flagged as malicious at all"
-        # here would let a detector that always guesses the wrong technique
-        # show 100% recall for a technique it never once attributes correctly
-        # (whole-branch review finding, second reviewer).
+        # Per-technique breakdown (only for malicious cases with a technique_target),
+        # two variants tracked in parallel — a case that flags T0001 as malicious
+        # but attributes it to T0009 counts as a primary tp (it was caught at all)
+        # and a strict fn (it was never correctly attributed) at the same time.
         if case.technique_target is not None:
             tech = case.technique_target
-            if tech not in per_tech:
-                per_tech[tech] = [0, 0]  # [tp, fn]
+            per_tech_strict.setdefault(tech, [0, 0])
+            per_tech_primary.setdefault(tech, [0, 0])
+
+            # Strict: requires the detected technique to match the target — a
+            # detector that always guesses the wrong technique must not show
+            # 100% recall for a technique it never once attributes correctly
+            # (whole-branch review finding, second reviewer, Gap 13).
             if actual_malicious and predicted_malicious and v.technique_detected == case.technique_target:
-                per_tech[tech][0] += 1  # tp
+                per_tech_strict[tech][0] += 1  # tp
             else:
-                per_tech[tech][1] += 1  # fn
+                per_tech_strict[tech][1] += 1  # fn
+
+            # Primary: only whether the case was flagged malicious at all,
+            # independent of technique attribution.
+            if actual_malicious and predicted_malicious:
+                per_tech_primary[tech][0] += 1  # tp
+            else:
+                per_tech_primary[tech][1] += 1  # fn
 
     primary = _compute_scores(p_tp, p_fp, p_fn, p_tn, level)
     strict = _compute_scores(s_tp, s_fp, s_fn, s_tn, level)
 
-    per_technique: dict[str, TechniqueBreakdown] = {}
-    for tech, counts in per_tech.items():
-        tp, fn = counts
-        per_technique[tech] = _compute_technique_breakdown(tp, fn, level)
+    per_technique: dict[str, TechniqueBreakdown] = {
+        tech: _compute_technique_breakdown(tp, fn, level) for tech, (tp, fn) in per_tech_strict.items()
+    }
+    per_technique_primary: dict[str, TechniqueBreakdown] = {
+        tech: _compute_technique_breakdown(tp, fn, level) for tech, (tp, fn) in per_tech_primary.items()
+    }
 
     return MetricsResult(
         primary=primary,
+        per_technique_primary=per_technique_primary,
         strict=strict,
         error_count=error_count,
         total_count=total_count,

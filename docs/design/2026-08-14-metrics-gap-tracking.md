@@ -150,9 +150,21 @@ case.technique_target` per contare `tp`, altrimenti `fn`). Aggiunto test di
 regressione `test_compute_metrics_per_technique_recall_requires_technique_match`
 in `tests/toy_agent/test_metrics.py` (scritto per fallire sul codice
 originale, verificato che fallisse, poi la correzione l'ha fatto passare).
-Aggiornato anche l'header della sezione nel report (`report.py`, da
-"primary metric, recall only" a "technique-attribution recall") e la nota di
-metodologia corrispondente, per riflettere la semantica corretta.
+
+**Estensione (stessa correzione, testo originale del design doc)**: rileggendo
+il testo originale della sezione "Modulo metriche" (non la parafrasi del
+piano) durante `finishing-a-development-branch` — "Entrambe [le due metriche]
+con intervallo di confidenza esplicito e breakdown per technique_target" — il
+requisito chiede un breakdown per tecnica per **entrambe** le metriche
+(primaria e strict), non una sola tabella. Aggiunto un secondo campo
+`MetricsResult.per_technique_primary` (label-only, indipendente
+dall'attribuzione) accanto a `per_technique` (rinominato concettualmente a
+"strict" ma non nel nome del campo, per non rompere i consumer esistenti).
+Il report ora mostra entrambe le tabelle, con header distinti ("strict —
+technique-attribution recall" / "primary — detection recall,
+technique-agnostic"). Nuovi test:
+`test_compute_metrics_per_technique_recall_requires_technique_match`
+(esteso) e `test_report_contains_both_per_technique_breakdowns`.
 
 ## Esito council checkpoint
 
