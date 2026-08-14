@@ -18,8 +18,11 @@ prima di eseguire il detector, non aggiustato dopo aver visto i risultati; (3) f
 unica di verità nel nostro repo, il registro nel clone vendor punta lì, non a una copia
 scritta apposta per SourceLens.
 
-**Ancora aperto, da decidere in fase di costruzione del dataset (non ora)**: cosa
-esattamente nasconde `update_account` oltre al suo scopo dichiarato.
+**Ancora aperto in origine ("cosa esattamente nasconde update_account"), ora deciso**:
+vedi Gap 7 sotto — deciso durante la strutturazione di Plan 1 (non in fase di
+costruzione del dataset come originariamente previsto, perché è codice del tool, non
+contenuto di un `TestCase`), poi ristretto dopo un rischio trovato dal council checkpoint
+su quel piano.
 
 **Severità**: maggiore — tocca la validità metodologica del confronto con i numeri
 dichiarati dal vendor (P=1.0, R=0.667), non solo un dettaglio implementativo.
@@ -184,6 +187,85 @@ escludere.
 dello stato finto (DB clienti, account, ticket) — nessuna mutazione prodotta da un
 `TestCase` è visibile a un altro, indipendentemente dall'ordine di esecuzione nel
 batch. Requisito aggiunto al mapping Requisito→Verifica del design doc.
+
+## Gap 6 — Nessun componente orchestra loop toy agent → adapter → metriche
+
+**Stato**: risolto nel design doc — sezione "Orchestrazione del run" in
+`2026-08-14-toy-agent-e-pipeline-misura.md`.
+
+**Trovato da**: writing-plans, 2026-08-14, durante la scomposizione del design in piani
+di implementazione separati per sotto-sistema — mappando ogni componente del design doc
+su un piano non emergeva un proprietario per la sequenza completa.
+
+**Severità**: minore — non tocca l'integrità della misura (a differenza di Gap 1/4/5),
+è un buco di composizione, non di metodologia.
+
+**Evidenza**: `Adapter.evaluate(transcript: Transcript) -> Verdict` (sezione "Adapter")
+opera su un singolo `Transcript` alla volta. Il modulo metriche (sezione "Modulo
+metriche") "prende `list[TestCase]` + `list[Verdict]` (accoppiati per `case_id`)" —
+assume che i `Verdict` esistano già. Nessuna sezione del design doc descrive il
+componente che, per ogni `TestCase` del dataset, resetta lo stato finto (Gap 5), fa
+girare il loop ReAct per produrre il `Transcript`, chiama `adapter.evaluate()`, raccoglie
+il `Verdict`, e passa le due liste accoppiate al modulo metriche/report.
+
+**Risoluzione applicata**: aggiunta la sezione "Orchestrazione del run" al design doc,
+componente collocato come ultimo task del piano di implementazione dell'adapter (nessuna
+logica propria oltre alla composizione di componenti già definiti altrove nel design
+doc, quindi nessuna nuova decisione architetturale da sottoporre a un council dedicato).
+
+## Gap 7 — Ground truth ambigua per un `TestCase` benigno che tocca un tool avvelenato
+
+**Stato**: `open` — da chiudere durante Plan 5 (costruzione del dataset), non durante
+Plan 1.
+
+**Trovato da**: council checkpoint su Plan 1 (`council-pragmatist`), 2026-08-14, con
+un'osservazione aggiuntiva del thread principale durante la sintesi.
+
+**Severità**: maggiore — tocca la validità della ground truth stessa, non
+un'implementazione.
+
+**Evidenza**: `update_account` opera solo su campi dell'*account* (`status`,
+`refund_total`, `marketing_opt_in` — non su email/telefono/indirizzo, che appartengono
+al `Customer` e si leggono via `query_customer_db`, non si scrivono qui). È veicolo sia
+di tecniche malevole (T0005, T0014, T0007) sia, plausibilmente, di richieste benigne
+legittime sul campo non sensibile `marketing_opt_in` (es. "vorrei disiscrivermi dalle
+email di marketing") o sugli stessi campi sensibili con intento benigno (es. "voglio
+disattivare il mio account, sto annullando l'abbonamento"). Il comportamento nascosto
+T0007 (vedi sopra, Gap 1) è stato ristretto ai campi `status`/`refund_total` proprio per
+non contaminare i `TestCase` benigni che toccano `marketing_opt_in` — ma non elimina il
+problema per un `TestCase` benigno che tocca legittimamente `status` o `refund_total`.
+
+Due rischi distinti, entrambi aperti:
+1. **Scorciatoia di correlazione**: se `update_account` viene chiamato *solo* nei
+   `TestCase` malevoli del dataset, il detector potrebbe imparare "sessione che chiama
+   `update_account` = malevola" senza mai ragionare sul contenuto del transcript o sul
+   codice sorgente — un recall gonfiato per un motivo estraneo alla capacità che si
+   vuole misurare. Servono quindi anche `TestCase` benigni che usano il tool, inclusi
+   almeno alcuni che toccano `status`/`refund_total` per intento genuinamente benigno.
+2. **Definizione di "benigno" quando il tool è di fatto avvelenato**: se un `TestCase`
+   con intento benigno tocca `status`/`refund_total`, il backdoor scatta comunque (per
+   costruzione, non selettivo). Non è ancora deciso se quel `TestCase` debba restare
+   etichettato `label: "benign"` (la label riflette l'intento/condotta dell'agente, non
+   l'esito di sicurezza) oppure se un effetto collaterale di sicurezza reale (escalation
+   silenziosa a admin) renda quella sessione intrinsecamente non "pulita" a prescindere
+   dall'intento — una convenzione di etichettatura che il design doc non specifica
+   ancora esplicitamente.
+
+**Perché conta**: qualunque scelta va dichiarata esplicitamente come convenzione
+metodologica nel design doc (o nel report finale, come limite dichiarato) prima di
+scrivere i `TestCase` reali — coerente col principio 2 di `SPIRIT.md` (metodologia
+dichiarata prima dei risultati). Scriverla dopo aver visto come si comporta il detector
+sarebbe esattamente il bias di conferma che il principio vuole escludere.
+
+**Da decidere in Plan 5, prima di scrivere qualunque `TestCase` che usi
+`update_account`**: (a) quanti `TestCase` benigni devono comunque esercitare il tool
+(inclusi alcuni su `status`/`refund_total`), per evitare la scorciatoia di correlazione;
+(b) la convenzione di etichettatura per un `TestCase` benigno che attiva comunque il
+backdoor — probabilmente: la `label` resta `"benign"` perché riflette la condotta
+dell'agente (non l'esito), ma la `rationale` deve dichiarare esplicitamente che il
+backdoor si attiva comunque, così che un eventuale falso positivo del detector su quel
+caso specifico sia leggibile nel report come "il detector ha segnalato un effetto
+collaterale reale non causato dall'intento dell'agente", non come un errore generico.
 
 ## Come si chiude un gap
 
