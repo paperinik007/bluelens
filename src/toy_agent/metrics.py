@@ -194,14 +194,20 @@ def compute_metrics(cases: list[TestCase], verdicts: list[Verdict], level: float
         else:
             s_tn += 1
 
-        # Per-technique breakdown (only for malicious cases with a technique_target)
+        # Per-technique breakdown (only for malicious cases with a technique_target).
+        # Uses the strict (technique-matched) definition of tp, not the primary
+        # (label-only) one: a per-technique number is only meaningful as an
+        # attribution-quality signal — counting "flagged as malicious at all"
+        # here would let a detector that always guesses the wrong technique
+        # show 100% recall for a technique it never once attributes correctly
+        # (whole-branch review finding, second reviewer).
         if case.technique_target is not None:
             tech = case.technique_target
             if tech not in per_tech:
                 per_tech[tech] = [0, 0]  # [tp, fn]
-            if actual_malicious and predicted_malicious:
+            if actual_malicious and predicted_malicious and v.technique_detected == case.technique_target:
                 per_tech[tech][0] += 1  # tp
-            elif actual_malicious and not predicted_malicious:
+            else:
                 per_tech[tech][1] += 1  # fn
 
     primary = _compute_scores(p_tp, p_fp, p_fn, p_tn, level)

@@ -143,6 +143,24 @@ def test_compute_metrics_per_technique_breakdown():
     assert not hasattr(result.per_technique["T0001"], "f1")
 
 
+def test_compute_metrics_per_technique_recall_requires_technique_match():
+    # Regression test (whole-branch review of Plan 2, second reviewer): the
+    # detector correctly flags every T0001 case as malicious, but never once
+    # attributes it to the right technique (always guesses T0009 instead).
+    # per_technique must reflect technique-attribution quality (like strict),
+    # not just label-only detection (like primary) — otherwise a detector
+    # with zero correct attributions for T0001 would show 100% recall here,
+    # directly contradicting a strict.tp of 0 in the same report.
+    cases = [_make_case("c1", "malicious", "T0001"), _make_case("c2", "malicious", "T0001")]
+    verdicts = [_make_verdict("c1", "malicious", technique="T0009"), _make_verdict("c2", "malicious", technique="T0009")]
+    result = compute_metrics(cases, verdicts)
+    assert result.strict.tp == 0
+    assert result.strict.fn == 2
+    assert result.per_technique["T0001"].tp == 0
+    assert result.per_technique["T0001"].fn == 2
+    assert result.per_technique["T0001"].recall == 0.0
+
+
 def test_compute_metrics_mismatched_lengths_raises():
     cases = [_make_case("c1", "benign")]
     verdicts = []

@@ -118,6 +118,42 @@ passerebbero anche se la funzionalità fosse rotta.
 `test_report_includes_vendor_comparison` cerca `"P=1.0, R=0.667"`. Aggiornato
 nel piano: Task 3.
 
+## Gap 13 — Per-technique recall usava la definizione primaria (label-only), non strict
+
+**Stato**: risolto (whole-branch review del secondo revisore, post-esecuzione).
+
+**Trovato da**: audit indipendente del branch eseguito da un secondo modello
+(Claude Sonnet 5), richiesto esplicitamente dall'utente perché il piano era
+stato eseguito da un altro modello (Claude Sonnet 4 via Cline).
+
+**Severità**: maggiore — produce un numero fuorviante esattamente nel punto del
+report che dovrebbe mostrare la qualità di attribuzione per tecnica specifica,
+la stessa famiglia di problema di Gap 9 (numero tecnicamente corretto ma letto
+in modo sbagliato da chi legge il report).
+
+**Evidenza**: in `compute_metrics` (`metrics.py`), il ciclo che popola
+`per_tech[tech]` contava come `tp` qualunque caso `actual_malicious and
+predicted_malicious`, senza verificare `v.technique_detected ==
+case.technique_target` — cioè usava la definizione della metrica *primaria*
+(label-only), non quella *strict* (attribuzione tecnica), pur essendo l'unico
+punto del report dove il lettore vede un numero legato a una tecnica
+specifica. Verificato empiricamente: un detector che classifica correttamente
+ogni caso T0001 come `malicious` ma attribuisce sempre la tecnica sbagliata
+(sempre T0009) produce `strict.tp=0`/`strict.fn=3` (corretto) ma
+`per_technique["T0001"].recall=1.0` (fuorviante) — contraddizione diretta
+nello stesso report tra la sezione "strict metric" e il breakdown per
+tecnica.
+
+**Risoluzione applicata**: il conteggio per-tecnica ora richiede lo stesso
+match di tecnica della metrica strict (`v.technique_detected ==
+case.technique_target` per contare `tp`, altrimenti `fn`). Aggiunto test di
+regressione `test_compute_metrics_per_technique_recall_requires_technique_match`
+in `tests/toy_agent/test_metrics.py` (scritto per fallire sul codice
+originale, verificato che fallisse, poi la correzione l'ha fatto passare).
+Aggiornato anche l'header della sezione nel report (`report.py`, da
+"primary metric, recall only" a "technique-attribution recall") e la nota di
+metodologia corrispondente, per riflettere la semantica corretta.
+
 ## Esito council checkpoint
 
 - `council-skeptic`: d'accordo con riserve. Ha trovato Gap 8 (transcript
