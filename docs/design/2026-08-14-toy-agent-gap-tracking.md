@@ -318,9 +318,34 @@ Requisito→Verifica del design doc.
 
 ## Gap 9 — Misuratore e misurato condividono lo stesso container di controllo
 
-**Stato**: `open` — accettato come limite dichiarato per Fase 1 (questo audit), da
-affrontare con un giro di design dedicato prima di iniziare l'audit del prossimo tool
-(Fase 2), non durante l'esecuzione di Plan 3.
+**Stato**: `open` — accettato come limite dichiarato per l'esecuzione di Plan 3.
+
+**Aggiornamento sul quando affrontarlo (2026-08-15, discussione successiva con
+l'utente)**: la collocazione iniziale ("prima di Fase 2", cioè prima dell'audit del
+prossimo tool) è stata rivista dopo aver esaminato le dipendenze reali tra i piani
+rimanenti. **Plan 4 (l'orchestratore) è direttamente accoppiato alla risposta a
+questo gap**, Plan 5 (dataset) no:
+- L'orchestratore di Plan 4 deve: resettare lo stato finto → far girare il loop
+  ReAct del toy agent (genera il `Transcript`) → chiamare `Pipeline().analyze()`
+  del vendor sul transcript → raccogliere il `Verdict`. Nell'architettura a
+  container unico, il pattern naturale (già anticipato da Task 6 di Plan 3,
+  `verify_sourcelens.py`: un unico processo Python dentro `control`, invocato via
+  `docker compose exec`, che spia `MCPClient.call` in-process) è una chiamata di
+  funzione diretta nello stesso interprete. In un'architettura a due container
+  separati questo pattern non esiste più — servirebbe un meccanismo di handoff del
+  transcript attraverso un confine tra processi/container. Sono due design radicalmente
+  diversi per lo stesso componente: costruire Plan 4 assumendo un container solo e
+  scoprire poi che serve lo split significherebbe rifare l'orchestratore da zero, non
+  un piccolo aggiustamento.
+- Plan 5 (costruzione del dataset di `TestCase`) non tocca mai il container — nessuna
+  dipendenza da questo gap, può procedere ovunque nella sequenza.
+
+**Sequenza rivista**: chiudere Plan 3 (Task 5 + Task 6) → discutere Gap 9 (informata
+anche dall'esperienza concreta di Task 6, la prima volta che si scrive "come si invoca
+`aidr` contro un transcript" — prova pratica di quanto il pattern attuale sia incollato
+a un container solo) → Plan 4 costruito già con la decisione presa. Plan 5 può
+incastrarsi in qualunque punto della sequenza, prima o dopo la discussione su Gap 9,
+senza impatto.
 
 **Trovato da**: discussione con l'utente durante l'esecuzione di Plan 3 Task 4
 (2026-08-15), innescata dall'indagine sulle 16 CRITICAL Trivy trovate nell'immagine
