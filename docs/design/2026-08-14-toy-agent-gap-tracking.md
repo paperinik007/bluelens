@@ -316,6 +316,63 @@ resta aperto per la parte "il canale scatta davvero" — ora eseguibile perché 
 container di controllo esiste, ma non ancora osservato. Riga aggiunta al mapping
 Requisito→Verifica del design doc.
 
+## Gap 9 — Misuratore e misurato condividono lo stesso container di controllo
+
+**Stato**: `open` — accettato come limite dichiarato per Fase 1 (questo audit), da
+affrontare con un giro di design dedicato prima di iniziare l'audit del prossimo tool
+(Fase 2), non durante l'esecuzione di Plan 3.
+
+**Trovato da**: discussione con l'utente durante l'esecuzione di Plan 3 Task 4
+(2026-08-15), innescata dall'indagine sulle 16 CRITICAL Trivy trovate nell'immagine
+`control` (4 CVE Perl senza fix upstream). L'utente ha notato che il container
+`control` ospita insieme sia `toy_agent` (il misuratore) sia `aidr` (il tool sotto
+misura) — mai discusso esplicitamente prima, né nel design doc, né in Gap 8, né al
+council checkpoint originale di Plan 3.
+
+**Severità**: minore per questo audit specifico — nessuna delle 4 CVE Perl è
+raggiungibile dal flusso dati reale (transcript generato dal toy agent, mai passato a
+Perl), e il codice vendor di FareedKhan-dev non ha ancora mostrato segnali di
+inaffidabilità. Potenzialmente maggiore per audit futuri di tool vendor meno fidati o
+con vulnerabilità reali sfruttabili — l'assunto implicito oggi è che il codice del tool
+sotto misura non possa toccare il processo/filesystem del misuratore, ma nell'attuale
+architettura a container unico questo non è garantito da nessun confine tecnico, solo
+dal fatto che (per ora) il vendor testato non sembra ostile.
+
+**Il problema**: `toy_agent` (il "misuratore" — schema, stato finto, tool, loop ReAct,
+in futuro adapter+metriche, SPIRIT.md principio 6) e `aidr` (il "misurato", il tool
+vendor sotto audit) girano nello stesso container `control` (Task 2 di questo piano),
+condividendo filesystem e network namespace. Un tool vendor futuro compromesso o
+genuinamente malevolo potrebbe in teoria toccare l'esecuzione o lo stato del misuratore
+stesso — un rischio all'integrità dell'audit più che alla sola sicurezza operativa,
+perché un ente che si dichiara indipendente (SPIRIT.md, "Perché esiste questo repo") non
+dovrebbe fondere lo strumento di misura con l'oggetto misurato nello stesso confine di
+fiducia.
+
+**Alternativa discussa**: due container separati — uno che genera il transcript (solo
+`toy_agent`, mai importa `aidr` — vincolo già rispettato a livello di codice da
+`tests/test_no_vendor_imports.py`, Plan 1) e uno che lo analizza (solo `aidr`),
+comunicanti esclusivamente tramite un'interfaccia a dati (`Transcript` in ingresso,
+`Verdict` in uscita) — lo stesso confine che Plan 4 (l'orchestratore) deve comunque
+costruire, spaccato su due container o no.
+
+**Analisi di riuso** (per quando si affronterà questo gap): la maggior parte
+dell'infrastruttura di rete costruita in Plan 3 si riuserebbe intatta —
+`docker/egress-proxy/` (Squid, splice SNI-based, rete `internal_net`) non ha idea di
+cosa ci sia dall'altra parte, basterebbe aggiungere un servizio in più dietro lo stesso
+proxy. `vendor_proxy.py` (Task 1) non ha già alcuna dipendenza dal resto di `toy_agent`
+(requisito esplicito del suo brief) — si sposterebbe as-is nel container "detector".
+`source_registry.yaml` e la logica di `entrypoint.sh` che avvia `vendor_proxy` restano
+lato detector senza modifiche. Da rifare: Task 2 diventerebbe due Dockerfile invece di
+uno, `docker-compose.yml` avrebbe una topologia più ricca (un servizio in più, reti
+separate per isolare i due container tra loro). Novità vera, non riuso: il meccanismo
+concreto di handoff del `Transcript` tra i due container.
+
+**Perché non risolto ora**: Task 2 e Task 3 di questo piano sono già passati per task
+review con l'architettura a container unico; riaprirli a metà Task 4 significherebbe
+rifare una decisione architetturale già passata per council senza un giro di
+brainstorming+council dedicato al cambiamento — la stessa disciplina già applicata alle
+altre decisioni di questo progetto (Gap 8).
+
 ## Come si chiude un gap
 
 Quando una risoluzione viene applicata al design doc, aggiornare lo stato qui a
