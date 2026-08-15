@@ -49,7 +49,10 @@ def build_forwarder(
 
     proxy_url routes the outbound call through egress-proxy (the only container
     with a real route to the internet — see design doc, "Container di controllo").
-    transport is for tests only: it bypasses proxy_url and any real network call.
+    transport is for tests only, to bypass any real network call. Note: httpx gives
+    a proxy-derived mount precedence over an injected transport for matching URLs,
+    so passing both proxy_url and transport at once does not behave as "transport
+    wins" — tests should pass transport alone (proxy_url=None, the default).
     """
     client = httpx.Client(
         base_url=OPENROUTER_BASE_URL,
@@ -81,9 +84,9 @@ class _ProxyHandler(BaseHTTPRequestHandler):
     server: _ForwardingHTTPServer  # narrows the type for self.server.forward below
 
     def do_POST(self) -> None:
-        length = int(self.headers.get("Content-Length", 0))
-        body = json.loads(self.rfile.read(length) or b"{}")
         try:
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length) or b"{}")
             result = self.server.forward(self.server.server_port, body)
         except Exception as exc:  # noqa: BLE001 - the listener must never crash on a bad/failed call
             payload = json.dumps({"error": exc.__class__.__name__}).encode()
