@@ -354,10 +354,10 @@ sempre disponibile su ciascuna.
    di questa macchina, non riproducibile da chi ricostruisce l'immagine da un checkout
    fresco del repo.
 
-**Verifica empirica ancora aperta, distinta da queste tre decisioni**: Gap 4 (sopra)
-resta aperto per la parte "il canale scatta davvero" — ora eseguibile perché il
-container di controllo esiste, ma non ancora osservato. Riga aggiunta al mapping
-Requisito→Verifica del design doc.
+**Verifica empirica, distinta da queste tre decisioni**: Gap 4 (sopra) — la parte
+"il canale scatta davvero" è stata osservata ed eseguita con esito PASS il
+2026-08-15 (Plan 3 Task 6); vedi la sezione Gap 4 per l'esito completo. Riga
+aggiunta al mapping Requisito→Verifica del design doc.
 
 ## Gap 9 — Misuratore e misurato condividono lo stesso container di controllo
 
