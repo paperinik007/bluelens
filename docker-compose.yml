@@ -1,0 +1,25 @@
+services:
+  egress-proxy:
+    build:
+      context: ./docker/egress-proxy
+    networks:
+      internal_net:
+      default:
+    expose:
+      - "3128"
+
+  control:
+    build:
+      context: .
+      dockerfile: docker/control/Dockerfile
+    depends_on:
+      - egress-proxy
+    environment:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      HTTPS_PROXY: http://egress-proxy:3128
+    networks:
+      internal_net:
+
+networks:
+  internal_net:
+    internal: true

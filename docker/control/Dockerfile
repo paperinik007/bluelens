@@ -1,7 +1,13 @@
 FROM python:3.11-slim
 
+# curl (deviation from Task 2, discovered in Task 3 Step 4 verification): Task 3's
+# egress-lockdown checks run curl-based probes inside this container to prove DNS
+# resolution and direct connects fail while only the openrouter.ai path through
+# egress-proxy succeeds. python:3.11-slim ships neither curl nor wget, so without
+# this, every curl-based check reports "BLOCKED" merely from command-not-found
+# (exit 127), not from an actual network block — meaningless as evidence either way.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git \
+    && apt-get install -y --no-install-recommends git curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Vendor code, pinned for reproducibility (SPIRIT.md principio 4) — cloned at
