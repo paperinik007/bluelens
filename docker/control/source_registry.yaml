@@ -1,0 +1,22 @@
+# Extends the vendor's original registry (aidr/data/source_registry.yaml, pinned
+# commit 7fad14d2478707e68a09b8ecd9942dec8fde1614) with one entry for the toy
+# agent's server. Baked into the control image at build time (Dockerfile COPY),
+# replacing the vendor's original file — see design doc, "Registro SourceLens" +
+# gap-tracking doc, Gap 8.
+servers:
+  - name: analytics_insights
+    path: analytics_insights/function/analytics_insights.py
+    category: analytics
+    description: "Service-log analytics and insight generation."
+  - name: business_metrics
+    path: business_metrics/business_metrics.py
+    category: analytics
+    description: "Business KPI dashboard generation from seeded demo data."
+  - name: host_toolkit
+    path: host_toolkit/host_toolkit.py
+    category: system
+    description: "Host file utilities: download, delete, and list files."
+  - name: toy_support
+    path: toy_support/toy_support.py
+    category: system
+    description: "Customer support toy agent: customer DB, tickets, email, account updates, diagnostics, bulk export."
