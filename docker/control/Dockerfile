@@ -41,6 +41,27 @@ COPY --from=vendor-source /opt/aidr-vendor /opt/aidr-vendor
 WORKDIR /opt/aidr-vendor
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Vendor's requirements.txt pins mcp[cli]>=1.2 with no upper bound, which
+# resolves to an incompatible mcp 2.x at build time (protocol rewrite: FastMCP
+# renamed to MCPServer, mcp.server.fastmcp removed) — breaks all three vendor
+# MCP providers (sourcelens.py/threatlens.py/policylens.py), which import
+# FastMCP from that path and crash on subprocess spawn (Task 6 finding).
+# Corrective override on our side, not a change to the vendor's own
+# requirements.txt: cap to the 1.x line per upstream's own migration guidance
+# for callers not ready for the v2 rewrite.
+RUN pip install --no-cache-dir 'mcp[cli]>=1.28,<2'
+
+# `aidr` was never installed as a package, only its dependencies — the vendor's
+# own pyproject.toml (`[project] name = "aidr"`, `[tool.setuptools.packages.find]
+# include = ["aidr*"]`) shows it's meant to be pip-installed. Without this,
+# threatlens.py's `from aidr.serving.model_client import embed` fails because
+# subprocess-launched scripts get their own directory on `sys.path[0]`, not
+# `/opt/aidr-vendor` (Task 6 finding) — sourcelens.py/policylens.py never
+# import `aidr`, so they didn't surface this. Installing `aidr` itself
+# (editable, same pattern as `toy_agent` below) fixes this regardless of
+# invocation style.
+RUN pip install --no-cache-dir -e .
+
 # toy_agent package (Plan 1 + this plan's vendor_proxy.py), installed editable so
 # `python -m toy_agent.vendor_proxy` and (Plan 4) the orchestrator both work from
 # the same image without a rebuild.
