@@ -14,7 +14,7 @@ import httpx
 TIER_TO_MODEL: dict[str, str] = {
     "sifter": "qwen/qwen3-4b-instruct-2507",
     "inspector": "qwen/qwen3-30b-a3b-instruct-2507",
-    "embed": "qwen/qwen3-embedding-0.6b",
+    "embed": "qwen/qwen3-embedding-4b",
 }
 
 # Port -> OpenRouter path, matching model_client.py's hardcoded ports:

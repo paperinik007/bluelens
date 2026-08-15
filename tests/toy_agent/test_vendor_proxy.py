@@ -54,7 +54,7 @@ def test_build_forwarder_posts_embeddings_endpoint_for_embed_tier():
     result = forward(8102, {"model": "embed", "input": "hello"})
 
     assert captured["url"] == "https://openrouter.ai/api/v1/embeddings"
-    assert captured["body"]["model"] == "qwen/qwen3-embedding-0.6b"
+    assert captured["body"]["model"] == "qwen/qwen3-embedding-4b"
     assert result == {"data": []}
 
 
