@@ -89,9 +89,12 @@ Nessun invocazione reale di `perl` in `docker/control/entrypoint.sh`, in
 
    Questo non cambia il conteggio di Trivy (che scansiona i metadati dpkg,
    non i permessi dei file) — le 4 CRITICAL restano riportate, come atteso e
-   documentato qui. Chiude però il percorso di sfruttamento reale: nessuna
-   delle 4 CVE è raggiungibile se il binario perl non può essere eseguito.
-   Verificato che nessuno step di build residuo o `entrypoint.sh` dipenda da
+   documentato qui. Riduce la superficie di attacco per invocazione
+   accidentale o non privilegiata; non è una difesa contro un attaccante che
+   ottenga già esecuzione di codice come root nel container (che potrebbe
+   ripristinare il bit di esecuzione con `chmod +x`, o invocare l'interprete
+   direttamente tramite `ld-linux.so`, dato che il file resta leggibile da
+   tutti). Verificato che nessuno step di build residuo o `entrypoint.sh` dipenda da
    perl eseguibile: il container è stato ricostruito e avviato con successo
    dopo questa modifica (vedi report Task 4 per il log completo del test di
    fumo — il container resta in stato `running` con il flusso di
@@ -100,9 +103,12 @@ Nessun invocazione reale di `perl` in `docker/control/entrypoint.sh`, in
 3. **Egress di rete bloccato (Task 3)**: `control` non ha alcuna rotta di
    rete in uscita se non verso `openrouter.ai`, tramite il sidecar
    `egress-proxy` (Squid), su una rete Docker `internal: true`. Anche nel
-   caso peggiore — una RCE via Perl sfruttando una di queste CVE — non
-   esiste alcuna destinazione di rete raggiungibile per exfiltrazione o
-   comando-e-controllo dall'interno di `control`.
+   caso peggiore — una RCE via Perl sfruttando una di queste CVE — l'unica
+   destinazione di rete raggiungibile dall'interno di `control` è
+   `openrouter.ai`: non un canale generico di exfiltrazione o
+   comando-e-controllo, ma comunque una destinazione reale, raggiungibile,
+   con una chiave API valida presente nell'ambiente — non una superficie
+   nulla.
 
 ## Note
 

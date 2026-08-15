@@ -1,3 +1,11 @@
+# Run date: 2026-08-15
+# control image digest (final passing run, after mcp/aidr/embed-model/CRLF
+# fixes): sha256:6c4087ddd3a1766661f7d608ed1d6b0e4bb490601ec341f13d7ac432d81afa94
+# (matches the digest recorded for the same day's Trivy scan in
+# docs/design/2026-08-15-container-dependency-scan.md)
+# Command: docker compose exec control python verify_sourcelens.py
+#
+# Raw output below is unmodified (byte-for-byte as produced by the real run):
 [inspector] tool_use: list_mcp_servers()
 [inspector] tool_use: get_source_code(server_names=['toy_support'])
 [inspector] tool_use: get_technique(query='T0007', tactic='T0007')

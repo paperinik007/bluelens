@@ -339,9 +339,10 @@ sempre disponibile su ciascuna.
    contenuto avversariale.
 3. **Embedding model per ThreatLens (porta 8102, gap non coperto dalla descrizione
    originale del proxy OpenRouter, che citava solo le porte 8100/8101)**: proxato anche
-   lui verso OpenRouter (`qwen/qwen3-embedding-0.6b` su `/v1/embeddings`, endpoint
-   OpenAI-compatibile — verificato nella documentazione ufficiale OpenRouter durante
-   questa discussione, non assunto), invece di self-hosting locale del modello (pure
+   lui verso OpenRouter (`qwen/qwen3-embedding-4b` — sostituito con 4b il 2026-08-15,
+   0.6b non ha più provider attivi su OpenRouter, vedi Gap 4 — su `/v1/embeddings`,
+   endpoint OpenAI-compatibile — verificato nella documentazione ufficiale OpenRouter
+   durante questa discussione, non assunto), invece di self-hosting locale del modello (pure
    fattibile, il modello è "minuscolo, gira su CPU" per design) o di disabilitare
    ThreatLens per questo piano. Scelto per tenere tutti e tre i modelli del vendor dietro
    lo stesso meccanismo e lo stesso limite di fedeltà dichiarato, invece di due regimi
@@ -358,6 +359,17 @@ sempre disponibile su ciascuna.
 "il canale scatta davvero" è stata osservata ed eseguita con esito PASS il
 2026-08-15 (Plan 3 Task 6); vedi la sezione Gap 4 per l'esito completo. Riga
 aggiunta al mapping Requisito→Verifica del design doc.
+
+**Eccezione tracciata sulla decisione 1 (scan Trivy)**: `Stato`: `accettato come
+limite dichiarato`. Il requisito del mapping Requisito→Verifica ("zero
+vulnerabilità CRITICAL irrisolte nell'output") non è soddisfatto alla lettera:
+l'immagine `control` riporta 4 CRITICAL residue su `perl-base`, senza fix
+upstream disponibile a questa data, accettate esplicitamente dal titolare del
+progetto (2026-08-15) sulla base dei controlli compensativi documentati
+(multi-stage build, bit di esecuzione rimosso da `perl`, egress di rete
+bloccato). Evidenza completa, incluse le 4 CVE e le mitigazioni:
+`docs/design/2026-08-15-container-dependency-scan.md`. Riga del mapping
+Requisito→Verifica aggiornata con un rimando esplicito a questa eccezione.
 
 ## Gap 9 — Misuratore e misurato condividono lo stesso container di controllo
 

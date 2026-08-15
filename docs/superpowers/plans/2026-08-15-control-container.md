@@ -911,7 +911,11 @@ Run:
 
 ```bash
 docker compose cp docker/control/verify_sourcelens.py control:/opt/aidr-vendor/verify_sourcelens.py
-docker compose exec -e OPENROUTER_API_KEY="$OPENROUTER_API_KEY" control python verify_sourcelens.py | tee docs/design/2026-08-15-gap4-verification-output.txt
+# No `-e OPENROUTER_API_KEY=...` here: docker-compose.yml already injects it into
+# control's environment at `up` time via .env interpolation. Passing it again
+# explicitly would only put the value into shell history and the process list
+# with no benefit.
+docker compose exec control python verify_sourcelens.py | tee docs/design/2026-08-15-gap4-verification-output.txt
 ```
 
 `tee` runs on the host (the shell invoking `docker compose exec`), so the file lands directly in the repo at `docs/design/2026-08-15-gap4-verification-output.txt` — the raw evidence (hashes, verdict, call count) is committed alongside the analysis, not left to evaporate in a terminal scrollback (principio 4/6, `SPIRIT.md`: risultati grezzi pubblicati insieme all'analisi).
