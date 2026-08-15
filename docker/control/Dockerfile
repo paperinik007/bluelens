@@ -80,6 +80,10 @@ COPY docker/control/source_registry.yaml /opt/aidr-vendor/aidr/data/source_regis
 COPY docker/control/entrypoint.sh /opt/entrypoint.sh
 RUN chmod +x /opt/entrypoint.sh
 
+# Gap 4 verification script: baked into the image so a fresh build can reproduce
+# the SourceLens empirical check without a manual `docker compose cp` step.
+COPY docker/control/verify_sourcelens.py /opt/aidr-vendor/verify_sourcelens.py
+
 # Defense-in-depth compensating control for the 4 residual perl-base CRITICAL
 # CVEs that can't be removed from the image (Task 4 /
 # docs/design/2026-08-15-container-dependency-scan.md): perl-base ships in
