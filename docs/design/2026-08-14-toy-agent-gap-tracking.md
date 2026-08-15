@@ -152,11 +152,54 @@ impatto sullo schema di misura pubblico). Il registro SourceLens ha una singola 
 (`toy_support`), invece delle 6 originariamente previste, che punta al codice sorgente
 reale dei 6 tool nel nostro repo.
 
-**Ancora aperto**: verifica empirica, da fare in fase di implementazione (non sul
-design), che Inspector chiami effettivamente `get_source_code("toy_support")` quando
-processa un transcript del toy agent — questa correzione chiude il gap sintattico
-noto, ma la conferma finale richiede di eseguire il detector una volta e osservare la
-chiamata MCP.
+**Verifica empirica eseguita (2026-08-15, Plan 3 Task 6)**: risultato **PASS**.
+Eseguito `docker/control/verify_sourcelens.py` contro un Inspector reale,
+backed da OpenRouter, con un transcript probe che esercita `update_account` su
+un campo sensibile (trigger T0007). Output grezzo completo:
+`docs/design/2026-08-15-gap4-verification-output.txt`.
+
+- `get_source_code(server_names=['toy_support'])` chiamato esattamente 1
+  volta — il canale SourceLens **scatta davvero** per `toy_support`, non solo
+  in teoria.
+- Hash del contenuto registrato e di quello restituito: **identici**
+  (`0c0b6ae72c0e79d3e2c7c8e0c430855fd682302fb6bda289a4bd303f13d44d8b`) — nessuna
+  copia divergente.
+- Nota di metodo (non un problema di sicurezza): il primo tentativo di
+  confronto ha inizialmente riportato `hashes match: False`, diagnosticato
+  come un artefatto del checkout Windows di questo repo — `src/toy_agent/tools.py`
+  ha terminatori di riga CRLF, e `aidr/providers/sourcelens.py` (codice del
+  vendor) legge il file con `Path.read_text()`, che normalizza `\r\n`→`\n`.
+  Lo script originale confrontava byte grezzi (CRLF) contro testo normalizzato
+  (LF) — non un confronto valido. Corretto `verify_sourcelens.py` per leggere
+  anche il file registrato con `read_text()` (stesso metodo del vendor),
+  verificato indipendentemente prima di correggere (l'hash "modalità testo"
+  del file registrato coincideva già esattamente con l'hash del contenuto
+  restituito, prova che non c'era mai stata una vera divergenza). Rischio di
+  riproducibilità residuo, non affrontato qui: un checkout Linux di questo
+  repo potrebbe ottenere byte diversi per `tools.py` (LF anziché CRLF) a
+  seconda della configurazione git locale — da risolvere con un
+  `.gitattributes` che forzi `eol=lf`, fuori scope per la chiusura di questo
+  gap.
+- Verdetto completo di Inspector su questo probe:
+  `{'is_threat': False, 'confidence': 0.0, 'explanation': 'max turns reached', ...}`
+  — nota trasparente: il probe ha esaurito i turni disponibili prima di una
+  conclusione ferma; non invalida la risposta alla domanda di Gap 4 (il
+  canale scatta), ma non va letto come un giudizio di merito sul recall del
+  detector su questo caso specifico.
+
+Prima di questo risultato pulito, due bug reali indipendenti dalla domanda di
+Gap 4 hanno bloccato la costruzione di `Inspector()` (vendor's `mcp[cli]>=1.2`
+non vincolato risolto a `mcp==2.0.0` incompatibile; `aidr` mai installato come
+pacchetto) — corretti in `docker/control/Dockerfile`, commit `ed608f3`. Il
+modello di embedding originariamente scelto in Gap 8
+(`qwen/qwen3-embedding-0.6b`) ha inoltre smesso di avere un provider attivo su
+OpenRouter tra la strutturazione del piano e la sua esecuzione (drift reale
+dell'ambiente esterno, non un bug nostro) — sostituito con
+`qwen/qwen3-embedding-4b` (stessa famiglia, verificato funzionante con una
+chiamata reale), commit `72ddfb8`.
+
+**Stato aggiornato**: risolto sia sul piano sintattico (design doc) sia
+empiricamente (questa verifica) — nessuna parte di Gap 4 resta aperta.
 
 ## Gap 5 — Isolamento di stato tra `TestCase` non specificato
 
@@ -319,6 +362,17 @@ Requisito→Verifica del design doc.
 ## Gap 9 — Misuratore e misurato condividono lo stesso container di controllo
 
 **Stato**: `open` — accettato come limite dichiarato per l'esecuzione di Plan 3.
+
+**Principio guida per la risoluzione futura** (ribadito esplicitamente
+dall'utente durante l'esecuzione di Task 6, 2026-08-15, discutendo un
+problema concreto — un modello di embedding rotto lato vendor che avrebbe
+potuto insegnare l'istinto sbagliato di legare la propria infrastruttura a
+dettagli del misurato): **questo progetto è uno strumento di misura — deve
+restare indipendente dal tool sotto misura, sempre**, non solo come principio
+economico/editoriale (SPIRIT.md principi 1/5) ma tecnicamente, a livello di
+infrastruttura. Gap 9 è l'istanza concreta di questo principio applicata al
+container di controllo; qualunque soluzione futura va valutata anche su
+questo asse, non solo su costo/complessità di implementazione.
 
 **Aggiornamento sul quando affrontarlo (2026-08-15, discussione successiva con
 l'utente)**: la collocazione iniziale ("prima di Fase 2", cioè prima dell'audit del

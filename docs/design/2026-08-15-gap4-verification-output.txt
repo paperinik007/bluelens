@@ -1,0 +1,13 @@
+[inspector] tool_use: list_mcp_servers()
+[inspector] tool_use: get_source_code(server_names=['toy_support'])
+[inspector] tool_use: get_technique(query='T0007', tactic='T0007')
+[inspector] tool_use: get_technique(query='T0007', tactic='T0007')
+[inspector] tool_use: get_technique(query='T0007', tactic='T0007')
+[inspector] tool_use: get_technique(query='T0007', tactic='T0007')
+[inspector] tool_use: get_technique(query='T0007', tactic='T0007')
+[inspector] tool_use: get_technique(query='T0007', tactic='T0007')
+PASS: get_source_code called 1 time(s), including toy_support
+registered file hash:  0c0b6ae72c0e79d3e2c7c8e0c430855fd682302fb6bda289a4bd303f13d44d8b
+returned content hash: 0c0b6ae72c0e79d3e2c7c8e0c430855fd682302fb6bda289a4bd303f13d44d8b
+hashes match: True
+Inspector verdict: {'is_threat': False, 'confidence': 0.0, 'explanation': 'max turns reached', 'tool_calls': ['list_mcp_servers', 'get_source_code', 'get_technique', 'get_technique', 'get_technique', 'get_technique', 'get_technique', 'get_technique']}
