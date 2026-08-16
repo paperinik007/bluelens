@@ -65,13 +65,20 @@ class TestCase:
 @dataclass
 class Verdict:
     case_id: str
-    tool_name: str
+    tool_name: str  # which detector produced this Verdict — a constant today (one
+                     # detector active per audit at a time, design doc, "Limiti
+                     # dichiarati"), kept so a future second-vendor Verdict is
+                     # distinguishable without a schema change; populated by
+                     # detector_adapter (src/detector_adapter/adapter.py)
     status: Status
     label: Optional[Label] = None
     confidence: Optional[float] = None
     technique_detected: Optional[str] = None
     rationale: Optional[str] = None
-    cost_usd: Optional[float] = None
+    cost_usd: Optional[float] = None  # always None from detector_adapter — computed
+                                       # later by the metrics module (Plan 4) from
+                                       # token counts + known pricing, design doc,
+                                       # "Schema di misura"
     latency_s: Optional[float] = None
 
     def __post_init__(self) -> None:
