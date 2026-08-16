@@ -692,7 +692,7 @@ DETECTOR_OPENROUTER_API_KEY=
 git rm -r docker/control
 ```
 
-(All four of its files were either moved in Tasks 1/3 — `vendor_proxy.py`, `source_registry.yaml`, `verify_sourcelens.py` — or fully superseded — `Dockerfile`, `entrypoint.sh` by `docker/agent/` + `docker/detector/`.)
+(All four of its files are already accounted for by this point: `source_registry.yaml`/`verify_sourcelens.py` were moved out to `docker/detector/` in Task 3 Step 3; the remaining `Dockerfile`/`entrypoint.sh` are fully superseded by `docker/agent/` + `docker/detector/`. `vendor_proxy.py` was never one of `docker/control`'s files — it lived under `src/toy_agent/` and was moved to `src/detector_adapter/` in Task 1, unrelated to this `git rm`.)
 
 - [ ] **Step 4: Build, start, and verify egress + isolation**
 
