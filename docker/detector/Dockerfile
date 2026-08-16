@@ -39,6 +39,14 @@ RUN pip install --no-cache-dir 'mcp[cli]>=1.28,<2'
 # scripts get their own directory on sys.path[0], not /opt/aidr-vendor).
 RUN pip install --no-cache-dir -e .
 
+# pytest, pre-installed at build time (Task 6 fix): docker/detector/run_adapter_tests.sh
+# runs pytest inside this container at exec time, but detector_net is internal-only
+# and the egress-proxy allowlists just openrouter.ai (Gap 8) — a runtime
+# `pip install pytest` can never reach pypi.org there. Build time uses the
+# host's unrestricted network instead, so installing it here is the only way
+# run_adapter_tests.sh's committed pip-install step actually succeeds.
+RUN pip install --no-cache-dir pytest
+
 # detector_adapter package (Gap 9): vendor_proxy.py (moved from toy_agent,
 # Task 1), AgenticThreatDetectionAdapter + evaluate_case entrypoint (Task 6).
 # A separate, dedicated pyproject.toml (docker/detector/detector_adapter.pyproject.toml)
