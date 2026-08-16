@@ -89,3 +89,13 @@ def test_terminate_subprocesses_terminates_only_live_mcp_clients():
 def test_terminate_subprocesses_never_raises_without_a_router():
     adapter = AgenticThreatDetectionAdapter(pipeline=SimpleNamespace())
     adapter.terminate_subprocesses()  # must not raise — called from an except branch
+
+
+def test_terminate_subprocesses_never_raises_when_router_has_no_clients():
+    # council-review finding: router can exist but be a partially-constructed
+    # or malformed object without a .clients attribute — this is exactly the
+    # mid-operation state evaluate_case.py's except TimeoutError handler is
+    # calling into, so it must degrade to "did nothing", not propagate.
+    fake_pipeline = SimpleNamespace(inspector=SimpleNamespace(router=SimpleNamespace()))
+    adapter = AgenticThreatDetectionAdapter(pipeline=fake_pipeline)
+    adapter.terminate_subprocesses()  # must not raise

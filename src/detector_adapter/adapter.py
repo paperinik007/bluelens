@@ -123,7 +123,17 @@ class AgenticThreatDetectionAdapter:
         router = getattr(getattr(self._pipeline, "inspector", None), "router", None)
         if router is None:
             return
-        for client in router.clients.values():
+        try:
+            clients = router.clients.values()
+        except Exception:
+            # router exists but is some partially-constructed/malformed shape
+            # (e.g. no .clients, or .clients isn't dict-like) — exactly the
+            # kind of mid-operation state this method is called to clean up
+            # after (evaluate_case.py's except TimeoutError handler). Degrade
+            # to "did nothing" rather than propagate, same discipline as the
+            # per-client terminate/wait/kill fallback below.
+            return
+        for client in clients:
             proc = getattr(client, "proc", None)
             if proc is None or proc.poll() is not None:
                 continue
