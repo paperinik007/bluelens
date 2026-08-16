@@ -4,6 +4,7 @@ import json
 import os
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Callable
 
 import httpx
@@ -30,6 +31,21 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 Forwarder = Callable[[int, dict], dict]
 
 
+def _scrub(text: str, secret: str) -> str:
+    if not secret:
+        return text
+    return text.replace(secret, "[REDACTED]")
+
+
+def _append_log(log_path: Path, entry: dict, api_key: str) -> None:
+    # Evidence channel ("Log del nostro thin proxy", design doc, "Raccolta prove
+    # esterna"): scrubbed at write time, not as a post-hoc pass over a raw file —
+    # council-risk finding on the Gap 9 targeted council, 2026-08-16.
+    scrubbed = _scrub(json.dumps(entry), api_key)
+    with open(log_path, "a", encoding="utf-8") as f:
+        f.write(scrubbed + "\n")
+
+
 def remap_tier(body: dict) -> dict:
     """Return a copy of body with body['model'] rewritten tier -> OpenRouter model id."""
     tier = body.get("model")
@@ -44,6 +60,7 @@ def build_forwarder(
     api_key: str,
     proxy_url: str | None = None,
     transport: httpx.BaseTransport | None = None,
+    log_path: Path | None = None,
 ) -> Forwarder:
     """Build a Forwarder that POSTs a tier-remapped body to OpenRouter.
 
@@ -53,6 +70,11 @@ def build_forwarder(
     a proxy-derived mount precedence over an injected transport for matching URLs,
     so passing both proxy_url and transport at once does not behave as "transport
     wins" — tests should pass transport alone (proxy_url=None, the default).
+
+    log_path, when given, persists every request/response as one JSON line —
+    the richest evidence channel for a real run (captures exactly what
+    Sifter/Inspector reasoned, not just that a connection happened), scrubbed
+    of api_key before it ever touches disk.
     """
     client = httpx.Client(
         base_url=OPENROUTER_BASE_URL,
@@ -67,9 +89,17 @@ def build_forwarder(
         if path is None:
             raise ValueError(f"no OpenRouter path configured for port {port}")
         remapped = remap_tier(body)
-        response = client.post(path, json=remapped)
-        response.raise_for_status()
-        return response.json()
+        try:
+            response = client.post(path, json=remapped)
+            response.raise_for_status()
+            result = response.json()
+        except Exception as exc:
+            if log_path is not None:
+                _append_log(log_path, {"port": port, "request": remapped, "error": str(exc)}, api_key)
+            raise
+        if log_path is not None:
+            _append_log(log_path, {"port": port, "request": remapped, "response": result}, api_key)
+        return result
 
     return forward
 
@@ -118,7 +148,9 @@ def serve_forever(ports: list[int], forward: Forwarder) -> list[_ForwardingHTTPS
 def main() -> None:
     api_key = os.environ["OPENROUTER_API_KEY"]
     proxy_url = os.environ.get("HTTPS_PROXY")
-    forward = build_forwarder(api_key, proxy_url)
+    log_path_str = os.environ.get("VENDOR_PROXY_LOG_PATH")
+    log_path = Path(log_path_str) if log_path_str else None
+    forward = build_forwarder(api_key, proxy_url, log_path=log_path)
     serve_forever(list(PORT_TO_PATH), forward)
     threading.Event().wait()  # keep the process alive; servers run on daemon threads
 

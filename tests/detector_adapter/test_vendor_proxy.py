@@ -1,11 +1,12 @@
 import json
+import json as _json
 import time
 from http.client import HTTPConnection
 
 import httpx
 import pytest
 
-from toy_agent.vendor_proxy import (
+from detector_adapter.vendor_proxy import (
     build_forwarder,
     remap_tier,
     serve_forever,
@@ -81,3 +82,60 @@ def test_serve_forever_binds_loopback_and_serves_stubbed_response():
     finally:
         for server in servers:
             server.shutdown()
+
+
+def test_build_forwarder_logs_request_and_response(tmp_path):
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"choices": []})
+
+    log_path = tmp_path / "vendor_proxy.jsonl"
+    forward = build_forwarder(
+        api_key="sk-test-secret",
+        transport=httpx.MockTransport(handler),
+        log_path=log_path,
+    )
+    forward(8100, {"model": "sifter", "messages": [{"role": "user", "content": "hi"}]})
+
+    lines = log_path.read_text(encoding="utf-8").strip().splitlines()
+    assert len(lines) == 1
+    entry = _json.loads(lines[0])
+    assert entry["port"] == 8100
+    assert entry["request"]["model"] == "qwen/qwen3-4b-instruct-2507"
+    assert entry["response"] == {"choices": []}
+    assert "error" not in entry
+
+
+def test_thin_proxy_log_never_contains_the_api_key(tmp_path):
+    # httpx.HTTPStatusError's own message never includes the response body, so
+    # a 4xx/5xx Response alone wouldn't actually exercise the scrub path here
+    # (the secret would never be in str(exc) to begin with — a vacuous test).
+    # Raising directly from the transport handler is what makes this a real
+    # test: it simulates the scenario the council-risk finding actually
+    # flagged (2026-08-16 targeted council on Gap 9) — an error whose message
+    # echoes the Authorization header back — and gives forward()'s except
+    # branch a str(exc) that genuinely contains the secret to scrub.
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise RuntimeError(f"upstream rejected request with header Bearer sk-test-secret")
+
+    log_path = tmp_path / "vendor_proxy.jsonl"
+    forward = build_forwarder(
+        api_key="sk-test-secret",
+        transport=httpx.MockTransport(handler),
+        log_path=log_path,
+    )
+    with pytest.raises(RuntimeError):
+        forward(8100, {"model": "sifter", "messages": []})
+
+    persisted = log_path.read_text(encoding="utf-8")
+    assert "sk-test-secret" not in persisted
+    assert "[REDACTED]" in persisted
+
+
+def test_no_log_path_means_no_logging(tmp_path):
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"choices": []})
+
+    forward = build_forwarder(api_key="sk-test", transport=httpx.MockTransport(handler))
+    forward(8100, {"model": "sifter", "messages": []})
+    # No log_path given: nothing should be written anywhere reachable from this
+    # test — the only assertion possible is that forward() didn't raise.
