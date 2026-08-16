@@ -136,6 +136,30 @@ def run_test_case(
         )
         return {"transcript": transcript_dict, "verdict": _error_verdict(case_id, "infra", f"detector invocation exceeded {detector_timeout_s}s wall-clock timeout")}
     if detector_result.returncode != 0:
+        # A clean nonzero exit (not timed_out) can still mean evaluate_case.py's
+        # own internal deadline (Task 6) fired *during* AgenticThreatDetectionAdapter()
+        # construction — before evaluate_case.py has an adapter handle to call
+        # terminate_subprocesses() on (final-review finding: Pipeline()/Inspector's
+        # blocking per-provider MCP handshake happens inside that constructor, so a
+        # hang there raises TimeoutError with adapter still None). evaluate_case.py
+        # exits 1 either way and prints "evaluate_case failed: TimeoutError" to
+        # stderr (see the except TimeoutError branch there) — that message is the
+        # only signal available here that its self-cleanup couldn't run. Same
+        # fallback pkill pair as the timed_out branch above, for the same reason:
+        # a still-running evaluate_case parent (unlikely on this path, but the
+        # first pkill is harmless if it's already gone) and/or orphaned MCP
+        # provider children left behind by the unfinished construction.
+        if b"TimeoutError" in detector_result.stderr:
+            run_command(
+                ["docker", "compose", "exec", "-T", "detector", "pkill", "-f", "detector_adapter.evaluate_case"],
+                b"",
+                10.0,
+            )
+            run_command(
+                ["docker", "compose", "exec", "-T", "detector", "pkill", "-f", "aidr/providers"],
+                b"",
+                10.0,
+            )
         return {"transcript": transcript_dict, "verdict": _error_verdict(case_id, "application", detector_result.stderr.decode("utf-8", errors="replace"))}
 
     try:

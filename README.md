@@ -17,9 +17,10 @@ audit sono in [`SPIRIT.md`](SPIRIT.md) — leggerlo prima di qualunque contribut
 di FareedKhan-dev. Design completo — toy agent, pipeline di misura indipendente dal
 tool testato, schema dati, adapter, modulo metriche — passato per council checkpoint e
 grill-with-docs. Vedi [`docs/design/2026-08-14-toy-agent-e-pipeline-misura.md`](docs/design/2026-08-14-toy-agent-e-pipeline-misura.md).
-Implementazione in corso: Plan 1 (toy agent), Plan 2 (modulo metriche/report) e Plan 3
-(container di controllo a due container, con egress di rete ristretto a
-`openrouter.ai`) sono completi e testati.
+Implementazione in corso: Plan 1 (toy agent), Plan 2 (modulo metriche/report), Plan 3
+(container di controllo con egress di rete ristretto a `openrouter.ai`) e Gap 9 (split
+del container di controllo in `agent`/`detector` isolati, vedi "Struttura" sotto) sono
+completi e testati.
 
 ## Struttura
 
@@ -27,26 +28,35 @@ Implementazione in corso: Plan 1 (toy agent), Plan 2 (modulo metriche/report) e 
 - `docs/design/` — design doc per audit, con relativo gap-tracking doc companion.
 - `docs/reports/` — report di audit pubblicati (uno per tool testato), quando pronti.
 - `src/toy_agent/` — pacchetto del toy agent (schema, stato finto, tool, loop ReAct,
-  modulo metriche, proxy di rimappatura verso OpenRouter).
-- `tests/` — test automatici del pacchetto `toy_agent`.
-- `docker/` — Dockerfile e configurazione dei due container del container di
-  controllo (`control`, che esegue il toy agent e il tool vendor sotto audit, ed
-  `egress-proxy`, l'unico varco con una rotta reale verso Internet).
-- `docker-compose.yml` — orchestrazione dei due container.
+  modulo metriche, orchestrazione agent -> detector).
+- `src/detector_adapter/` — pacchetto che gira nel container `detector`: adapter verso
+  il tool vendor sotto audit (`AgenticThreatDetectionAdapter`, entrypoint
+  `evaluate_case`) e `vendor_proxy.py`, il thin proxy di rimappatura verso OpenRouter
+  usato dal tool vendor.
+- `tests/` — test automatici dei pacchetti `toy_agent` e `detector_adapter`.
+- `docker/` — Dockerfile e configurazione dei tre container: `agent` (esegue solo il
+  toy agent), `detector` (clone del tool vendor sotto audit + `detector_adapter`) ed
+  `egress-proxy`, l'unico intermediario di rete tra `agent`/`detector` e l'esterno —
+  ed è anche l'unica rete Docker condivisa tra i due: `agent` e `detector` non hanno
+  alcuna rotta di rete diretta l'uno verso l'altro (Gap 9, confine misuratore/misurato).
+- `docker-compose.yml` — orchestrazione dei tre container.
 
 ## Come eseguire
 
-Serve una chiave API OpenRouter (`OPENROUTER_API_KEY`) per far funzionare il thin
-proxy verso i modelli usati dal tool vendor sotto audit.
+Servono due chiavi API OpenRouter distinte, una per `agent` e una per `detector`
+(`AGENT_OPENROUTER_API_KEY` e `DETECTOR_OPENROUTER_API_KEY`) — chiavi separate per
+principio, non per necessità tecnica: un container compromesso non deve poter
+spendere o agire per conto dell'altro (Gap 9, confine misuratore/misurato).
 
 ```
 cp .env.example .env
-# poi modificare .env e impostare OPENROUTER_API_KEY=<la propria chiave>
+# poi modificare .env e impostare AGENT_OPENROUTER_API_KEY=<chiave 1> e
+# DETECTOR_OPENROUTER_API_KEY=<chiave 2>
 docker compose build
 docker compose up -d
 ```
 
-Attenzione: `docker compose config` stampa `OPENROUTER_API_KEY` in chiaro — non
+Attenzione: `docker compose config` stampa entrambe le chiavi in chiaro — non
 eseguirlo in una sessione di terminale condivisa o loggata.
 
 ## Licenza
