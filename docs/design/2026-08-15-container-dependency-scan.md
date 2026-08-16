@@ -61,6 +61,38 @@ e il report di Task 4) è un falso positivo per substring in
 Nessun invocazione reale di `perl` in `docker/control/entrypoint.sh`, in
 `src/toy_agent/`, né in alcun punto del Dockerfile stesso.
 
+## Immagine agent
+
+Immagine `agentic-security-audits-agent` (digest:
+`sha256:31fcb564f78e1fffa94f1e06e443a8ed2f0002589147959ea1b6c5eca9c4cc1d`,
+build 2026-08-16T15:28:11Z), Gap 9 — split del container di controllo in
+`agent` (solo `toy_agent`) e `detector` (Task 3, non ancora scansionato a
+questa data). Scansionata il 2026-08-16 con lo stesso comando dockerizzato
+(Trivy non installato come binario sulla macchina host):
+
+    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache/ \
+      aquasec/trivy image --severity CRITICAL --exit-code 1 agentic-security-audits-agent
+
+**4 vulnerabilità CRITICAL residue**, tutte sul pacchetto `perl-base`
+(`CVE-2026-13221`, `CVE-2026-42496`, `CVE-2026-57433`, `CVE-2026-8376`) —
+esattamente le stesse 4 CVE già documentate sopra per `control`, stessa causa
+radice: `perl-base` è parte del set essenziale Debian e resta presente in
+qualunque immagine `python:3.11-slim`, indipendentemente dal Dockerfile.
+Exit code: 1. Nessuna CVE CRITICAL aggiuntiva/diversa rispetto a `control`.
+
+Questa immagine `agent` (`docker/agent/Dockerfile`) applica lo stesso
+controllo compensativo già in atto per `control` — `chmod a-x /usr/bin/perl
+/usr/bin/perl5.40.1` come ultimo passo di build — e ricade sotto la
+**stessa eccezione già accettata dal titolare del progetto (2026-08-15)**:
+nessuna delle 4 CVE ha una fix disponibile a questa data, nessun codice di
+questa immagine (`entrypoint.sh`, `toy_agent`) invoca mai perl su alcun
+percorso, e l'immagine `agent` non ha nemmeno lo stage di build con `git`
+(non installato affatto in questo Dockerfile — `toy_agent` non ha
+dipendenze vendor da clonare), quindi la superficie è anzi più ridotta di
+quella di `control`. Non è una nuova decisione di rischio da discutere: è la
+stessa eccezione, riapplicata a una seconda immagine che condivide la stessa
+causa non risolvibile lato Debian.
+
 ## Controlli compensativi in atto
 
 1. **Riduzione della superficie (multi-stage build, Task 4)**: `git` — e
