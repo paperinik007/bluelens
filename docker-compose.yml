@@ -3,27 +3,47 @@ services:
     build:
       context: ./docker/egress-proxy
     networks:
-      internal_net:
+      agent_net:
+      detector_net:
       default:
     expose:
       - "3128"
 
-  control:
+  agent:
     build:
       context: .
-      dockerfile: docker/control/Dockerfile
+      dockerfile: docker/agent/Dockerfile
     depends_on:
       - egress-proxy
     environment:
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_API_KEY: ${AGENT_OPENROUTER_API_KEY}
       HTTPS_PROXY: http://egress-proxy:3128
     cap_drop:
       - ALL
     security_opt:
       - "no-new-privileges:true"
     networks:
-      internal_net:
+      agent_net:
+
+  detector:
+    build:
+      context: .
+      dockerfile: docker/detector/Dockerfile
+    depends_on:
+      - egress-proxy
+    environment:
+      OPENROUTER_API_KEY: ${DETECTOR_OPENROUTER_API_KEY}
+      HTTPS_PROXY: http://egress-proxy:3128
+      VENDOR_PROXY_LOG_PATH: /var/log/vendor_proxy.jsonl
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    networks:
+      detector_net:
 
 networks:
-  internal_net:
+  agent_net:
+    internal: true
+  detector_net:
     internal: true
