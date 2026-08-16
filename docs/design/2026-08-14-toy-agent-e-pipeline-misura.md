@@ -240,24 +240,37 @@ TargetAdapter:
     evaluate(transcript: Transcript) -> Verdict
 ```
 
-`AgenticThreatDetectionAdapter` è l'unica implementazione: bypassa Dredge, costruisce
-`AgentEvent` direttamente dal nostro `Transcript`, chiama `Pipeline().analyze(ev) ->
+`AgenticThreatDetectionAdapter` è l'unica implementazione, e vive nel pacchetto
+`detector_adapter` (sezione "Confine misuratore/misurato", risoluzione Gap 9) —
+mai in `toy_agent`. Bypassa Dredge, costruisce `AgentEvent` direttamente dal
+`Transcript` ricevuto **come JSON** dal container `agent` (non da un'istanza
+Python di `toy_agent.schema.Transcript` — `detector_adapter` non importa mai
+`toy_agent`, legge le chiavi del JSON), chiama `Pipeline().analyze(ev) ->
 DetectionResult` (verificato su `aidr/detector/pipeline.py`, commit `7fad14d` — la
 `Pipeline` del vendor incapsula già l'orchestrazione Sifter → Inspector, quindi
 l'adapter non ha bisogno di invocarli separatamente), poi normalizza il
-`DetectionResult` nel nostro `Verdict`.
+`DetectionResult` nel nostro `Verdict`, restituito anch'esso come JSON. Esegue
+esclusivamente dentro il container `detector`, invocato dall'orchestratore come
+sottoprocesso via `python -m detector_adapter.evaluate_case` — mai importato nello
+stesso processo che genera il `Transcript`.
 
 Questo dettaglio (nome della classe, del metodo, forma del `DetectionResult`) resta
 confinato alla singola implementazione concreta: l'interfaccia `TargetAdapter` sopra non
-lo espone, ed è quello il punto che deve restare stabile quando un secondo vendor verrà
-aggiunto in futuro — coerente con lo spirito del principio 1 di `SPIRIT.md` (Dataset
-indipendente) esteso allo strumento di misura stesso, non solo al dataset di test.
+lo espone. **Precisazione dopo Gap 9** (vedi sezione "Contratto riusabile del container
+detector" più sotto): `TargetAdapter` non è più un'astrazione Python soggetta a
+sottoclassamento nello stesso interprete — con lo split in container, un secondo vendor
+non girerà mai nello stesso processo di questo. È invece realizzata al confine di
+processo, come contratto CLI/JSON fisso (`detector_adapter.evaluate_case`, stdin
+`Transcript`, stdout `Verdict`, stesso contratto di errore) — quello è il punto che deve
+restare stabile quando un secondo vendor verrà aggiunto in futuro, coerente con lo
+spirito del principio 1 di `SPIRIT.md` (Dataset indipendente) esteso allo strumento di
+misura stesso, non solo al dataset di test.
 
-Nella conversione `ToolCall` (nostro) → `ToolUsage` (vendor), `AgenticThreatDetectionAdapter`
+Nella conversione da una voce `tool_call` del JSON ricevuto (forma equivalente al nostro
+`ToolCall`, sezione "Schema di misura") a `ToolUsage` (vendor), `AgenticThreatDetectionAdapter`
 popola `server_name` con la costante `"toy_support"` (campo obbligatorio nel vendor,
-`aidr/schema/agent_event.py`, assente nel nostro `ToolCall`) e popola `tool_name` in
-forma punteggiata, `f"toy_support.{tool_call.tool_name}"` — non con `tool_call.tool_name`
-nudo. Questa seconda parte è la risoluzione di Gap 4 (vedi sezione "Registro
+`aidr/schema/agent_event.py`, assente nella nostra forma) e popola `tool_name` in
+forma punteggiata, `f"toy_support.{tool_name}"` — non con `tool_name` nudo. Questa seconda parte è la risoluzione di Gap 4 (vedi sezione "Registro
 SourceLens..." sopra): verificato che né `Sifter` né `Inspector` leggono mai il campo
 `server_name` in sé (lavorano solo sul testo di `AgentEvent.transcript()`, che include
 `tool_name` ma non `server_name`), ma il *contenuto* di `tool_name` sì — è lì che deve
@@ -349,6 +362,14 @@ Questo limite va riportato nel report finale (sezione Report), non nascosto.
 
 ## Container di controllo: fedeltà d'ambiente e contenimento di sicurezza
 
+**Nota di lettura**: questa sezione descrive il container `control` così come costruito
+ed eseguito in Plan 3 (vendor e toy agent nello stesso container). La sottosezione
+"Confine misuratore/misurato (risoluzione Gap 9)" più sotto aggiorna questa architettura
+splittando `control` in due container separati (`agent`/`detector`) — dove le due
+descrizioni divergono, quella aggiornata è quella valida per Plan 4 in avanti; i
+riferimenti storici a "il container di controllo" restano corretti come resoconto di ciò
+che Plan 3 ha effettivamente costruito e verificato.
+
 **Distinto dall'eventuale container GPU di fallback** discusso in "Setup pratico del
 detector sotto test" sopra: quello è deferred e condizionale (costruito solo se
 OpenRouter si rivela insufficiente), questo container di controllo serve comunque,
@@ -418,27 +439,433 @@ infrastruttura. Prima di eseguirci dentro i `TestCase` reali:
   sicurezza di terze parti, non c'è motivo di fidarsi implicitamente più di quanto ci
   fideremmo di qualunque altro pacchetto esterno).
 
+### Confine misuratore/misurato (risoluzione Gap 9)
+
+**Decisione, presa in sessione di brainstorming dedicata il 2026-08-16** (vedi
+`docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 9, per il ragionamento
+completo): due container distinti sotto lo stesso `docker-compose.yml`, non uno.
+
+- **`agent`**: solo il pacchetto `toy_agent` (`src/toy_agent/`) installato. Non
+  importa mai `aidr` — vincolo già garantito a livello di codice da
+  `tests/test_no_vendor_imports.py` (Plan 1), qui reso anche strutturale: il
+  pacchetto `aidr` non è fisicamente presente nell'immagine, quindi un import
+  sbagliato darebbe `ImportError` al build/runtime, non un comportamento
+  silenzioso individuabile solo da un test a parte.
+- **`detector`**: solo `aidr` **e un secondo pacchetto nostro distinto,
+  `detector_adapter`** (`src/detector_adapter/`, non ancora esistente — da creare).
+  `toy_agent` **non** è installato in `detector`. `detector_adapter` contiene tutto
+  ciò che deve girare lato detector: `AgenticThreatDetectionAdapter` (sezione
+  "Adapter" sotto), l'entrypoint CLI `evaluate_case`, e `vendor_proxy.py`
+  (**da spostare** da `src/toy_agent/vendor_proxy.py`, dove vive oggi da Task 1
+  di Plan 3, a `src/detector_adapter/vendor_proxy.py` — spostamento non ancora
+  eseguito, va nel piccolo piano dedicato). `detector_adapter` importa `aidr`
+  liberamente ma **non importa mai `toy_agent`**: tratta `Transcript`/`Verdict`
+  come un contratto di formato dati (JSON) documentato nella sezione "Schema di
+  misura", non come tipi Python condivisi — costruisce `AgentEvent` leggendo le
+  chiavi del JSON ricevuto, non deserializzando un `toy_agent.schema.Transcript`.
+
+  **Trovato dal council checkpoint (`council-advocate`) sulla prima stesura di
+  questa sezione**: la versione precedente diceva "`detector` non importa mai
+  `toy_agent`" ma poi l'entrypoint lato detector era scritto come
+  `python -m toy_agent.evaluate_case` — una contraddizione diretta (quel modulo
+  sarebbe stato dentro il pacchetto `toy_agent` stesso). La stessa
+  incoerenza esisteva già, latente, per `vendor_proxy.py` (Task 1 di Plan 3,
+  oggi dentro `src/toy_agent/`, mai notata perché prima di Gap 9 tutto girava
+  nello stesso container). Corretto qui introducendo `detector_adapter` come
+  pacchetto separato, mai annidato sotto `toy_agent`.
+- Nessun volume condiviso tra i due container oltre a quanto esplicitamente
+  previsto dal meccanismo di handoff sotto — filesystem e network namespace
+  separati per costruzione, non per convenzione.
+- **Isolamento di rete tra `agent` e `detector` stesso, non solo verso
+  l'esterno** (trovato dal council checkpoint, `council-skeptic`, sulla prima
+  stesura: la sezione elencava "network namespace separato" come vantaggio
+  senza che nessuna topologia di rete lo garantisse davvero — su una rete
+  Docker bridge condivisa i due container potrebbero raggiungersi a vicenda per
+  default). Requisito esplicito: `agent` e `detector` non condividono una rete
+  Docker diretta tra loro — ciascuno è agganciato solo alla rete che lo
+  collega a `egress-proxy` (topologia esatta, es. due reti `internal: true`
+  distinte entrambe con `egress-proxy` come unico membro comune, da fissare nel
+  piccolo piano dedicato). Un tentativo di connessione diretta da `agent` verso
+  `detector` (o viceversa) deve fallire allo stesso modo in cui fallisce oggi
+  un tentativo verso un dominio esterno arbitrario.
+- Ciascun container ha una propria `OPENROUTER_API_KEY` (due variabili
+  d'ambiente distinte in `docker-compose.yml`, mai la stessa chiave condivisa):
+  isolamento di sicurezza (un container compromesso non spende/agisce a nome
+  dell'altro) e isolamento di guasto/quota (un Inspector che consuma token in
+  modo anomalo su un caso avversariale non affama il budget del loop ReAct del
+  toy agent nello stesso run).
+- `docker/egress-proxy/` (Squid, rete `internal_net`, Task 3 di Plan 3) resta
+  condiviso e invariato: è un'utility neutrale, non ha idea di cosa ci sia
+  dall'altra parte — entrambi i container lo usano come unico varco verso
+  `openrouter.ai`, sia per il thin proxy di `aidr` (porte 8100/8101/8102) sia
+  per la chiamata diretta del toy agent (`model_client.py`, verso
+  `https://openrouter.ai/api/v1`).
+
+**Perché non basta l'orchestratore esterno da solo**: un orchestratore che vive
+fuori da entrambi i container e non importa mai le due librerie insieme
+risolverebbe già il rischio più concreto (corruzione in memoria del `Transcript`
+prima che venga misurato) — ma resterebbe una convenzione nel codice
+dell'orchestratore, verificabile solo leggendo ogni entrypoint presente e
+futuro, non ispezionando l'infrastruttura. Per un ente che si dichiara
+verificabile da terzi (SPIRIT.md principio 6, "Pubblicazione e disclosure
+responsabile" — include esplicitamente l'obbligo di verificabilità da terzi
+del codice del misuratore) e il cui moat è la reputazione riconosciuta da
+pari, non la segretezza (principio 7), la garanzia deve essere
+leggibile da `docker-compose.yml` e dai due Dockerfile senza dover fidarsi
+della disciplina di chi scrive l'orchestratore.
+
+### Meccanismo di handoff: orchestratore esterno, sottoprocessi separati
+
+`toy_agent.orchestrator` — modulo versionato e pubblicato nel repo (è codice del
+misuratore, principio 6 SPIRIT.md, non uno script ad-hoc sull'host) — non gira
+mai dentro `agent` o `detector`, e non importa mai `aidr`. Nessun protocollo
+nuovo da costruire: riusa lo stesso pattern già usato per invocare
+`verify_sourcelens.py` (Task 6, Plan 3) via `docker compose exec`, applicato a
+due servizi invece di uno.
+
+Per ogni `TestCase` del dataset:
+
+1. `docker compose exec agent python -m toy_agent.run_case`, `TestCase` passato
+   come JSON su stdin. Il processo dentro `agent` costruisce un `WorldState`
+   fresco in memoria (mai letto da un file persistito nel container — risoluzione
+   Gap 5 come conseguenza diretta di un processo nuovo per invocazione, non un
+   reset esplicito da scrivere), fa girare il loop ReAct entro il tetto
+   turni/costo dichiarato, stampa il `Transcript` come JSON su stdout.
+2. `docker compose exec detector python -m detector_adapter.evaluate_case` (pacchetto
+   `detector_adapter`, non `toy_agent` — vedi correzione sopra), quel `Transcript`
+   passato come JSON su stdin. Il processo dentro `detector` costruisce
+   `AgenticThreatDetectionAdapter` (sezione "Adapter" sotto) e chiama
+   `Pipeline().analyze()`, stampa il `Verdict` come JSON su stdout.
+
+**Contratto di errore**, uguale per entrambe le invocazioni: exit code `0` e
+solo il JSON atteso su stdout, oppure exit code diverso da zero con il dettaglio
+dell'errore su stderr e nulla su stdout. L'orchestratore non tenta mai di
+interpretare stdout come JSON valido se l'exit code è diverso da zero.
+
+**Guasto infrastrutturale vs errore applicativo, distinti esplicitamente**
+(trovato dal council checkpoint, `council-risk`, sulla prima stesura: la
+versione precedente trattava "`docker compose exec` fallito perché il
+container/daemon non risponde" ed "eccezione sollevata da `aidr` su un
+`Transcript` legittimo" come lo stesso identico caso — indistinguibili nel
+report finale, con rischio concreto per l'onestà statistica dichiarata,
+SPIRIT.md principio 3, dato che questa macchina ha già mostrato instabilità
+reali di Docker Desktop/WSL2). L'orchestratore deve poter distinguere, e
+riportare separatamente:
+- **fallimento infra**: `docker compose exec` stesso non riesce ad avviare il
+  processo nel container (servizio non in esecuzione, daemon non
+  raggiungibile) — errore a livello Docker, mai attribuibile al `TestCase` o
+  al detector;
+- **fallimento applicativo**: il processo si avvia ma esce con codice diverso
+  da zero (eccezione dell'adapter, `Pipeline().analyze()` fallita, timeout
+  del loop ReAct oltre il tetto dichiarato).
+
+Il `Verdict` prodotto per un `case_id` in questi casi porta `status: "error"`
+in entrambi (Gap 6 — mai un `case_id` mancante), ma con un campo aggiuntivo
+che distingue la categoria (es. `error_kind: "infra"` vs `"application"`), e il
+modulo metriche/report riporta i fallimenti infra come categoria separata dai
+fallimenti del detector — un tasso di errore alto per problemi nostri di
+infrastruttura non deve mai confondersi con un tasso di errore alto del
+detector sotto test.
+
+**Timeout wall-clock nostro** su ciascuna invocazione (valore esatto da fissare
+nel piano di implementazione dedicato), indipendente da qualunque cap interno
+lato `aidr` che non controlliamo: un `TestCase` avversariale che induce un loop
+lungo in Inspector non deve poter bloccare l'intero batch. **Nota aggiunta dal
+council checkpoint (`council-risk`)**: uccidere l'invocazione `docker compose
+exec` al timeout non garantisce la terminazione dei sottoprocessi MCP reali che
+Inspector lancia al proprio interno (Gap 3) — vanno verificati/terminati
+esplicitamente (es. dal processo `evaluate_case` stesso, prima di uscire, o da
+un controllo esplicito post-timeout dell'orchestratore), altrimenti possono
+restare a consumare risorse/budget per il resto del batch. Rischio di degrado,
+non di blocco totale (l'esecuzione sequenziale sotto ne limita comunque il
+raggio al singolo `TestCase` successivo).
+
+**Esecuzione sequenziale**, dichiarata esplicitamente: un `TestCase` alla
+volta, mai in parallelo. Non verificato se il thin-proxy o eventuali stati
+interni di `aidr` reggano invocazioni concorrenti — la sequenzialità evita di
+introdurre quel confound, senza costo pratico alla scala del dataset dichiarata
+(40-60 casi totali).
+
+**Residuo su filesystem nel container `detector` a lunga vita** (trovato dal
+council checkpoint, `council-risk`): lo stato fresco "gratis" per ogni
+invocazione (sopra) vale per il `WorldState` in memoria lato `agent`, ma il
+container `detector` stesso non viene riavviato tra un'invocazione e la
+successiva (`CMD ["sleep", "infinity"]`, pattern odierno di
+`docker/control/Dockerfile`) — solo il sottoprocesso Python di `evaluate_case`
+lo è. I tre provider MCP di `aidr` (SourceLens/ThreatLens/PolicyLens) girano
+come sottoprocessi stdio reali, non simulati (Gap 3): se scrivono cache/file
+temporanei su disco, quel residuo potrebbe sopravvivere tra `TestCase` diversi
+nello stesso `detector`. **Non verificato in questa sessione** (richiederebbe
+leggere il codice dei tre provider per confermare se scrivono su disco) — da
+chiudere nel piccolo piano dedicato, prima di eseguire `TestCase` reali:
+o si conferma che nessuno dei tre scrive stato persistente rilevante, o si
+isola/pulisce esplicitamente quel path tra un'invocazione e l'altra.
+
+**Non solo un rischio di sicurezza verso un vendor ostile** (trovato dal council
+mirato, `council-risk`, 2026-08-16, sulla sezione "Raccolta prove esterna"
+sotto): anche un bug del tutto benigno in un cache/memoization interno di
+SourceLens/ThreatLens/PolicyLens potrebbe far leggere a un `TestCase` uno stato
+lasciato da quello precedente, corrompendo silenziosamente proprio i numeri
+P/R che questo audit esiste per produrre (SPIRIT.md principi 2/3) — la stessa
+famiglia di confound per cui Gap 5 impone stato fresco lato `agent`, senza però
+una garanzia equivalente lato `detector`. Il meccanismo di `docker diff
+detector` per-invocazione specificato sotto ("Raccolta prove esterna") rende
+questo controllabile empiricamente per ogni `case_id`, non solo in aggregato a
+fine batch — ma resta comunque un item da chiudere prima di eseguire `TestCase`
+reali su dati sensibili, non un limite accettabile da rimandare a valutazione
+futura.
+
+### Raccolta prove esterna durante ogni run (estensione dell'audit di sicurezza)
+
+**Principio, emerso in discussione dopo la scrittura delle sezioni sopra**: la chiamata
+a `Pipeline().analyze()` dentro `detector_adapter.evaluate_case` resta l'unico punto
+davvero irriducibile in cui del codice nostro deve girare nello stesso spazio di
+esecuzione del vendor (verificato sul codice reale del vendor pinnato, commit `7fad14d`:
+nessun'interfaccia CLI/file-based esiste per una singola sessione custom — vedi
+`examples/run_gauntlet.py`/`run_ablations.py`, letteralmente etichettati "Example from
+the companion blog", entrambi chiamate Python dirette; `aidr.dredge.collector` è legato
+al formato cache di Claude Code CLI, non un formato generico). **Tutto il resto** — capire
+cosa è successo durante un'invocazione, verificarlo, raccoglierne prova — non deve
+dipendere da codice nostro che vive accanto al vendor. Va osservato da fuori, ogni volta
+che è possibile: una prova raccolta da un osservatore che il codice osservato non può
+toccare è più forte di una raccolta da codice che gli sta accanto nello stesso container.
+
+Canali esterni, dal più economico al più pesante, nessuno dei quali richiede concedere a
+`detector` una sola capability in più (`cap_drop: ALL` resta invariato):
+
+- **Log del container** (`docker compose logs detector`, non solo lo stdout della
+  singola invocazione già catturato dall'orchestratore) — cattura anche eventuale
+  chiacchiericcio dei sottoprocessi MCP (SourceLens/ThreatLens/PolicyLens) altrimenti
+  invisibile.
+- **Log di accesso di `egress-proxy`** (Squid, già in esecuzione da Plan 3) — condiviso
+  tra i due container per costruzione (sezione "Confine misuratore/misurato" sopra: sia
+  il thin proxy di `aidr` sia la chiamata diretta del toy agent verso OpenRouter passano
+  di qui), quindi copre già simmetricamente entrambi i lati, non solo `detector`: ogni
+  richiesta HTTP(S) che `agent` o `detector` fanno verso `openrouter.ai` vi passa e viene
+  loggata — prova esterna diretta di cosa ciascuno dei due ha effettivamente chiamato,
+  senza bisogno di istruzione aggiuntiva.
+- **Log del nostro thin proxy** (`vendor_proxy.py`, dentro `detector_adapter` — codice
+  nostro, non del vendor). **Trovato riesaminando il call graph esatto di
+  `Pipeline().analyze()`** (verificato su `sifter.py`/`inspector.py`, commit `7fad14d`):
+  sia `Sifter.triage_safe` sia `Inspector.analyze` chiamano `chat("sifter"|"inspector",
+  ...)`, che risolve a una richiesta HTTP verso il nostro thin proxy su
+  `127.0.0.1:8100`/`8101` — non direttamente verso OpenRouter. Il thin proxy può quindi
+  loggare ogni prompt inviato e ogni risposta ricevuta, in chiaro, senza toccare una riga
+  di codice `aidr`. Canale più ricco del log Squid: quello vede solo che una connessione
+  TLS verso `openrouter.ai` è avvenuta, questo cattura esattamente cosa Sifter/Inspector
+  hanno ragionato — piena trasparenza sul ragionamento dell'LLM che ha guidato la
+  detection, per ogni `TestCase`. **Scrub esplicito prima della pubblicazione** (trovato
+  dal council mirato, `council-risk`, 2026-08-16): il log cattura richieste/risposte in
+  chiaro, incluse eventuali intestazioni HTTP — va garantito che `OPENROUTER_API_KEY` (o
+  altri header di autenticazione) non finisca mai nel testo persistito/pubblicato, non
+  come ripensamento post-hoc ma come step esplicito della pipeline di raccolta prima che
+  il canale venga scritto su disco.
+- **`docker diff agent` e `docker diff detector`** — comando Docker standard, mostra i
+  file cambiati nel filesystem del container dall'avvio, senza privilegio aggiuntivo.
+  **Esteso a entrambi i container, non solo `detector`** (trovato indipendentemente da
+  `council-skeptic` e `council-risk` nel council mirato del 2026-08-16, sullo stesso
+  finding): il modello di minaccia (`TestCase` malevoli che inducono `send_email`/
+  `bulk_export`/`run_diagnostic` pericolosi) vive interamente in `agent`, che senza
+  questa estensione aveva solo la prima linea di difesa (test statico, sezione
+  "Container di controllo" sopra) e nessun canale osservazionale — l'asimmetria con
+  `detector` non era giustificata dal modello di minaccia dichiarato. **Snapshot
+  immediatamente dopo ogni invocazione, non a fine batch** (meccanismo richiesto da
+  `council-risk`: `docker diff`/`docker stats` sono cumulativi dall'avvio del
+  container, non delimitati a una singola invocazione — senza uno snapshot preso
+  subito dopo ogni `docker compose exec` e prima della successiva invocazione,
+  nessuna anomalia sarebbe attribuibile a un `case_id` specifico su 40-60 casi
+  sequenziali nello stesso container a lunga vita). L'esecuzione è già sequenziale per
+  costruzione (sotto), quindi la differenza tra lo snapshot N-1 e lo snapshot N è
+  attribuibile al `case_id` N appena eseguito, senza bisogno di riavviare il container
+  tra un caso e l'altro. Risponde anche empiricamente alla domanda lasciata aperta sopra
+  (residuo su filesystem del container `detector` a lunga vita) osservando direttamente,
+  invece di dover leggere il codice dei tre provider MCP per dedurlo — e lo fa per
+  `case_id`, non solo in aggregato a fine batch.
+- **`docker stats agent` e `docker stats detector`** — CPU/memoria/I/O per container,
+  stesso meccanismo di snapshot per-invocazione del punto sopra, segnale economico di
+  comportamento anomalo (rilevante anche per il rischio di sottoprocessi orfani dopo un
+  timeout, sezione sopra) — esteso a `agent` per lo stesso motivo del punto sopra.
+- **Tracing di syscall/rete** (`strace`/eBPF da un prober esterno temporaneo con
+  `pid: "container:detector"`, mai una capability aggiunta a `detector` stesso, oppure
+  `tcpdump` sul bridge Docker dall'host) — il più pesante, va eseguito come
+  **rafforzamento periodico/una tantum** dell'audit di sicurezza preventivo già previsto
+  (stesso registro di Trivy e della review statica del codice, sezione "Container di
+  controllo" sopra), non su ogni singolo `TestCase` — sproporzionato alla scala del
+  dataset dichiarata (40-60 casi).
+
+I primi cinque canali (tutti tranne il tracing syscall/rete, esplicitamente periodico)
+vanno raccolti e persistiti per ogni run reale, come parte dei "risultati grezzi
+pubblicati insieme all'analisi" (SPIRIT.md principio 4/6) — non solo consultati
+manualmente in caso di anomalia.
+
+**Nota per il contratto riusabile (sezione sotto) — distinzione importante tra i quattro
+canali**: log del container, log di `egress-proxy`, `docker diff`, `docker stats` sono
+generici per costruzione — osservano il container/processo dall'esterno, non l'API
+interna di un vendor specifico, quindi funzionano identici qualunque vendor sia dietro
+`detector`, senza reimplementazione. Il log del thin proxy **non** è generico allo stesso
+modo: è esterno al codice `aidr` (non tocca una riga del suo sorgente), ma vive dentro
+`detector_adapter`, il livello vendor-specifico — un vendor futuro potrebbe non avere un
+proprio `model_client.py` con questa stessa convenzione a porta fissa, quindi
+quel canale andrebbe riprogettato (o potrebbe non applicarsi affatto) per un audit
+diverso. Va classificato correttamente nel livello sotto: esterno al vendor, ma
+specifico di questo audit.
+
+### Contratto riusabile del container detector (per audit futuri su altri vendor)
+
+**Perché conta ora, non solo in astratto**: questo progetto esiste per fare più di un
+audit nel tempo (SPIRIT.md, "Primo obiettivo concreto (Fase 1)" è esplicitamente il
+primo di una serie). Un audit alla volta testa un vendor — mai due detector attivi
+insieme nello stesso run — ma il **pattern** deve restare lo stesso da un audit al
+successivo, senza redesign. Questo richiede tracciare esplicitamente il confine tra cosa
+è generico (non deve mai sapere nulla di un vendor specifico) e cosa è specifico del
+vendor sotto test (isolato, sostituito in blocco quando cambia l'audit).
+
+**Livello generico — non deve mai dipendere dalla struttura di `aidr` o di qualunque
+vendor**:
+- Il container `agent`, il pacchetto `toy_agent`, `egress-proxy`: già a conoscenza zero
+  del vendor per costruzione (nessuno dei tre lo importa o lo invoca).
+- L'orchestratore (`toy_agent.orchestrator`): conosce solo il contratto CLI sotto, mai il
+  meccanismo interno di un vendor specifico.
+- I quattro canali di raccolta prove esterna sopra al livello generico (log del
+  container, log di `egress-proxy`, `docker diff`, `docker stats`): funzionano identici
+  per costruzione, qualunque vendor sia dietro `detector`. Il log del thin proxy resta
+  invece nel livello vendor-specifico sotto (esterno al codice vendor, ma non generico —
+  vedi nota sopra).
+- **Il contratto CLI stesso**, che è la realizzazione concreta di `TargetAdapter`
+  (sezione "Adapter" sopra): un nome di modulo fisso, mai variato per vendor —
+  `python -m detector_adapter.evaluate_case` — che legge un `Transcript` (schema
+  "Schema di misura", JSON) su stdin e scrive un `Verdict` (stesso schema) su stdout,
+  con lo stesso contratto di errore (`error_kind: "infra"|"application"`, sezione
+  "Meccanismo di handoff" sopra) per qualunque vendor. **Vincolo aggiuntivo sullo
+  stdout** (trovato dal council mirato, `council-risk`, 2026-08-16): il contratto di
+  errore sopra distingue solo exit code zero/diverso da zero, ma un adapter (questo o
+  un futuro adapter per un secondo vendor) che esce con codice `0` e però scrive su
+  stdout anche `print()`/warning sparsi oltre al JSON finale romperebbe il parsing
+  senza far scattare né `error_kind: "infra"` né `"application"` — un fallimento
+  silenzioso indistinguibile da un successo malformato. Regola esplicita per ogni
+  implementazione di `evaluate_case`, presente e futura: **stdout riceve
+  esclusivamente il JSON finale**, ogni diagnostica/log/warning va su stderr.
+
+**Livello specifico del vendor — isolato, sostituito in blocco per un audit futuro**:
+- `docker/detector/Dockerfile`: quale codice vendor si clona/pinna e installa.
+- `src/detector_adapter/`: come si realizza *internamente* il contratto CLI sopra per
+  quel vendor specifico — per `aidr`, costruzione di `AgentEvent`, chiamata a
+  `Pipeline().analyze()`, normalizzazione in `Verdict`, il thin proxy OpenRouter
+  (`vendor_proxy.py`, con la sua mappa tier→model-id specifica di `aidr`), il registro
+  SourceLens. Per un vendor futuro con un'interfaccia diversa (CLI propria, REST,
+  un formato di log diverso) questo pacchetto conterrebbe una logica interna
+  completamente diversa — ma esporrebbe sempre lo stesso `evaluate_case`.
+
+**Decisione esplicita, corregge quanto discusso nella sessione precedente**: la
+normalizzazione `DetectionResult` (o equivalente del vendor) → `Verdict` **resta dentro**
+`detector_adapter`, non si sposta nell'orchestratore. Ripensandoci alla luce di questo
+principio (non prima): spostarla fuori renderebbe il contratto che attraversa il confine
+vendor-specifico invece che generico — l'orchestratore dovrebbe conoscere la forma
+grezza di *ogni* vendor per normalizzarla, esattamente la dipendenza dalla struttura del
+misurato che questa sezione vuole eliminare. La normalizzazione a `Verdict` non aumenta
+l'accoppiamento al vendor (è logica interamente nostra, il nostro schema di destinazione)
+— è precisamente il tipo di lavoro che deve vivere nel pacchetto sostituibile, non nel
+livello generico.
+
+**Verifica di riuso, per quando arriverà un secondo vendor (non eseguibile ora, non
+esiste ancora un secondo caso)**: sostituire `docker/detector/` e `src/detector_adapter/`
+per un vendor diverso non deve richiedere alcuna modifica a `src/toy_agent/`,
+all'orchestratore, a `docker-compose.yml` oltre al build context del servizio
+`detector`, o ai quattro canali generici di raccolta prove.
+
+**Ambito di riuso, precisato**: questo contratto si adatta a vendor della stessa forma di
+`aidr` — una pipeline di detection invocabile solo in-process (Python, o equivalente),
+senza CLI/REST esterna. Un vendor futuro con una vera interfaccia esterna sarebbe in
+realtà un caso *più semplice* di questo: nessun ponte minimo (`evaluate_case`) sarebbe
+necessario, il riquadro "stessa condivisione di processo" della sezione sopra
+sparirebbe del tutto. Un vendor senza alcun codice eseguibile localmente (es. un SaaS
+chiuso, nessuna pipeline da eseguire in un container nostro) richiederebbe di ripensare
+l'intero pattern container-based, non solo il livello vendor-specifico — fuori scope
+per la previsione fatta qui.
+
+### Limiti dichiarati di questa architettura (Gap 9)
+
+**Alternative valutate esplicitamente e non scelte per questa iterazione** — questa
+architettura è la migliore tra quelle messe realmente alla prova (council checkpoint,
+verifica sul codice vendor reale), non un ottimo assoluto: almeno quattro alternative
+restano non esplorate o deliberatamente rimandate, e vale dichiararle invece di lasciarle
+implicite.
+
+1. **Container `detector` a lunga vita vs. un container fresco per ogni `TestCase`**: un
+   container fresco eliminerebbe per costruzione il rischio di residuo su filesystem tra
+   `TestCase` (sezione "Raccolta prove esterna", non ancora verificato empiricamente), al
+   costo di 40-60 avvii di container invece di uno. Non scartata per principio — se
+   `docker diff`, una volta implementata la raccolta prove, rivelasse residuo reale, va
+   rivalutata prima di eseguire `TestCase` reali su dati sensibili.
+2. **Isolamento a container (kernel Linux condiviso) vs. a microVM** (es. Firecracker):
+   un vendor genuinamente ostile potrebbe in teoria sfruttare un escape da container —
+   categoria di rischio che una VM chiuderebbe e un container no. Non scelto perché il
+   modello di minaccia attuale (Gap 9, severità "minore per questo audit specifico" — il
+   vendor testato non ha mostrato segnali di inaffidabilità) non lo giustifica.
+   Esplicitamente da rivalutare se un audit futuro riguardasse un vendor con segnali reali
+   di inaffidabilità (la stessa nota di severità del gap-tracking doc lo prevede).
+3. **Tracing di syscall/rete per ogni `TestCase` vs. periodico/una tantum**: scelto
+   periodico per proporzionalità alla scala dichiarata (40-60 casi), non perché il
+   tracing continuo sia sbagliato in assoluto — un dataset molto più grande, o un vendor
+   meno fidato, potrebbero spostare questo compromesso.
+4. **Un solo `detector` attivo per audit, mai due vendor in parallelo nello stesso run**:
+   scelta di scope confermata esplicitamente con l'utente (2026-08-16), non un vincolo
+   tecnico — estendere a più detector paralleli richiederebbe naming parametrico dei
+   servizi e reti isolate per ciascuno, un'estensione della topologia attuale, non una
+   riscrittura.
+
+**Cosa questa architettura non risolve, anche una volta costruita** — pilastri della
+"terzietà" dichiarata in SPIRIT.md che restano fuori dal perimetro di Gap 9, non perché
+dimenticati ma perché non sono questioni di infrastruttura:
+- **Indipendenza economica** (principio 5) — chi paga questo lavoro. Nessuna decisione
+  architetturale la garantisce o la mina; resta vera o falsa indipendentemente da
+  `docker-compose.yml`.
+- **Indipendenza del dataset** (principio 1) — Gap 9 verifica solo che non si riusi per
+  errore il meccanismo di benchmark del vendor (`run_gauntlet()`, legato ai suoi 300 task
+  fissi, verificato sul codice reale). La qualità/indipendenza effettiva dei `TestCase` di
+  Plan 5 dipende da come vengono scritti, non dall'infrastruttura che li esegue.
+- **Disciplina "metodologia dichiarata prima dei risultati"** (principio 2) — oggi
+  enforced solo dall'ordine dei commit git (mapping Requisito→Verifica: dataset committato
+  prima dei `Verdict`), un vincolo procedurale nostro, non una proprietà tecnica come lo
+  split container.
+- **Il log del thin proxy è "self-reported" in miniatura** (trovato dal council mirato,
+  `council-skeptic`, 2026-08-16): è il canale di prova più ricco (sezione "Raccolta prove
+  esterna" sopra — piena trasparenza sul ragionamento di Sifter/Inspector), ma è codice
+  scritto e controllato dal team stesso (`vendor_proxy.py`, dentro `detector_adapter`),
+  seduto direttamente sul percorso richiesta/risposta tra il vendor e il modello, senza
+  alcun canale indipendente che ne corrobori il contenuto — il log di `egress-proxy` vede
+  solo che una connessione TLS è avvenuta, non cosa conteneva. Un bug (troncamento, retry
+  silenzioso, problema di encoding) potrebbe far rappresentare in modo scorretto cosa
+  Sifter/Inspector hanno effettivamente prodotto, senza che nulla lo smentisca. Stessa
+  famiglia di rischio "self-reported" che questo progetto contesta ai vendor (SPIRIT.md,
+  "Perché esiste questo repo"), qui applicata riflessivamente alla nostra stessa
+  strumentazione — non risolto, dichiarato.
+
+Questi limiti vanno riportati nel report finale (sezione Report), non nascosti — stesso
+principio già applicato al compromesso OpenRouter-vs-vLLM ("Setup pratico del detector
+sotto test").
+
 ## Orchestrazione del run (risoluzione Gap 6)
 
 Vedi `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 6: né l'`Adapter`
 (`evaluate(transcript) -> Verdict`, un `Transcript` alla volta) né il modulo metriche
-(che assume `list[Verdict]` già esistente) coprono la sequenza completa. Un componente
-dedicato, senza logica propria oltre alla composizione di pezzi già definiti sopra, per
-ogni `TestCase` del dataset:
+(che assume `list[Verdict]` già esistente) coprono la sequenza completa. L'orchestratore
+(sezione "Confine misuratore/misurato" sopra — nessuna logica propria oltre alla
+composizione di pezzi già definiti altrove in questo documento), per ogni `TestCase` del
+dataset:
 
-1. reinizializza lo stato finto da uno snapshot fisso (risoluzione Gap 5 — mai
-   riutilizzato tra `TestCase`);
-2. fa girare il loop ReAct del toy agent sul `TestCase.transcript` iniziale (il prompt
-   utente/scenario) fino a produrre il `Transcript` completo, entro il tetto turni/costo
-   dichiarato in "Orchestrazione" (loop ReAct);
-3. chiama `TargetAdapter.evaluate(transcript) -> Verdict`;
-4. raccoglie i `Verdict` prodotti, accoppiati per `case_id` con i `TestCase` originali.
+1. genera il `Transcript` invocando il container `agent` (stato finto reinizializzato per
+   costruzione, non serve un reset esplicito — vedi sopra);
+2. lo passa al container `detector`, che chiama `TargetAdapter.evaluate(transcript) ->
+   Verdict`;
+3. raccoglie i `Verdict` prodotti, accoppiati per `case_id` con i `TestCase` originali.
 
 Al termine del batch, passa `list[TestCase]` + `list[Verdict]` al modulo metriche
 (sezione sotto), che calcola le due metriche e genera il report. Nessun `TestCase` viene
-saltato silenziosamente per un fallimento del detector: un'eccezione dell'adapter produce
-un `Verdict` con `status: "error"` (vedi sezione "Schema di misura"), non l'assenza di un
-`Verdict` per quel `case_id`.
+saltato silenziosamente per un fallimento del detector: un'eccezione dell'adapter (o
+un'invocazione fallita del container `detector`) produce un `Verdict` con `status:
+"error"` (vedi sezione "Schema di misura"), non l'assenza di un `Verdict` per quel
+`case_id`.
 
 ## Modulo metriche
 
@@ -528,6 +955,17 @@ mapping esplicito:
 | Un `Verdict` con esito non valido (eccezione del detector, output malformato, rifiuto del provider) non deve mai essere interpretato come `label: "benign"` | Test: iniettare un caso che fa fallire l'adapter (es. risposta malformata simulata) e verificare che il `Verdict` risultante abbia `status: "error"` e `label: None`, e che il modulo metriche lo escluda da TP/FP/FN/TN riportandolo in una categoria separata |
 | L'orchestratore non deve mai saltare silenziosamente un `TestCase` per un fallimento del detector (Gap 6) | Test: eseguire un batch in cui uno dei `TestCase` induce un'eccezione nell'adapter e verificare che l'output finale contenga comunque un `Verdict` (con `status: "error"`) per quel `case_id`, non un `list[Verdict]` più corto del `list[TestCase]` di input |
 | Il comportamento nascosto di `update_account` deve attivarsi solo sui campi `status`/`refund_total`, mai su campi non sensibili (Gap 1, ristretto dopo il council checkpoint su Plan 1) | Test: chiamare `update_account` sul campo non sensibile `marketing_opt_in` e verificare che `level` resti invariato; chiamare su `status` o `refund_total` e verificare che `level` diventi `"admin"` indipendentemente dal valore richiesto |
+| Il pacchetto `aidr` non deve mai essere installato/importabile nel container `agent`, né `toy_agent` nel container `detector` (Gap 9) | Test: dentro il container `agent`, `python -c "import aidr"` deve fallire con `ModuleNotFoundError`; dentro `detector`, `python -c "import toy_agent"` deve fallire allo stesso modo |
+| Nessun processo dell'orchestratore deve mai importare `toy_agent` e `aidr` insieme (Gap 9) | Test statico: nessun modulo del pacchetto `toy_agent.orchestrator` importa `aidr`, e nessun modulo del pacchetto `detector_adapter` (eseguito dentro `detector`) importa `toy_agent` — stessa forma di verifica di `tests/test_no_vendor_imports.py`, estesa a entrambi i pacchetti |
+| Ogni invocazione dell'orchestratore verso `agent`/`detector` deve avere un contratto di errore inequivocabile, e distinguere un guasto infrastrutturale da un errore applicativo del detector (Gap 9, esteso dal council checkpoint `council-risk`) | Test in due parti: (a) iniettare un fallimento simulato (comando che esce con exit code ≠ 0) e verificare che l'orchestratore non tenti mai il parsing JSON dello stdout associato, producendo invece un `Verdict` con `status: "error"` per quel `case_id`; (b) verificare che un `docker compose exec` fallito per motivi infra (container fermo) produca `error_kind: "infra"` mentre un'eccezione applicativa dentro `evaluate_case` produca `error_kind: "application"`, e che il report finale li conti in categorie separate |
+| Le due chiavi `OPENROUTER_API_KEY` (container `agent` e `detector`) devono essere distinte (Gap 9) | Test: ispezionare `docker-compose.yml`, verificare che le due variabili d'ambiente puntino a segreti diversi, non allo stesso valore |
+| Ogni invocazione di `agent`/`detector` da parte dell'orchestratore deve rispettare un tetto wall-clock nostro, indipendente da eventuali cap interni di `aidr` (Gap 9) | Test: costruire un caso che induce un tempo di esecuzione anomalo lato `detector` (es. mock che non risponde mai) e verificare che l'orchestratore interrompa l'invocazione entro il timeout dichiarato, producendo un `Verdict` con `status: "error"` invece di bloccarsi indefinitamente |
+| `agent` e `detector` non devono potersi raggiungere direttamente in rete tra loro, solo tramite `egress-proxy` (Gap 9, trovato dal council checkpoint `council-skeptic`) | Test attivo: da dentro `agent`, un tentativo di connessione diretta verso l'hostname/IP di `detector` deve fallire, e viceversa — stessa forma di verifica già usata per il blocco egress verso domini esterni arbitrari |
+| I cinque canali di raccolta prove per-run (log container, log `egress-proxy`, log thin proxy, `docker diff`, `docker stats`) devono essere raccolti e persistiti per ogni `TestCase` reale, non solo consultabili manualmente (risoluzione Gap 9, "Raccolta prove esterna") | Test: dopo un run completo del dataset, verificare che esista un artefatto persistito per ciascuno dei cinque canali per ogni `case_id`, non solo per i casi in cui è stata rilevata un'anomalia |
+| `docker diff`/`docker stats` devono coprire entrambi i container (`agent` e `detector`, non solo `detector`) e devono essere attribuibili al singolo `case_id`, non solo aggregati a fine batch (council mirato 2026-08-16, `council-skeptic`+`council-risk`, "Raccolta prove esterna") | Test: eseguire almeno due `TestCase` malevoli in sequenza (incluso uno che tocca `send_email`/`bulk_export`/`run_diagnostic`) e verificare che esistano snapshot `docker diff`/`docker stats` distinti per `agent` e per `detector`, uno per ciascun `case_id`, presi immediatamente dopo la relativa invocazione e prima della successiva |
+| Il log del thin proxy non deve mai contenere `OPENROUTER_API_KEY` o altre credenziali in chiaro nell'artefatto persistito/pubblicato (council mirato 2026-08-16, `council-risk`) | Test: iniettare un caso che fa fallire la chiamata OpenRouter con un errore che normalmente includerebbe l'header di autenticazione nella risposta, verificare che il log persistito non contenga la stringa della API key |
+| Ogni implementazione di `evaluate_case` (questo o un futuro adapter vendor) deve scrivere su stdout esclusivamente il `Verdict` JSON finale, mai diagnostica/log/warning intermedi (council mirato 2026-08-16, `council-risk`) | Test: iniettare nell'adapter un `print()` di diagnostica prima del JSON finale e verificare che il parsing dell'orchestratore fallisca in modo esplicito (non silenzioso), non che interpreti l'output misto come un `Verdict` valido o malformato indistintamente da un errore applicativo |
+| Sostituire il vendor sotto test (audit futuro) non deve richiedere modifiche a `src/toy_agent/`, all'orchestratore, a `docker-compose.yml` oltre al build context del servizio `detector`, o ai quattro canali generici di raccolta prove esterna (log container, log `egress-proxy`, `docker diff`, `docker stats` — non il log del thin proxy, vendor-specifico per costruzione) ("Contratto riusabile del container detector") | Test (eseguibile solo quando esisterà un secondo vendor, non ora): sostituire `docker/detector/` e `src/detector_adapter/` con un'implementazione fittizia/mock che rispetta lo stesso contratto CLI, e verificare che l'intero run (orchestratore, `agent`, raccolta prove generiche) funzioni senza modifiche altrove |
 
 ## Fuori scope per questa iterazione (dichiarato esplicitamente)
 
@@ -595,3 +1033,168 @@ tutti e tre sono correzioni di precisione terminologica/numerica, coerenti col c
 pratico della skill (valore atteso basso ma non nullo, dato che l'unica documentazione
 preesistente da incrociare era `SPIRIT.md` + gap-tracking, entrambi già ampiamente
 citati nel design doc).
+
+### Council checkpoint su Gap 9 (2026-08-16)
+
+Eseguito il 2026-08-16, roster completo, ognuno con `SPIRIT.md`, il design doc completo
+(sezioni aggiornate incluse) e il gap-tracking doc completi come contesto.
+
+- `council-skeptic`: d'accordo con riserve. Ha confermato che il criterio di decisione
+  (garanzia strutturale verificabile da `docker-compose.yml`, non convenzione di codice)
+  è solido, non retorica post-hoc, e che l'analisi di riuso rende il costo marginale
+  credibile. Ha trovato un buco concreto: la sezione elencava "network namespace
+  separato" tra i vantaggi senza che nessuna topologia lo garantisse — **risolto sopra**
+  con il requisito esplicito di isolamento di rete diretto tra `agent` e `detector`.
+- `council-risk`: rischio moderato. Ha trovato tre punti concreti, **tutti risolti
+  sopra**: (1) il contratto di errore non distingueva un guasto infrastrutturale
+  (`docker compose exec` fallito) da un errore applicativo del detector — rilevante per
+  l'onestà statistica del report; (2) uccidere l'invocazione al timeout non garantisce
+  la terminazione dei sottoprocessi MCP reali lanciati da Inspector; (3) il container
+  `detector` a lunga vita potrebbe lasciare residuo su filesystem tra `TestCase` se i
+  provider MCP scrivono cache/temp — non verificato, segnalato come item da chiudere nel
+  piccolo piano dedicato, non risolto per assunzione.
+- `council-pragmatist`: **dissenso non applicato**. Verdetto "over-scoped": la
+  severità dichiarata di Gap 9 è "minore per questo audit specifico" (vendor non
+  ostile), e un orchestratore esterno con sottoprocessi separati ma container unico
+  chiuderebbe già il rischio più concreto (corruzione in memoria del `Transcript`) senza
+  riaprire Task 2/3 di Plan 3. Argomento reale, non scartato per pigrizia: ma la
+  verificabilità infrastrutturale non è un requisito rimandabile a un vendor futuro
+  meno fidato — è la proprietà che rende questo progetto, fin dal primo audit
+  pubblicato, coerente con SPIRIT.md principio 6 ("Pubblicazione e disclosure
+  responsabile", che include l'obbligo di verificabilità da terzi del codice del
+  misuratore) senza dover
+  chiedere a un revisore di fidarsi della nostra disciplina di codice oggi e di nuovo a
+  ogni piano futuro. Il costo marginale (confermato basso da `council-skeptic`
+  attraverso l'analisi di riuso) non giustifica, a mio giudizio, rimandare una proprietà
+  che il progetto vuole comunque avere.
+- `council-advocate`: ha trovato una contraddizione reale nella prima stesura, non uno
+  spigolo di stile — la sezione vietava a `detector` di importare `toy_agent` ma poi
+  descriveva il suo entrypoint come `python -m toy_agent.evaluate_case`, dentro il
+  pacchetto vietato. **Risolto sopra** introducendo il pacchetto separato
+  `detector_adapter` (mai annidato sotto `toy_agent`), che risolve anche un'incoerenza
+  preesistente e non notata su `vendor_proxy.py` (Task 1 di Plan 3, oggi dentro
+  `src/toy_agent/`, da spostare).
+
+**Esito mapping Requisito→Verifica**: 1 riga delle 5 scritte prima del council
+riformulata per riflettere la correzione di `council-risk` (contratto di errore esteso
+con `error_kind`) e 1 riga nuova aggiunta per riflettere il finding di `council-skeptic`
+(isolamento di rete diretto tra `agent`/`detector`) — 6 righe totali legate a Gap 9 nel
+mapping, coerente col conteggio nel gap-tracking doc; nessuna scartata.
+
+Tre dei quattro pareri (skeptic, risk, advocate)
+hanno trovato indipendentemente, senza vedersi a vicenda, problemi concreti nella prima
+stesura — segnale forte che il checkpoint ha aggiunto valore reale su una sezione
+scritta rapidamente in una singola sessione di discussione, non un giro di conferma.
+
+**Valutazione `grill-with-docs`**: raccomandazione **salta**, con motivazione esplicita
+mostrata (non un'assunzione silenziosa — da confermare con l'utente). Il ruolo che
+`grill-with-docs` avrebbe (incrociare contro documentazione preesistente rilevante:
+`SPIRIT.md`, decisioni pregresse, terminologia) è già stato coperto oggi in profondità
+dal council checkpoint — tutti e quattro gli agenti hanno letto `SPIRIT.md` per intero
+come contesto, e tre dei quattro hanno trovato problemi concreti di coerenza (non solo
+di architettura): una contraddizione terminologica reale (`council-advocate`), un
+vantaggio dichiarato senza garanzia tecnica corrispondente (`council-skeptic`). Verifica
+di coerenza terminologica post-fix fatta anche autonomamente (grep su tutte le
+occorrenze di `detector_adapter`/`evaluate_case`/`toy_agent.orchestrator` nel documento,
+nessun riferimento stantio residuo trovato). Punto di attenzione se l'utente preferisce
+comunque eseguirlo: non ancora verificato se la nuova terminologia (`detector_adapter`,
+`error_kind`) sia coerente con qualunque nota nei piani già scritti/committati (Plan 1-3)
+che potrebbe fare riferimento alla struttura precedente — un `grill-with-docs` mirato
+solo a quell'incrocio (piani esistenti, non `SPIRIT.md`) avrebbe un valore atteso più
+alto di una ripetizione generica.
+
+**Aggiornamento (2026-08-16, sessione successiva)**: la raccomandazione sopra era
+"salta"; l'utente, informato del ragionamento (incluso il controllo mirato sui piani
+1-3, che ha confermato che la loro staleness terminologica è quella attesa e già in
+carico al piccolo piano dedicato — non una scoperta nuova), ha scelto comunque di
+eseguire il giro generico (`SPIRIT.md` + gap-tracking doc per intero) contro le sezioni
+aggiornate del 16/8. Due findings concreti, entrambi corretti sopra e nel gap-tracking
+doc:
+- Auto-contraddizione nel conteggio delle righe del mapping Requisito→Verifica
+  aggiunte da Gap 9 (la frase diceva "2 righe riformulate" ma l'esempio stesso ne
+  chiamava una "nuova riga" — corretto in "1 riformulata + 1 nuova, 6 totali",
+  riconciliato col conteggio "6 righe nuove" già presente nel gap-tracking doc).
+- Tre citazioni del principio 6 di `SPIRIT.md` come se si chiamasse "verificabile da
+  terzi" (design doc, sezione "Confine misuratore/misurato" e questa sezione;
+  gap-tracking doc, Gap 9) quando il titolo reale è "Pubblicazione e disclosure
+  responsabile" — "verificabile da terzi" è una frase nel corpo del principio, non il
+  suo nome. Stessa famiglia di imprecisione già trovata e corretta nel primo giro di
+  `grill-with-docs` (14/8). Corrette tutte e tre le citazioni.
+
+Aggiunta anche, su richiesta esplicita, una nota di raccordo nel gap-tracking doc (Gap
+9, sezione "bilancio onesto") che spiega perché il pilastro "indipendenza
+infrastrutturale" è agganciato al principio 6 lì ma ai principi 1/5 nella sezione
+"Principio guida" più sopra nello stesso documento — evoluzione del criterio decisionale
+nella stessa giornata (15/8 → 16/8), non un'incoerenza di citazione.
+
+### Council mirato su Gap 9 — sezioni post-council (2026-08-16)
+
+Su proposta dell'utente (non un checkpoint di processo automatico): le tre sezioni
+scritte dopo il council originale su Gap 9 dello stesso giorno ("Raccolta prove
+esterna", "Contratto riusabile del container detector", "Limiti dichiarati di questa
+architettura") non erano mai passate da una revisione indipendente. Roster completo,
+scope esplicitamente mirato a queste tre sezioni (non un rerun dello split
+container/handoff, già validato dal council originale), documento intero + `SPIRIT.md`
++ gap-tracking doc come contesto per ciascun agente.
+
+| Agente | Verdetto | Punto chiave |
+|---|---|---|
+| `council-skeptic` | D'accordo con riserve | I 5 canali di prova esterna erano scoped solo a `detector`, mai ad `agent` — dove vive il modello di minaccia dichiarato (`send_email`/`bulk_export`/`run_diagnostic`). |
+| `council-risk` | Rischio moderato | `docker diff`/`docker stats` sono cumulativi/istantanei, non delimitabili a una singola invocazione — nessun meccanismo di attribuzione per `case_id` come richiesto dal mapping. Stesso finding di `council-skeptic` sull'asimmetria `agent`/`detector`, trovato indipendentemente. |
+| `council-pragmatist` | Leggermente sovradimensionato | `docker stats` per-run è monitoraggio operativo, non prova d'audit — raccoglierlo come pilota, non per ogni caso. `detector_adapter` come pacchetto anticipa una generalizzazione senza un secondo vendor a validarla. |
+| `council-advocate` | Ha spigoli grezzi | Le tre sezioni sono scritte per un pubblico interno, non per il lettore esterno che deve decidere se fidarsi — non dicono dove/come le prove grezze saranno consultabili nel report finale, né mostrano un esempio concreto di verifica per un revisore. |
+
+**Findings applicati** (convergenza forte: `council-skeptic` e `council-risk` hanno
+trovato indipendentemente, senza vedersi, la stessa asimmetria):
+- Raccolta prove esterna estesa a entrambi i container (`docker diff agent`/`docker
+  stats agent`, non solo `detector`) — sezione "Raccolta prove esterna" sopra.
+- Meccanismo di attribuzione per-`case_id` specificato esplicitamente: snapshot
+  immediatamente dopo ogni invocazione, non a fine batch — risolve anche la domanda
+  dell'utente su questo stesso punto durante la sessione.
+- Il rischio di residuo su filesystem del container `detector` a lunga vita
+  riqualificato da "rischio di sicurezza verso un vendor ostile" a "rischio di
+  validità della misura anche con un vendor benigno" (`council-risk`) — vedi nota
+  aggiunta sopra, subito dopo la sezione "Isolamento di stato".
+- Scrub esplicito dei segreti dal log del thin proxy prima della pubblicazione
+  (`council-risk`) — aggiunto come step della pipeline di raccolta, non come
+  ripensamento post-hoc.
+- Vincolo sullo stdout per ogni implementazione di `evaluate_case`, presente e futura
+  (`council-risk`) — solo il JSON finale su stdout, diagnostica su stderr.
+- Il rischio "self-reported" del log del thin proxy (`council-skeptic`) aggiunto come
+  limite dichiarato esplicito nella sezione "Limiti dichiarati di questa architettura"
+  — non era mai stato registrato, né applicato né tracciato come deliberatamente
+  rimandato, prima che un secondo giro di verifica lo notasse durante questa stessa
+  sessione (vedi sotto, "Nota di processo").
+- Tre righe nuove aggiunte al mapping Requisito→Verifica per questi findings.
+
+**Non applicati, registrati ma non implementati in questa sessione**:
+- Dissenso di `council-pragmatist` su `docker stats` per-run e su `detector_adapter`
+  come generalizzazione prematura — stessa forma del suo dissenso, non applicato, sul
+  council originale di Gap 9: il costo marginale è basso e il principio 6 (SPIRIT.md)
+  pesa di più.
+- Punti di `council-advocate` su leggibilità/credibilità per il lettore esterno (dove
+  le prove grezze saranno linkate nel report, un esempio concreto di verifica per un
+  revisore) — reali ma di forma/comunicazione, non di rischio; da riprendere quando si
+  scriverà la sezione "Report" vera e propria (Plan successivo), non bloccanti per il
+  piccolo piano dedicato a Gap 9.
+
+**Nota di processo**: l'utente ha chiesto, dopo l'applicazione dei findings sopra, se
+avesse senso un altro giro di `grill-with-docs` per essere sicuri dell'allineamento.
+Invece di rilanciare l'intera skill, è stato fatto un controllo mirato delle sole
+modifiche appena scritte in questa sessione (non un rerun contro `SPIRIT.md`/tutto il
+gap-tracking doc, già coperti due volte) — ha trovato due problemi reali in meno di
+un minuto: (1) questa stessa sezione dichiarava "quattro righe nuove" nel mapping
+quando le righe effettivamente aggiunte erano tre — corretto; (2) il finding di
+`council-skeptic` sul rischio "self-reported" del thin proxy era stato letto e
+sintetizzato ma mai effettivamente scritto da nessuna parte — né applicato né
+tracciato come deliberatamente rimandato, semplicemente perso nel passaggio da
+sintesi a modifica del documento — corretto sopra. Nessun altro problema trovato in
+questo controllo mirato. Non risulta necessario un ulteriore giro completo di
+`grill-with-docs`/council su queste sezioni; un controllo mirato di questo tipo dopo
+ogni sessione di modifiche sostanziali (non solo dopo un council) sembra però un'
+euristica di processo che vale la pena portarsi avanti, non solo un caso isolato di
+questa sessione.
+
+**Non ancora fatto**: commit. Il design doc e il gap-tracking doc sono aggiornati e
+pronti per la review dell'utente, non ancora committati (nessuna richiesta esplicita di
+commit in questa sessione).

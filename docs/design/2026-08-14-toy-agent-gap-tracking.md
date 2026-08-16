@@ -373,7 +373,11 @@ Requisito→Verifica aggiornata con un rimando esplicito a questa eccezione.
 
 ## Gap 9 — Misuratore e misurato condividono lo stesso container di controllo
 
-**Stato**: `open` — accettato come limite dichiarato per l'esecuzione di Plan 3.
+**Stato**: risolto nel design doc — sezioni "Confine misuratore/misurato
+(risoluzione Gap 9)" e "Meccanismo di handoff: orchestratore esterno,
+sottoprocessi separati" in `2026-08-14-toy-agent-e-pipeline-misura.md`. Da
+strutturare ancora come piccolo piano dedicato (revisione mirata di Task 2/3 di
+Plan 3) prima di Plan 4 — vedi "Prossimo passo" sotto.
 
 **Principio guida per la risoluzione futura** (ribadito esplicitamente
 dall'utente durante l'esecuzione di Task 6, 2026-08-15, discutendo un
@@ -458,11 +462,181 @@ uno, `docker-compose.yml` avrebbe una topologia più ricca (un servizio in più,
 separate per isolare i due container tra loro). Novità vera, non riuso: il meccanismo
 concreto di handoff del `Transcript` tra i due container.
 
-**Perché non risolto ora**: Task 2 e Task 3 di questo piano sono già passati per task
-review con l'architettura a container unico; riaprirli a metà Task 4 significherebbe
-rifare una decisione architetturale già passata per council senza un giro di
-brainstorming+council dedicato al cambiamento — la stessa disciplina già applicata alle
-altre decisioni di questo progetto (Gap 8).
+**Perché non risolto ora [nota storica — superata dalla decisione sotto]**: Task 2 e
+Task 3 di questo piano erano già passati per task review con l'architettura a container
+unico; riaprirli a metà Task 4 avrebbe significato rifare una decisione architetturale
+già passata per council senza un giro di brainstorming+council dedicato al cambiamento —
+la stessa disciplina già applicata alle altre decisioni di questo progetto (Gap 8). Da
+qui la scelta originale di rimandare la decisione a un momento dedicato, invece di
+deciderla al volo durante Task 4 — quel momento dedicato è la discussione registrata
+sotto.
+
+**Decisione e ragionamento (2026-08-16, sessione di brainstorming dedicata,
+prima di Plan 4)**
+
+**Decisione**: sì, split in due container — uno che ospita solo `toy_agent`
+(il misuratore, mai importa `aidr`) e uno che ospita solo `aidr` (il misurato),
+comunicanti esclusivamente tramite un'interfaccia a dati.
+
+**Il criterio che ha deciso, non ovvio all'inizio della discussione**: non "qual
+è il meccanismo più economico per chiudere il rischio interno più tagliente" ma
+"quale confine è verificabile da un revisore esterno rigoroso senza doversi
+fidare della nostra disciplina di codice". Il primo criterio (economicità) porta
+a una risposta diversa dal secondo (verificabilità esterna) — la discussione è
+partita dal primo ed è arrivata al secondo solo dopo essere stata messa in
+discussione esplicitamente dall'utente ("stiamo progettando un sistema di
+validazione che deve essere avallato da persone che si devono fidare... come
+farebbero loro?"). Per un progetto il cui intero valore è essere riconosciuto
+come rigoroso da pari del settore (SPIRIT.md "Perché esiste questo repo",
+principio 6 "Pubblicazione e disclosure responsabile" — include l'obbligo di
+verificabilità da terzi del codice del misuratore —, principio 7 "il moat è la
+reputazione, non la segretezza"), il secondo criterio è quello corretto.
+
+**Percorso di ragionamento** (riassunto; la trascrizione completa è nella
+sessione di brainstorming del 2026-08-16):
+
+1. **Due assi distinti, spesso confusi**: contenimento verso l'esterno (il
+   container non può raggiungere l'host/Internet se non concesso — già risolto,
+   Task 3/4 di Plan 3, `internal_net` + `egress-proxy` + DNS lockdown) vs.
+   segregazione interna tra misuratore e misurato (possono toccarsi *dentro* il
+   perimetro che controlliamo — questo è Gap 9, non risolto dal primo asse). "Il
+   container non può uscire se non lo permettiamo" risponde al primo asse, non
+   al secondo: `toy_agent` non è "l'esterno" in questo schema, è il vicino di
+   casa nello stesso container.
+2. **Primo candidato, insufficiente**: un orchestratore che vive *fuori* da
+   qualunque container (host, o script di controllo minimale senza né
+   `toy_agent` né `aidr` installati) e pilota ciascun lato come sottoprocesso
+   fresco separato (`docker compose exec`), scambiando solo `Transcript`/
+   `Verdict` serializzati JSON su stdin/stdout — mai un processo che importa
+   entrambe le librerie insieme. Risolve il rischio più concreto trovato in
+   discussione (corruzione in memoria del `Transcript`, ground truth alterato
+   dopo essere stato scritto, prima di essere misurato — violerebbe il
+   principio 2 di SPIRIT.md) e risolve gratis anche Gap 5 (isolamento di stato:
+   un processo fresco per ogni `TestCase` non ha memoria del precedente, nessun
+   reset esplicito da scrivere). Costruibile dentro l'architettura a container
+   singolo attuale, senza toccare Task 2/3 di Plan 3.
+3. **Perché non basta**: è una convenzione nel codice dell'orchestratore, non
+   una proprietà strutturale — verificabile solo leggendo con attenzione ogni
+   entrypoint presente e futuro, non ispezionando l'infrastruttura. Lo stesso
+   tipo di garanzia di `tests/test_no_vendor_imports.py`: vera finché nessuno
+   (un contributor futuro, uno script aggiunto in fretta) scrive per errore un
+   punto che importa entrambe le librerie insieme. Per un ente che si dichiara
+   verificabile da terzi, non è lo standard giusto.
+4. **Cosa aggiunge davvero lo split in due container**, rispetto al solo
+   orchestratore esterno:
+   - Import incrociato reso *fisicamente impossibile*, non solo vietato da un
+     test: `aidr` assente dall'immagine di `toy_agent` (e viceversa) — un
+     errore in quella direzione dà `ImportError` al build/run, non un
+     comportamento silenzioso da scoprire dopo.
+   - Filesystem separato per costruzione: nessun file scritto da un lato è
+     raggiungibile dall'altro, anche tra invocazioni non concorrenti (a
+     differenza di due sottoprocessi nello stesso container).
+   - Network namespace separato: una policy di rete pensata per un lato non
+     può applicarsi per errore anche all'altro.
+   - Verificabilità diretta da `docker-compose.yml` e dai due Dockerfile — un
+     revisore non deve leggere la logica dell'orchestratore per credere alla
+     garanzia.
+   - Attribuzione immediata in caso di anomalia: il container coinvolto è già
+     la risposta a "quale dei due lati", senza distinguere sottoprocessi dentro
+     uno spazio condiviso.
+5. **Meccanismo di handoff scelto — nessun protocollo nuovo da costruire**: il
+   pattern del punto 2 (orchestratore esterno, mai dentro nessun container,
+   `docker compose exec` per lato, JSON su stdin/stdout) resta il meccanismo,
+   applicato ora *tra* due container invece che *dentro* uno solo. È lo stesso
+   pattern già usato per invocare `verify_sourcelens.py` (Task 6, Plan 3),
+   esteso a due servizi invece di uno — nessuna RPC o server nuovo tra i due
+   container. Risolve anche la domanda che il gap doc lasciava aperta come
+   "novità vera, non riuso" (voce "Analisi di riuso" sopra).
+
+**Aggiornamento (2026-08-16, dopo scrittura del design doc + council
+checkpoint)**: il mapping Requisito→Verifica è stato scritto (6 righe nuove nel
+design doc, sezione "Mapping Requisito → Verifica", cercare "Gap 9"). Council
+checkpoint eseguito lo stesso giorno, roster completo — vedi
+`2026-08-14-toy-agent-e-pipeline-misura.md`, sezione "Council checkpoint su
+Gap 9 (2026-08-16)", per la sintesi completa. Findings applicati: pacchetto
+`detector_adapter` introdotto (bug reale trovato da `council-advocate` — la prima
+stesura vietava a `detector` di importare `toy_agent` ma poi ne descriveva
+l'entrypoint come `toy_agent.evaluate_case`), isolamento di rete diretto tra
+`agent`/`detector` reso esplicito (`council-skeptic`), contratto di errore
+esteso con `error_kind: "infra"|"application"` (`council-risk`), cleanup
+sottoprocessi MCP al timeout e residuo su filesystem del container a lunga
+vita segnalati come item da chiudere nel piano dedicato (`council-risk`).
+Dissenso di `council-pragmatist` ("over-scoped": il rischio dichiarato è
+minore per questo audit, un orchestratore esterno a container unico
+basterebbe) registrato ma non applicato — motivazione nella sintesi del
+design doc.
+
+**Aggiornamento (2026-08-16, seconda discussione lo stesso giorno)**: due
+sezioni ulteriori aggiunte al design doc dopo il council, entrambe nate da
+domande dirette dell'utente, non da un secondo council: "Raccolta prove
+esterna durante ogni run" (log container/`egress-proxy`/`docker diff` come
+prove standard per ogni `TestCase`, tracing syscall/rete come rafforzamento
+periodico) e "Contratto riusabile del container detector" (il confine tra
+codice generico — mai a conoscenza di un vendor specifico — e codice
+vendor-specifico isolato in `detector_adapter`, sostituibile in blocco per un
+audit futuro senza toccare `toy_agent`/orchestratore/`docker-compose.yml`).
+Rinominato `aidr_adapter` → `detector_adapter` in entrambi i documenti per
+riflettere che il pacchetto deve restare generico di nome anche se il
+contenuto cambia per vendor. Verificato sul codice vendor reale (non
+assunto) che non esiste alcuna interfaccia CLI/file-based per una singola
+sessione custom (`examples/run_gauntlet.py`, `run_ablations.py`: chiamate
+Python dirette; `aidr.dredge.collector` legato al formato cache Claude Code
+CLI) — la chiamata a `Pipeline().analyze()` resta l'unico punto irriducibile
+in cui il nostro codice deve girare accanto al vendor.
+
+**Terza discussione lo stesso giorno — bilancio onesto, non solo
+progettazione**: l'utente ha chiesto esplicitamente se, arrivati in fondo al
+lavoro, questa architettura ci mette in grado di rispondere alle domande
+fondative del progetto (SPIRIT.md, "Perché esiste questo repo": il tool del
+vendor rileva davvero come dichiara? P=1.0, R=0.667 verificato in modo
+indipendente?) — e se questa è "la architettura migliore". Risposta data e
+integrata nel design doc, sezione "Limiti dichiarati di questa architettura
+(Gap 9)": **no**, non ancora — Gap 9 risolve un pilastro necessario
+(indipendenza infrastrutturale, principio 6 — l'aggancio è cambiato rispetto al
+"Principio guida" sopra, che lo legava per analogia ai principi 1/5: quella era
+la lettura iniziale del 15/8, prima che il criterio decisivo si spostasse sulla
+verificabilità esterna, vedi "Il criterio che ha deciso" sopra) ma non la
+domanda fondativa
+stessa (zero `TestCase` eseguiti finora) né gli altri pilastri della
+"terzietà" (indipendenza economica, principio 5; indipendenza del dataset,
+principio 1; disciplina "ground truth prima dei risultati", principio 2) — né
+è "la migliore" in assoluto, solo la migliore tra quattro alternative
+esplicitamente valutate e non scelte (container fresco per caso vs. a lunga
+vita, microVM vs. container, tracing per-caso vs. periodico, un solo detector
+per audit vs. paralleli), tutte dichiarate con la motivazione per cui restano
+aperte o rimandate.
+
+**Aggiornamento (2026-08-16, quarta discussione — mappa visiva)**: prodotto e
+condiviso con l'utente un diagramma (Artifact privato, non parte del repo)
+che localizza esattamente il confine tra codice nostro e codice del vendor
+lungo l'intero schema — un solo riquadro ("stesso processo Python") copre
+`detector_adapter.evaluate_case` + `Pipeline`/`Sifter`/`Inspector`, tutto il
+resto (incluse le chiamate del vendor al proprio modello, instradate
+attraverso il nostro thin proxy, e i suoi stessi sottoprocessi MCP) è fuori
+da quel confine. Ha portato a una scoperta concreta non pianificata: un
+quarto canale di raccolta prove, il log del nostro thin proxy
+(`vendor_proxy.py`), che cattura in chiaro ogni prompt/risposta di
+Sifter/Inspector senza toccare codice vendor — aggiunto alla sezione
+"Raccolta prove esterna" del design doc, classificato correttamente come
+esterno ad `aidr` ma **non** generico (vive nel livello vendor-specifico,
+a differenza degli altri tre canali).
+
+**Prossimo passo**: `grill-with-docs` generico eseguito (2026-08-16, sessione
+successiva — vedi design doc, sezione "Esito valutazione council / grill-with-docs",
+"Aggiornamento (2026-08-16, sessione successiva)"), due findings corretti (conteggio
+righe mapping, citazione principio 6). **Council mirato eseguito anche sulle tre
+sezioni scritte dopo il council originale** ("Raccolta prove esterna", "Contratto
+riusabile del container detector", "Limiti dichiarati" — vedi design doc, sezione
+"Council mirato su Gap 9 — sezioni post-council (2026-08-16)"): findings applicati
+(raccolta prove estesa a `agent`, non solo `detector`; attribuzione per-`case_id`
+via snapshot per-invocazione; scrub segreti dal log del thin proxy; vincolo di
+stdout pulito sul contratto CLI). Resta: committare, poi strutturare come piccolo
+piano dedicato (revisione mirata di Task 2/3 di Plan 3: due Dockerfile —
+incluso spostare `vendor_proxy.py` in `src/detector_adapter/` —
+`docker-compose.yml` con topologia più ricca inclusa la rete non condivisa
+tra `agent`/`detector`, entrypoint per lato, script dell'orchestratore,
+raccolta prove esterna) prima di iniziare
+Plan 4 — coerente con la sequenza già definita sopra ("Sequenza rivista").
 
 ## Come si chiude un gap
 
