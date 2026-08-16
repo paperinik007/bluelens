@@ -601,6 +601,13 @@ chiudere nel piccolo piano dedicato, prima di eseguire `TestCase` reali:
 o si conferma che nessuno dei tre scrive stato persistente rilevante, o si
 isola/pulisce esplicitamente quel path tra un'invocazione e l'altra.
 
+**Verificato (2026-08-16, piccolo piano dedicato, Task 9)**: nessuno dei tre
+provider MCP scrive stato persistente su disco — vedi
+`docs/design/2026-08-16-mcp-provider-persistent-state-review.md` per la review
+completa. L'unica scrittura (`.mcp.json`, da `write_mcp_config`) è
+deterministica e completamente sovrascritta a ogni invocazione, nessun residuo
+di contenuto tra `TestCase`.
+
 **Non solo un rischio di sicurezza verso un vendor ostile** (trovato dal council
 mirato, `council-risk`, 2026-08-16, sulla sezione "Raccolta prove esterna"
 sotto): anche un bug del tutto benigno in un cache/memoization interno di

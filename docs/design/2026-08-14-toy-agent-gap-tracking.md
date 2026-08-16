@@ -638,6 +638,14 @@ tra `agent`/`detector`, entrypoint per lato, script dell'orchestratore,
 raccolta prove esterna) prima di iniziare
 Plan 4 — coerente con la sequenza già definita sopra ("Sequenza rivista").
 
+**Aggiornamento (2026-08-16, Task 9 del piano dedicato)**: item "residuo su
+filesystem nel container `detector` a lunga vita" (sopra, segnalato da
+`council-risk`) chiuso — vedi
+`docs/design/2026-08-16-mcp-provider-persistent-state-review.md` per la review
+completa e `2026-08-14-toy-agent-e-pipeline-misura.md` per il follow-up nella
+sezione "Meccanismo di handoff". Nessuno dei tre provider MCP scrive stato
+persistente su disco tra `TestCase`.
+
 ## Come si chiude un gap
 
 Quando una risoluzione viene applicata al design doc, aggiornare lo stato qui a
