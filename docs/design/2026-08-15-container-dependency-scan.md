@@ -66,8 +66,8 @@ Nessun invocazione reale di `perl` in `docker/control/entrypoint.sh`, in
 Immagine `agentic-security-audits-agent` (digest:
 `sha256:31fcb564f78e1fffa94f1e06e443a8ed2f0002589147959ea1b6c5eca9c4cc1d`,
 build 2026-08-16T15:28:11Z), Gap 9 — split del container di controllo in
-`agent` (solo `toy_agent`) e `detector` (Task 3, non ancora scansionato a
-questa data). Scansionata il 2026-08-16 con lo stesso comando dockerizzato
+`agent` (solo `toy_agent`) e `detector` (Task 3, vedi sezione "Immagine
+detector" più sotto). Scansionata il 2026-08-16 con lo stesso comando dockerizzato
 (Trivy non installato come binario sulla macchina host):
 
     docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache/ \
@@ -92,6 +92,42 @@ dipendenze vendor da clonare), quindi la superficie è anzi più ridotta di
 quella di `control`. Non è una nuova decisione di rischio da discutere: è la
 stessa eccezione, riapplicata a una seconda immagine che condivide la stessa
 causa non risolvibile lato Debian.
+
+## Immagine detector
+
+Immagine `agentic-security-audits-detector` (digest:
+`sha256:7ffd08d905e755c02734ba79c88ac07228ffcedc19246976c1fb61446e3d09ad`,
+build 2026-08-16T15:40:20Z), Gap 9 — la seconda metà dello split del
+container di controllo: ospita `aidr` (vendor, commit pinnato
+`7fad14d2478707e68a09b8ecd9942dec8fde1614`) e il pacchetto `detector_adapter`
+(`vendor_proxy.py`, Task 1); nessun `toy_agent` installato in questa
+immagine. Scansionata il 2026-08-16 con lo stesso comando dockerizzato
+(Trivy non installato come binario sulla macchina host):
+
+    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache/ \
+      aquasec/trivy image --severity CRITICAL --exit-code 1 agentic-security-audits-detector
+
+**4 vulnerabilità CRITICAL residue**, tutte sul pacchetto `perl-base`
+(`CVE-2026-13221`, `CVE-2026-42496`, `CVE-2026-57433`, `CVE-2026-8376`) —
+esattamente le stesse 4 CVE già documentate sopra per `control` e `agent`,
+stessa causa radice: `perl-base` è parte del set essenziale Debian e resta
+presente in qualunque immagine `python:3.11-slim`, indipendentemente dal
+Dockerfile. Exit code: 1. Nessuna CVE CRITICAL aggiuntiva/diversa rispetto a
+`control`/`agent`.
+
+Questa immagine `detector` (`docker/detector/Dockerfile`) applica lo stesso
+controllo compensativo già in atto per `control` e `agent` — `chmod a-x
+/usr/bin/perl /usr/bin/perl5.40.1` come ultimo passo di build — e ricade
+sotto la **stessa eccezione già accettata dal titolare del progetto
+(2026-08-15)**: nessuna delle 4 CVE ha una fix disponibile a questa data, e
+nessun codice di questa immagine (`entrypoint.sh`, `detector_adapter`,
+`aidr`) invoca mai perl su alcun percorso — questa immagine conserva lo
+stage di build separato con `git` (necessario qui per clonare il repo
+vendor pinnato, a differenza di `agent`), ma quello stage resta uno stage
+di build separato (`vendor-source`), scartato prima dell'immagine finale,
+per la stessa ragione già documentata per `control`. Non è una nuova
+decisione di rischio da discutere: è la stessa eccezione, riapplicata a una
+terza immagine che condivide la stessa causa non risolvibile lato Debian.
 
 ## Controlli compensativi in atto
 
