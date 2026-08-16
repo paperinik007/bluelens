@@ -1,0 +1,146 @@
+from __future__ import annotations
+
+import json
+import subprocess
+from dataclasses import dataclass
+from typing import Callable
+
+CommandRunner = Callable[[list[str], bytes, float], "CommandResult"]
+
+# Matches VENDOR_PROXY_LOG_PATH in docker-compose.yml (Task 4) and the default
+# read by collect_thin_proxy_log (Task 8) — one fixed path, three places that
+# must agree on it.
+THIN_PROXY_LOG_PATH = "/var/log/vendor_proxy.jsonl"
+
+
+@dataclass
+class CommandResult:
+    returncode: int
+    stdout: bytes
+    stderr: bytes
+    timed_out: bool = False
+    failed_to_start: bool = False
+
+
+def default_command_runner(cmd: list[str], stdin_bytes: bytes, timeout_s: float) -> "CommandResult":
+    try:
+        proc = subprocess.run(cmd, input=stdin_bytes, capture_output=True, timeout=timeout_s)
+    except subprocess.TimeoutExpired as exc:
+        return CommandResult(returncode=-1, stdout=exc.stdout or b"", stderr=exc.stderr or b"", timed_out=True)
+    except OSError:
+        return CommandResult(returncode=-1, stdout=b"", stderr=b"", failed_to_start=True)
+    return CommandResult(returncode=proc.returncode, stdout=proc.stdout, stderr=proc.stderr)
+
+
+def _error_verdict(case_id: str, error_kind: str, detail: str) -> dict:
+    return {
+        "case_id": case_id,
+        "tool_name": "agentic_threat_detection",
+        "status": "error",
+        "error_kind": error_kind,
+        "label": None,
+        "confidence": None,
+        "technique_detected": None,
+        "rationale": detail,
+        "cost_usd": None,
+        "latency_s": None,
+        "in_tokens": None,
+        "out_tokens": None,
+    }
+
+
+def run_test_case(
+    test_case: dict,
+    *,
+    agent_timeout_s: float = 120.0,
+    detector_timeout_s: float = 180.0,
+    run_command: CommandRunner = default_command_runner,
+) -> dict:
+    """Drive one TestCase through agent -> detector (design doc, 'Meccanismo di
+    handoff'). Never imports aidr or detector_adapter — the JSON contract on
+    stdin/stdout is the only thing this function knows about either side.
+
+    Returns {"transcript": <Transcript JSON dict or None>, "verdict": <Verdict
+    JSON dict>} — transcript is None only when the agent invocation itself
+    failed before producing one (council-skeptic finding, Gap 9 targeted
+    council: Plan 4 needs the transcript for the report's "Casi concreti"
+    section — an earlier draft of this plan discarded it here, which would
+    have forced Plan 4 to change this function's signature anyway)."""
+    case_id = test_case["case_id"]
+
+    agent_cmd = ["docker", "compose", "exec", "-T", "agent", "python", "-m", "toy_agent.run_case"]
+    agent_input = json.dumps(test_case).encode("utf-8")
+    agent_result = run_command(agent_cmd, agent_input, agent_timeout_s)
+
+    if agent_result.failed_to_start:
+        return {"transcript": None, "verdict": _error_verdict(case_id, "infra", "docker compose exec failed to start the agent invocation")}
+    if agent_result.timed_out:
+        return {"transcript": None, "verdict": _error_verdict(case_id, "infra", f"agent invocation exceeded {agent_timeout_s}s wall-clock timeout")}
+    if agent_result.returncode != 0:
+        return {"transcript": None, "verdict": _error_verdict(case_id, "application", agent_result.stderr.decode("utf-8", errors="replace"))}
+
+    transcript_bytes = agent_result.stdout
+    try:
+        transcript_dict = json.loads(transcript_bytes)
+    except json.JSONDecodeError:
+        return {"transcript": None, "verdict": _error_verdict(case_id, "application", "agent produced invalid JSON on stdout despite exit code 0")}
+
+    # Truncate the thin proxy's cumulative log immediately before this
+    # invocation (council-risk finding, Gap 9 targeted council): vendor_proxy
+    # runs as one long-lived background process for the whole detector
+    # container's life, so without this its log mixes entries from every
+    # prior case — the same per-case_id attribution problem the design doc
+    # already solved for docker diff/stats (Task 8), never extended to this
+    # channel until now. Mirrors the "fresh state per invocation" pattern
+    # already established for Gap 5's WorldState reset. Best-effort: a
+    # failure here degrades evidence attribution for this one case, it never
+    # blocks detection itself — sequential execution (design doc) means a
+    # failed truncate at worst leaves this case's log entries mixed with the
+    # previous case's, not with a concurrent one.
+    run_command(
+        ["docker", "compose", "exec", "-T", "detector", "sh", "-c", f"> {THIN_PROXY_LOG_PATH}"],
+        b"",
+        10.0,
+    )
+
+    detector_cmd = ["docker", "compose", "exec", "-T", "detector", "python", "-m", "detector_adapter.evaluate_case"]
+    detector_result = run_command(detector_cmd, transcript_bytes, detector_timeout_s)
+
+    if detector_result.failed_to_start:
+        return {"transcript": transcript_dict, "verdict": _error_verdict(case_id, "infra", "docker compose exec failed to start the detector invocation")}
+    if detector_result.timed_out:
+        # Last-resort fallback only (council-skeptic finding, Gap 9 targeted
+        # council): evaluate_case.py (Task 6) now enforces its own internal
+        # wall-clock deadline and terminates its MCP subprocesses via direct
+        # process handles before exiting — this external cleanup only matters
+        # if that internal mechanism somehow didn't fire (e.g. a bug, or
+        # signal delivery delayed inside a C extension that doesn't check for
+        # interrupts). Two patterns, not one: the evaluate_case process
+        # itself (if the internal deadline never fired, it's still the
+        # parent holding everything up — a single external pkill targeting
+        # only "aidr/providers", as an earlier draft of this plan did, would
+        # never touch that parent) and its MCP provider children (in case
+        # the parent died but a child survived it, since killing a parent
+        # does not cascade-kill children on Linux). Both best-effort,
+        # non-fatal — a risk of degradation for the rest of the sequential
+        # batch, not of total blockage, per the design doc.
+        run_command(
+            ["docker", "compose", "exec", "-T", "detector", "pkill", "-f", "detector_adapter.evaluate_case"],
+            b"",
+            10.0,
+        )
+        run_command(
+            ["docker", "compose", "exec", "-T", "detector", "pkill", "-f", "aidr/providers"],
+            b"",
+            10.0,
+        )
+        return {"transcript": transcript_dict, "verdict": _error_verdict(case_id, "infra", f"detector invocation exceeded {detector_timeout_s}s wall-clock timeout")}
+    if detector_result.returncode != 0:
+        return {"transcript": transcript_dict, "verdict": _error_verdict(case_id, "application", detector_result.stderr.decode("utf-8", errors="replace"))}
+
+    try:
+        verdict_dict = json.loads(detector_result.stdout)
+    except json.JSONDecodeError:
+        return {"transcript": transcript_dict, "verdict": _error_verdict(case_id, "application", "detector produced invalid JSON on stdout despite exit code 0")}
+
+    return {"transcript": transcript_dict, "verdict": verdict_dict}
