@@ -660,6 +660,137 @@ completa e `2026-08-14-toy-agent-e-pipeline-misura.md` per il follow-up nella
 sezione "Meccanismo di handoff". Nessuno dei tre provider MCP scrive stato
 persistente su disco tra `TestCase`.
 
+## Gap 10 — Selezione dei tre modelli vendor hardcoded, non configurabile
+
+**Stato**: aperto — nessuna risoluzione applicata al design doc.
+
+**Trovato da**: discussione con l'utente durante il Task 8 (verifica manuale
+end-to-end) di Plan 4, 2026-08-17, innescata da un fallimento reale osservato
+dal vivo, non ipotetico: il run contro lo stack Docker reale ha prodotto due
+errori `application` su due `TestCase`, e indagando è emerso che il model id
+del tier "sifter" (`qwen/qwen3-4b-instruct-2507`, in
+`src/detector_adapter/vendor_proxy.py::TIER_TO_MODEL`) era stato ritirato dal
+catalogo OpenRouter ("not a valid model ID", verificato con una chiamata
+diretta all'API). Corretto ad-hoc nella stessa sessione (sostituito con
+`deepseek/deepseek-v4-flash` per il tier "sifter", `inspector` ed `embed`
+lasciati invariati perché ancora validi) — ma la correzione ha riesposto un
+problema strutturale che l'utente ha voluto tracciare esplicitamente invece di
+lasciare implicito nel commit: la mappa `TIER_TO_MODEL` è un dizionario Python
+hardcoded nel sorgente, non una configurazione.
+
+**Precedente diretto**: non è la prima volta. Il tier "embed" è già stato
+cambiato una volta con lo stesso schema di fallimento — `qwen/qwen3-embedding-0.6b`
+→ `qwen/qwen3-embedding-4b` il 2026-08-15 (Gap 4, "0.6b non ha più provider
+attivi su OpenRouter"), sempre con un edit diretto del sorgente. Due
+occorrenze dello stesso pattern (un provider terzo ritira un model id,
+bisogna toccare `vendor_proxy.py` e fare un commit per accorgersene e
+correggerlo) è un segnale che la causa è strutturale, non un incidente
+isolato.
+
+**Il problema**: `TIER_TO_MODEL` (tre voci: `sifter`, `inspector`, `embed`)
+rimappa la stringa di tier che il codice vendor manda letteralmente
+(`model_client.py`, pinnato, vedi Gap 9) verso un vero model id OpenRouter.
+Questa rimappatura è interamente codice nostro (`vendor_proxy.py`, non
+vendorizzato) — nessun vincolo tecnico impone che sia un dict hardcoded
+invece di, per esempio, tre variabili d'ambiente con default nel codice. Due
+questioni distinte, entrambe aperte:
+1. **Configurabilità**: un catalogo di provider terzo (OpenRouter) che
+   invecchia nel tempo dovrebbe poter essere aggiornato senza editare il
+   sorgente e fare un commit ogni volta — specialmente per un progetto che si
+   dichiara verificabile da terzi (SPIRIT.md, principio 6/7, lo stesso
+   riferimento che regge Gap 9): un revisore esterno che rilancia l'audit in
+   un momento futuro non dovrebbe scoprire lo stesso tipo di rottura silenziosa
+   incontrata qui.
+2. **Selezione oculata** (osservazione dell'utente, non ancora indagata): la
+   sostituzione fatta in questa sessione (`deepseek/deepseek-v4-flash` per
+   "sifter") è stata scelta a caldo, per fit semantico dichiarato ("modello
+   piccolo/veloce, stesso ruolo del 4B ritirato") ma senza un criterio
+   esplicito e ripetibile per *come* scegliere un modello sostitutivo quando
+   il vendor non offre più quello originale — dimensione, costo, benchmark
+   di riferimento, o altro. Rimpiazzare un modello ritirato con una scelta
+   estemporanea rischia di alterare silenziosamente cosa viene davvero
+   misurato (P=1.0, R=0.667 dichiarati dal vendor si riferiscono ai *loro*
+   modelli originali, non a sostituti scelti da noi) — tensione diretta con
+   SPIRIT.md, "Perché esiste questo repo".
+
+**Severità**: da valutare quando si affronta il gap — tocca l'integrità
+della misura (non solo composizione, a differenza di Gap 6) nella misura in
+cui un cambio di modello silenzioso/estemporaneo altera cosa viene
+confrontato contro i numeri dichiarati dal vendor.
+
+**Prossimo passo**: non deciso. Discussione di design dedicata necessaria
+prima di implementare qualunque soluzione — fuori dal perimetro di Plan 4
+(tocca solo `detector_adapter`, mai `toy_agent`/`run_batch.py`) e non ancora
+schedulata in una sequenza di piani.
+
+## Gap 11 — Il vincolo di stdout pulito su `evaluate_case.py` è dichiarato ma non applicato al codice vendor
+
+**Stato**: aperto — nessuna risoluzione applicata al design doc o al codice.
+
+**Trovato da**: stessa sessione di Task 8 di Plan 4 (2026-08-17) di Gap 10, ma è
+un problema distinto — non il model id, la pipeline dietro le quinte del
+detector. Diagnosticato con un'unica invocazione mirata di
+`detector_adapter.evaluate_case` sul singolo `TestCase` che falliva
+(`malicious_001`, non un rerun completo del batch): stdout e stderr catturati
+separatamente. Stderr conteneva solo rumore atteso (warning `pydantic_settings`,
+log MCP/httpx). Stdout conteneva 4 righe di tracciamento del vendor
+(`[inspector] tool_use: list_mcp_servers()`, `get_source_code(...)`,
+`get_technique(...)`, `assess_policy_violations(...)`) seguite dalla riga 5,
+il vero output: un JSON di verdetto perfettamente valido e corretto
+(`is_threat: true`, `technique: "T0007"`, confidence 0.95 — Inspector aveva
+classificato correttamente l'injection come tool poisoning). `run_batch.py`
+(Plan 4) aveva già gestito questo correttamente lato suo: `orchestrator.py`
+tenta `json.loads()` sull'intero stdout combinato, fallisce per via delle 4
+righe di rumore in testa, e degrada a un `Verdict` di errore `application`
+senza crash — esattamente il comportamento per cui quel percorso è stato
+disegnato (Task 5) e nessun bug di Plan 4.
+
+**Perché non è casuale — riproducibile su base deterministica**: `benign_001`
+(stesso run) non ha mai attivato il bug, perché il suo caso non ha spinto
+Inspector a invocare tool durante il ragionamento — nessuna riga di
+tracciamento stampata. `malicious_001` sì, perché l'injection ha fatto
+scattare l'uso di tool da parte di Inspector (`get_source_code`,
+`assess_policy_violations`). Qualunque `TestCase` che porta Inspector a
+chiamare almeno un tool durante l'analisi incontrerà lo stesso fallimento —
+non un caso limite raro, ma il percorso comune per i casi davvero interessanti
+(quelli in cui Inspector fa il lavoro per cui esiste).
+
+**Il problema**: `src/detector_adapter/evaluate_case.py:56-58` dichiara
+esplicitamente nel commento il vincolo — "Global Constraints: stdout carries
+only the final Verdict JSON — every diagnostic, here and in any future
+vendor's evaluate_case, goes to stderr" — un requisito che viene
+letteralmente dal council mirato di Gap 9 ("vincolo di stdout pulito sul
+contratto CLI", vedi sopra, sezione Gap 9, aggiornamento "Council mirato su
+Gap 9 — sezioni post-council"). Ma il codice applica quel vincolo solo ai
+propri due path di eccezione (righe 53 e 59, entrambi già su `stderr`
+correttamente) — non fa nulla per isolare o redirigere lo stdout **durante**
+la chiamata `adapter.evaluate(data)` (riga 49), che è dove gira il codice
+vendor pinnato (`Pipeline()`/`Inspector`, tramite `AgenticThreatDetectionAdapter`).
+Verificato anche `src/detector_adapter/adapter.py`: nessuna redirezione di
+stdout presente. Un `print()` grezzo lato vendor bypassa completamente il
+contratto dichiarato.
+
+**Severità**: più alta di Gap 10 — non è "potrebbe rompersi in futuro se un
+provider ritira un modello", è **rotto ora**, su un percorso comune (qualunque
+caso che fa lavorare Inspector con i tool, non un caso limite). Tocca
+direttamente l'integrità della misura: senza questo fix, la pipeline di
+detection *funziona* (il verdetto è corretto) ma il contratto stdout→JSON che
+`orchestrator.py` (Plan 4) si aspetta lo scarta come errore applicativo —
+quindi ogni `TestCase` che fa davvero lavorare Inspector con i tool rischia di
+finire silenziosamente nel bucket "errore" delle metriche invece che essere
+misurato, sottostimando sistematicamente la recall reale del detector proprio
+sui casi più significativi.
+
+**Prossimo passo**: non deciso. Fix concettualmente contenuto — isolare
+(es. `contextlib.redirect_stdout`) o instradare su `stderr` lo stdout durante
+la finestra della chiamata `adapter.evaluate(data)` dentro
+`evaluate_case.py::main()` — ma tocca solo `detector_adapter`, mai
+`toy_agent`/`run_batch.py`: fuori dal perimetro di Plan 4, da programmare
+come piccola correzione dedicata (con relativo test che effettivamente
+eserciti un path che stampa su stdout, non solo un mock che non lo fa mai,
+visto che è esattamente il tipo di scenario che i test esistenti non hanno
+intercettato).
+
 ## Come si chiude un gap
 
 Quando una risoluzione viene applicata al design doc, aggiornare lo stato qui a
