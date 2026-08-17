@@ -61,6 +61,27 @@ def test_collect_case_evidence_is_attributed_to_the_given_case_id(tmp_path):
     assert not (tmp_path / "case_001").exists()
 
 
+def test_collect_case_evidence_skips_diff_and_stats_when_container_id_is_empty(tmp_path):
+    runner = FakeRunner({
+        ("docker", "compose", "logs", "--no-color", "agent"): b"",
+        ("docker", "compose", "logs", "--no-color", "detector"): b"",
+        ("docker", "compose", "logs", "--no-color", "egress-proxy"): b"",
+        _ps_key("agent"): b"",  # container unreachable — no lines on stdout
+        _ps_key("detector"): b"def456\n",
+        ("docker", "diff", "def456"): b"C /var/log/vendor_proxy.jsonl\n",
+        ("docker", "stats", "--no-stream", "def456"): b"detector stats\n",
+    })
+
+    written = collect_case_evidence("case_004", ("agent", "detector"), tmp_path, run_command=runner)
+
+    assert "agent.diff" not in written
+    assert "agent.stats" not in written
+    assert not (tmp_path / "case_004" / "agent.diff.txt").exists()
+    assert not (tmp_path / "case_004" / "agent.stats.txt").exists()
+    assert "detector.diff" in written
+    assert "detector.stats" in written
+
+
 def test_collect_thin_proxy_log_scrubs_the_api_key(tmp_path):
     runner = FakeRunner({
         ("docker", "compose", "exec", "-T", "detector", "cat", "/var/log/vendor_proxy.jsonl"):

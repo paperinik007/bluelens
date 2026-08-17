@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional
 
 CommandRunner = Callable[[list[str]], bytes]
 
@@ -12,9 +12,10 @@ def default_command_runner(cmd: list[str]) -> bytes:
     return proc.stdout + proc.stderr
 
 
-def _container_id(service: str, run_command: CommandRunner) -> str:
+def _container_id(service: str, run_command: CommandRunner) -> Optional[str]:
     output = run_command(["docker", "compose", "ps", "-q", service])
-    return output.decode("utf-8").strip().splitlines()[0]
+    lines = output.decode("utf-8", errors="replace").strip().splitlines()
+    return lines[0] if lines else None
 
 
 def collect_case_evidence(
@@ -39,6 +40,11 @@ def collect_case_evidence(
 
     for service in services:
         container_id = _container_id(service, run_command)
+        if container_id is None:
+            # Service unreachable (e.g. Docker daemon instability) — degrade
+            # this one case's evidence for this one channel, never crash the
+            # batch (design doc, mapping Requisito -> Verifica).
+            continue
 
         diff_path = case_dir / f"{service}.diff.txt"
         diff_path.write_bytes(run_command(["docker", "diff", container_id]))
