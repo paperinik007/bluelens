@@ -753,7 +753,28 @@ schedulata in una sequenza di piani.
 
 ## Gap 11 — Il vincolo di stdout pulito su `evaluate_case.py` è dichiarato ma non applicato al codice vendor
 
-**Stato**: aperto — nessuna risoluzione applicata al design doc o al codice.
+**Stato**: risolto nel codice — `src/detector_adapter/evaluate_case.py::main()` avvolge
+la costruzione dell'adapter e la chiamata `run_evaluate_case()` in
+`contextlib.redirect_stdout(sys.stderr)`, così qualunque `print()` grezzo del codice
+vendor durante quella finestra finisce su stderr invece che sull'unico stdout reale del
+processo — il `print(json.dumps(result))` finale resta fuori dal blocco redirect, quindi
+è l'unica cosa che tocca lo stdout vero. Fix TDD-first (`tests/detector_adapter/test_evaluate_case.py::test_main_isolates_vendor_stdout_noise_from_the_verdict_json`,
+un `NoisyFakeAdapter` che riproduce il comportamento vendor osservato: un `print()`
+durante `.evaluate()`) — RED confermato prima del fix (stesso `JSONDecodeError` visto in
+produzione), poi GREEN. **Riverificato dal vivo**, stessa `malicious_001` transcript
+salvata durante Task 8, stessa invocazione mirata `docker compose exec detector python -m
+detector_adapter.evaluate_case`: stdout ora una singola riga di JSON valido (stesso
+verdetto corretto, `technique_detected: "T0007"`, confidence 0.95), le 4 righe di
+tracciamento vendor confermate presenti su stderr (non silenziosamente perse — restano
+ispezionabili come prova diagnostica). Suite completa: 169 passed, 2 skipped (168 + 1
+nuovo test).
+
+**Nota di scope**: il redirect copre la finestra costruzione-adapter + `evaluate()`, non
+il path di cleanup post-`TimeoutError` (`adapter.terminate_subprocesses()`, fuori dal
+blocco `with`) — nessuna evidenza che quel path stampi su stdout, non esteso lì senza
+prova concreta (stesso principio di "fix alla causa radice, niente correzioni
+preventive non evidenziate" di `systematic-debugging`). Se emergesse un caso analogo su
+quel path, è un follow-up separato, non riaperto qui.
 
 **Trovato da**: stessa sessione di Task 8 di Plan 4 (2026-08-17) di Gap 10, ma è
 un problema distinto — non il model id, la pipeline dietro le quinte del
