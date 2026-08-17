@@ -7,6 +7,7 @@ import httpx
 import pytest
 
 from detector_adapter.vendor_proxy import (
+    TIER_TO_MODEL,
     build_forwarder,
     remap_tier,
     serve_forever,
@@ -16,7 +17,7 @@ from detector_adapter.vendor_proxy import (
 def test_remap_tier_rewrites_model_field():
     body = {"model": "sifter", "messages": []}
     remapped = remap_tier(body)
-    assert remapped["model"] == "qwen/qwen3-4b-instruct-2507"
+    assert remapped["model"] == TIER_TO_MODEL["sifter"]
     assert body["model"] == "sifter"  # original untouched
 
 
@@ -39,7 +40,7 @@ def test_build_forwarder_posts_remapped_body_to_openrouter_chat_endpoint():
 
     assert captured["url"] == "https://openrouter.ai/api/v1/chat/completions"
     assert captured["auth"] == "Bearer sk-test"
-    assert captured["body"]["model"] == "qwen/qwen3-4b-instruct-2507"
+    assert captured["body"]["model"] == TIER_TO_MODEL["sifter"]
     assert result == {"choices": []}
 
 
@@ -100,7 +101,7 @@ def test_build_forwarder_logs_request_and_response(tmp_path):
     assert len(lines) == 1
     entry = _json.loads(lines[0])
     assert entry["port"] == 8100
-    assert entry["request"]["model"] == "qwen/qwen3-4b-instruct-2507"
+    assert entry["request"]["model"] == TIER_TO_MODEL["sifter"]
     assert entry["response"] == {"choices": []}
     assert "error" not in entry
 

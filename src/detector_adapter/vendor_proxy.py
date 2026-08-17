@@ -13,7 +13,11 @@ import httpx
 # sends `model` as the literal tier name ("sifter"/"inspector"/"embed"), not a real
 # OpenRouter model id (design doc, "Setup pratico del detector sotto test").
 TIER_TO_MODEL: dict[str, str] = {
-    "sifter": "qwen/qwen3-4b-instruct-2507",
+    # qwen/qwen3-4b-instruct-2507 was retired from OpenRouter's catalog
+    # (confirmed via a live probe: "not a valid model ID") — replaced with
+    # another small/fast model to preserve the sifter tier's cost/latency
+    # role rather than promoting to the larger "inspector" model.
+    "sifter": "deepseek/deepseek-v4-flash",
     "inspector": "qwen/qwen3-30b-a3b-instruct-2507",
     "embed": "qwen/qwen3-embedding-4b",
 }
