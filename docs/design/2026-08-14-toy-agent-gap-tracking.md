@@ -819,6 +819,51 @@ eserciti un path che stampa su stdout, non solo un mock che non lo fa mai,
 visto che è esattamente il tipo di scenario che i test esistenti non hanno
 intercettato).
 
+## Gap 12 — `case_id` raggiunge il detector come `session_id`, canale di fuga non verificabile da questo repo
+
+**Stato**: aperto — rischio da verificare, non un difetto confermato.
+
+**Trovato da**: revisione finale whole-branch di Plan 4 (opus, 2026-08-17), durante
+la verifica end-to-end della catena di composizione tra i moduli.
+
+**Il problema**: `_agent_input()` (`run_batch.py`) manda `case_id` come
+`session_id` a `run_case.run_case` (`run_case.py:54`); il `session_id` finisce
+serializzato nel transcript; `detector_adapter/adapter.py:104-108` legge
+`transcript["session_id"]` e lo passa a `AgentEvent(session_id=...)`, che
+entra in `Pipeline().analyze()` del vendor. Se il codice vendor include
+`session_id` in un prompt inviato a Sifter/Inspector (non verificabile da
+questo repo — `aidr` è clonato al build dell'immagine, non vendorizzato nel
+nostro codice, quindi il suo comportamento interno non è ispezionabile
+staticamente qui), un `case_id` che porta con sé un segnale sulla label
+(esempio concreto già in uso nel run manuale di Task 8: `benign_001` /
+`malicious_001` — il nome stesso rivela la ground truth) consegnerebbe al
+detector sotto misura l'informazione che la decisione 2 esiste apposta per
+tenergli nascosta. Una fuga potenzialmente più grave di quella che decisione
+2 già previene, passata da un canale diverso (naming convention del
+`case_id`, non il contenuto del transcript).
+
+**Perché riguarda anche Plan 5**: `CASE_ID_PATTERN`
+(`^[a-zA-Z0-9_-]+$`, decisione 12, `dataset.py`) è dichiarato esplicitamente
+come la costante che Plan 5 (costruzione dataset) eredita — ma quella regex
+vincola solo i caratteri ammessi, non se il valore possa essere
+semanticamente label-bearing (`benign_001` la passerebbe senza problemi).
+
+**Severità**: da stabilire — dipende interamente da un fatto verificabile ma
+non ancora verificato (se il codice vendor pinnato usa `session_id` in un
+prompt). Non è un difetto di Plan 4 in sé (nessuna decisione presa da questo
+piano dipende da `case_id` restando opaco alla label), ma un vincolo che
+manca sia sul lato dati (Plan 5) sia, potenzialmente, sul lato codice
+(`_agent_input()` potrebbe disaccoppiare `session_id` da `case_id`, es. un
+UUID generato per invocazione, indipendentemente dall'esito della verifica).
+
+**Prossimo passo**: verificare contro il commit pinnato di `aidr`
+(`7fad14d2478707e68a09b8ecd9942dec8fde1614`, lo stesso citato altrove in
+questo documento) se `session_id` compare in un prompt. Se sì: o Plan 5
+vincola i `case_id` a essere label-opachi (es. `case_017`, mai
+`benign_017`/`malicious_017`), o si disaccoppia `session_id` da `case_id` in
+`_agent_input()`. Se no: chiudere il gap come limite non applicabile, con
+riferimento al commit verificato.
+
 ## Come si chiude un gap
 
 Quando una risoluzione viene applicata al design doc, aggiornare lo stato qui a
