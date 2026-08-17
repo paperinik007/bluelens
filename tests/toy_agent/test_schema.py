@@ -93,3 +93,8 @@ def test_validate_unique_case_ids_accepts_distinct_ids():
         TestCase(case_id="c2", transcript=_transcript(), label="benign", technique_target=None, rationale="r2"),
     ]
     validate_unique_case_ids(cases)  # must not raise
+
+
+def test_testcase_transcript_defaults_to_none():
+    case = TestCase(case_id="c1", label="benign", technique_target=None, rationale="r")
+    assert case.transcript is None

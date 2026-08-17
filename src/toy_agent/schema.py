@@ -46,10 +46,10 @@ class Transcript:
 @dataclass
 class TestCase:
     case_id: str
-    transcript: Transcript
     label: Label
     technique_target: Optional[str]
     rationale: str
+    transcript: Optional[Transcript] = None
 
     def __post_init__(self) -> None:
         if self.label not in ("malicious", "benign"):
