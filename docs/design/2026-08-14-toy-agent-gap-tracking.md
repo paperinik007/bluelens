@@ -270,6 +270,34 @@ chiude davvero il gap), ma la stima originale di quanto sarebbe stato "pura comp
 era ottimistica — nota qui per lo stesso motivo per cui altri gap in questo documento
 tracciano la propria evoluzione, non solo lo stato finale.
 
+**Aggiornamento (2026-08-17, Task 8 di Plan 4 — verifica manuale end-to-end)**:
+il gap è chiuso davvero, non solo sulla carta — verificato con uno stack
+Docker reale, non solo con i test unitari a mock. Dataset scratch di 2 casi
+(un `benign_001` innocuo, un `malicious_001` con un vero tentativo di prompt
+injection nel seed turn), run completo `python -m toy_agent.run_batch`.
+Entrambi i percorsi dell'orchestratore sono stati esercitati dal vivo, non
+solo simulati: il percorso di successo (`benign_001` → verdetto `ok` reale,
+token conteggiati) dopo aver corretto un problema di infrastruttura
+incontrato lungo il percorso (vedi sotto), e il percorso di errore
+(`malicious_001` → verdetto `error` per un bug reale e non correlato in
+`detector_adapter`, vedi Gap 11) gestito correttamente da `run_batch.py`
+senza crash, con persistenza dei dati grezzi, raccolta prove per ogni caso,
+nessuna fuga della API key nel log del thin proxy, e la directory del
+dataset rimasta byte-identica al termine. Il report finale non conteneva
+`None%` né traceback.
+
+Due problemi scoperti durante la verifica, entrambi fuori dal perimetro di
+Plan 4 (vivono in `detector_adapter`, mai importato da `orchestrator.py`) e
+tracciati separatamente: Gap 10 (selezione dei tre modelli vendor hardcoded,
+non configurabile — un model id era di fatto ritirato dal catalogo
+OpenRouter, corretto ad-hoc in questa sessione) e Gap 11 (vincolo di stdout
+pulito su `evaluate_case.py` dichiarato ma non applicato al codice vendor —
+ancora aperto, causa reale del fallimento su `malicious_001`). Nessuno dei
+due invalida la chiusura di questo gap: la responsabilità di Plan 4 era
+costruire l'orchestratore che compone i componenti già esistenti, non
+garantire la correttezza interna di quei componenti — e l'orchestratore ha
+gestito correttamente un fallimento reale, non ipotetico, di uno di essi.
+
 ## Gap 7 — Ground truth ambigua per un `TestCase` benigno che tocca un tool avvelenato
 
 **Stato**: `open` — da chiudere durante Plan 5 (costruzione del dataset), non durante
