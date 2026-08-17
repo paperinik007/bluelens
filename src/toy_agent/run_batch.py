@@ -29,6 +29,8 @@ class BatchResult:
     executed_count: int
     breaker_tripped: bool
     last_infra_rationale: Optional[str] = None
+    transcript_conversion_failure_count: int = 0
+    verdict_conversion_failure_count: int = 0
 
 
 def _agent_input(case: TestCase) -> dict:
@@ -75,12 +77,20 @@ def execute_batch(
     raw_dir = run_output_dir / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
     verdicts_path = run_output_dir / "verdicts.jsonl"
+    # Truncate at the start of each run (not append-forever) — a rerun of the
+    # same run_output_dir (natural after a circuit-breaker trip or an infra
+    # fix) must not desync verdicts.jsonl from report.md/raw/*.json, which
+    # are already overwritten rather than accumulated on rerun (Finding 2,
+    # final review).
+    verdicts_path.write_text("", encoding="utf-8")
 
     cases: list[TestCase] = []
     verdicts: list[Verdict] = []
     consecutive_infra = 0
     last_infra_rationale: Optional[str] = None
     breaker_tripped = False
+    transcript_conversion_failure_count = 0
+    verdict_conversion_failure_count = 0
 
     for ground_truth in dataset:
         case_id = ground_truth.case_id
@@ -110,6 +120,7 @@ def execute_batch(
             verdict_obj = verdict_from_dict(raw_verdict_dict)
         except Exception as exc:
             conversion_failed = True
+            verdict_conversion_failure_count += 1
             verdict_obj = _fallback_verdict(case_id, exc)
 
         transcript_obj = None
@@ -118,6 +129,7 @@ def execute_batch(
                 transcript_obj = transcript_from_dict(raw_transcript_dict)
             except Exception:
                 transcript_obj = None
+                transcript_conversion_failure_count += 1
 
         cases.append(TestCase(
             case_id=case_id,
@@ -146,6 +158,8 @@ def execute_batch(
         executed_count=len(cases),
         breaker_tripped=breaker_tripped,
         last_infra_rationale=last_infra_rationale,
+        transcript_conversion_failure_count=transcript_conversion_failure_count,
+        verdict_conversion_failure_count=verdict_conversion_failure_count,
     )
 
 
@@ -155,6 +169,10 @@ def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s
         f"detector_timeout_s={detector_timeout_s}",
         f"circuit_breaker_threshold={breaker_threshold}",
     ]
+    if result.transcript_conversion_failure_count > 0:
+        notes.append(f"transcript_conversion_failures={result.transcript_conversion_failure_count}")
+    if result.verdict_conversion_failure_count > 0:
+        notes.append(f"verdict_conversion_failures={result.verdict_conversion_failure_count}")
     if result.breaker_tripped:
         notes.insert(
             0,

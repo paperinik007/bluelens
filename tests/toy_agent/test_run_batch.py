@@ -194,6 +194,83 @@ def test_conversion_failure_falls_back_to_an_error_verdict_and_does_not_trip_the
     assert json.loads(lines[1])["confidence"] == 1.5
 
 
+def _malformed_transcript_result(case_id, label="benign"):
+    return {
+        # missing required "session_id" key -> transcript_from_dict raises KeyError
+        "transcript": {"turns": [], "stop_reason": "completed"},
+        "verdict": {
+            "case_id": case_id, "tool_name": "agentic_threat_detection", "status": "ok",
+            "label": label, "confidence": 0.9, "technique_detected": None,
+            "rationale": "r", "cost_usd": None, "latency_s": 1.0,
+            "in_tokens": 10, "out_tokens": 5,
+        },
+    }
+
+
+def test_transcript_conversion_failure_is_counted_and_leaves_transcript_none(tmp_path):
+    dataset = [_ground_truth("c1")]
+    runner = ScriptedRunTestCase([_malformed_transcript_result("c1")])
+
+    result = execute_batch(dataset, tmp_path, run_test_case_fn=runner,
+                            collect_case_evidence_fn=RecordingEvidenceCollector(),
+                            collect_thin_proxy_log_fn=RecordingProxyLogCollector())
+
+    assert result.transcript_conversion_failure_count == 1
+    assert result.verdict_conversion_failure_count == 0
+    assert result.cases[0].transcript is None
+    # the verdict itself converted fine (status=ok), unaffected by the
+    # transcript-side failure
+    assert result.verdicts[0].status == "ok"
+
+
+def test_verdict_conversion_failure_is_counted(tmp_path):
+    dataset = [_ground_truth("c1")]
+    bad_confidence_result = _ok_result("c1")
+    bad_confidence_result["verdict"]["confidence"] = 1.5
+    runner = ScriptedRunTestCase([bad_confidence_result])
+
+    result = execute_batch(dataset, tmp_path, run_test_case_fn=runner,
+                            collect_case_evidence_fn=RecordingEvidenceCollector(),
+                            collect_thin_proxy_log_fn=RecordingProxyLogCollector())
+
+    assert result.verdict_conversion_failure_count == 1
+    assert result.transcript_conversion_failure_count == 0
+
+
+def test_setup_notes_includes_conversion_failure_counts_only_when_nonzero(tmp_path):
+    from toy_agent.run_batch import BatchResult, _setup_notes
+
+    zero_result = BatchResult(
+        cases=[], verdicts=[], total_count=0, executed_count=0, breaker_tripped=False,
+    )
+    notes = _setup_notes(zero_result, 120.0, 180.0, 3)
+    assert "transcript_conversion_failures" not in notes
+    assert "verdict_conversion_failures" not in notes
+
+    nonzero_result = BatchResult(
+        cases=[], verdicts=[], total_count=0, executed_count=0, breaker_tripped=False,
+        transcript_conversion_failure_count=2, verdict_conversion_failure_count=1,
+    )
+    notes = _setup_notes(nonzero_result, 120.0, 180.0, 3)
+    assert "transcript_conversion_failures=2" in notes
+    assert "verdict_conversion_failures=1" in notes
+
+
+def test_verdicts_jsonl_is_truncated_at_the_start_of_a_run_not_appended_across_reruns(tmp_path):
+    (tmp_path / "verdicts.jsonl").write_text(json.dumps({"case_id": "stale", "stale": True}) + "\n", encoding="utf-8")
+
+    dataset = [_ground_truth("c1")]
+    runner = ScriptedRunTestCase([_ok_result("c1")])
+
+    execute_batch(dataset, tmp_path, run_test_case_fn=runner,
+                  collect_case_evidence_fn=RecordingEvidenceCollector(),
+                  collect_thin_proxy_log_fn=RecordingProxyLogCollector())
+
+    lines = (tmp_path / "verdicts.jsonl").read_text(encoding="utf-8").strip().splitlines()
+    assert len(lines) == 1
+    assert json.loads(lines[0])["case_id"] == "c1"
+
+
 def test_evidence_is_collected_for_every_case_regardless_of_outcome(tmp_path):
     dataset = [_ground_truth("c1"), _ground_truth("c2")]
     runner = ScriptedRunTestCase([_infra_result("c1"), _ok_result("c2")])

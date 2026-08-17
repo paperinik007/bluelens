@@ -128,3 +128,21 @@ def test_render_report_handles_a_transcript_none_case_without_crashing():
     report = render_report([error_case], [error_verdict], metrics)
 
     assert "No misclassifications detected." in report
+
+
+def test_render_report_handles_a_misclassified_case_with_no_transcript_without_crashing():
+    # Finding 1 (final review): a successful (status="ok") verdict whose
+    # transcript conversion failed upstream still reaches this function with
+    # case.transcript is None. _find_misclassified_cases only filters on
+    # verdict.status == "error", so this case must not crash even though it
+    # is misclassified and status is "ok".
+    from toy_agent.schema import TestCase, Verdict
+
+    case = TestCase(case_id="c1", label="malicious", technique_target="T0001", rationale="r", transcript=None)
+    verdict = Verdict(case_id="c1", tool_name="agentic_threat_detection", status="ok", label="benign")
+
+    metrics = compute_metrics([case], [verdict])
+    report = render_report([case], [verdict], metrics)
+
+    assert "c1" in report
+    assert "(no transcript recorded)" in report

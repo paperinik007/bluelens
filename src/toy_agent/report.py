@@ -150,7 +150,10 @@ def render_report(
             lines.append(f"- **Detector verdict:** {verdict.label}" + (f" ({verdict.technique_detected})" if verdict.technique_detected else ""))
             lines.append(f"- **Rationale (written before detection):** {case.rationale}")
             lines.append("- **Transcript excerpt:**")
-            lines.append(_format_transcript_excerpt(case.transcript))
+            if case.transcript is None:
+                lines.append("  - *(no transcript recorded)*")
+            else:
+                lines.append(_format_transcript_excerpt(case.transcript))
             lines.append("")
     else:
         lines.append("No misclassifications detected.")

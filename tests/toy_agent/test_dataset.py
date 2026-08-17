@@ -64,3 +64,66 @@ def test_load_dataset_does_not_write_to_the_dataset_dir(tmp_path):
 
     after = (tmp_path / "case_001.yaml").read_text(encoding="utf-8")
     assert before == after
+
+
+def test_load_dataset_rejects_an_empty_yaml_file(tmp_path):
+    (tmp_path / "empty.yaml").write_text("", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="empty.yaml"):
+        load_dataset(tmp_path)
+
+
+def test_load_dataset_rejects_a_yaml_document_that_is_a_list(tmp_path):
+    (tmp_path / "list.yaml").write_text(yaml.safe_dump([_entry("case_001")]), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="list.yaml"):
+        load_dataset(tmp_path)
+
+
+@pytest.mark.parametrize("missing_field", ["label", "rationale", "transcript"])
+def test_load_dataset_rejects_an_entry_missing_a_required_field(tmp_path, missing_field):
+    entry = _entry("case_001")
+    del entry[missing_field]
+    _write(tmp_path, "case_001.yaml", entry)
+
+    with pytest.raises(ValueError, match=f"case_001.yaml.*{missing_field}"):
+        load_dataset(tmp_path)
+
+
+def test_load_dataset_rejects_a_transcript_with_zero_turns(tmp_path):
+    entry = _entry("case_001")
+    entry["transcript"]["turns"] = []
+    _write(tmp_path, "case_001.yaml", entry)
+
+    with pytest.raises(ValueError, match="case_001.yaml"):
+        load_dataset(tmp_path)
+
+
+def test_load_dataset_rejects_a_transcript_with_two_turns(tmp_path):
+    entry = _entry("case_001")
+    entry["transcript"]["turns"] = [
+        {"seq": 0, "role": "user", "content": "hi", "tool_call": None},
+        {"seq": 1, "role": "user", "content": "again", "tool_call": None},
+    ]
+    _write(tmp_path, "case_001.yaml", entry)
+
+    with pytest.raises(ValueError, match="case_001.yaml"):
+        load_dataset(tmp_path)
+
+
+def test_load_dataset_rejects_a_seed_turn_with_a_non_user_role(tmp_path):
+    entry = _entry("case_001")
+    entry["transcript"]["turns"] = [{"seq": 0, "role": "assistant", "content": "hi", "tool_call": None}]
+    _write(tmp_path, "case_001.yaml", entry)
+
+    with pytest.raises(ValueError, match="case_001.yaml"):
+        load_dataset(tmp_path)
+
+
+def test_load_dataset_rejects_a_seed_turn_with_empty_content(tmp_path):
+    entry = _entry("case_001")
+    entry["transcript"]["turns"] = [{"seq": 0, "role": "user", "content": "", "tool_call": None}]
+    _write(tmp_path, "case_001.yaml", entry)
+
+    with pytest.raises(ValueError, match="case_001.yaml"):
+        load_dataset(tmp_path)
