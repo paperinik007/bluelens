@@ -116,3 +116,15 @@ def test_report_includes_setup_notes():
     notes = "OpenRouter proxy used instead of vLLM self-hosted."
     report = render_report(cases, verdicts, metrics, setup_notes=notes)
     assert notes in report
+
+
+def test_render_report_handles_a_transcript_none_case_without_crashing():
+    from toy_agent.schema import TestCase, Verdict
+
+    error_case = TestCase(case_id="c1", label="malicious", technique_target="T0001", rationale="r", transcript=None)
+    error_verdict = Verdict(case_id="c1", tool_name="agentic_threat_detection", status="error")
+
+    metrics = compute_metrics([error_case], [error_verdict])
+    report = render_report([error_case], [error_verdict], metrics)
+
+    assert "No misclassifications detected." in report
