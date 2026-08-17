@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import json
+import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
 
 from . import evidence
+from .dataset import load_dataset
+from .metrics import compute_metrics
 from .orchestrator import run_test_case
+from .report import render_report
 from .schema import TestCase, Verdict
 from .serialization import transcript_from_dict, verdict_from_dict
 
@@ -142,3 +147,42 @@ def execute_batch(
         breaker_tripped=breaker_tripped,
         last_infra_rationale=last_infra_rationale,
     )
+
+
+def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s: float, breaker_threshold: int) -> str:
+    notes = [
+        f"agent_timeout_s={agent_timeout_s}",
+        f"detector_timeout_s={detector_timeout_s}",
+        f"circuit_breaker_threshold={breaker_threshold}",
+    ]
+    if result.breaker_tripped:
+        notes.insert(
+            0,
+            f"circuit breaker tripped after {result.executed_count}/{result.total_count} cases executed; "
+            f"last infra failure: {result.last_infra_rationale}",
+        )
+    return " | ".join(notes)
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = sys.argv[1:] if argv is None else argv
+    if len(args) != 2:
+        print("usage: python -m toy_agent.run_batch <dataset_dir> <run_output_dir>", file=sys.stderr)
+        raise SystemExit(2)
+
+    dataset_dir = Path(args[0])
+    run_output_dir = Path(args[1])
+
+    dataset = load_dataset(dataset_dir)
+    api_key = os.environ.get("DETECTOR_OPENROUTER_API_KEY", "")
+    result = execute_batch(dataset, run_output_dir, api_key=api_key)
+
+    metrics = compute_metrics(result.cases, result.verdicts)
+    setup_notes = _setup_notes(result, AGENT_TIMEOUT_S, DETECTOR_TIMEOUT_S, BREAKER_THRESHOLD)
+    report = render_report(result.cases, result.verdicts, metrics, setup_notes=setup_notes)
+    run_output_dir.mkdir(parents=True, exist_ok=True)
+    (run_output_dir / "report.md").write_text(report, encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()

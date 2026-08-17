@@ -206,3 +206,122 @@ def test_evidence_is_collected_for_every_case_regardless_of_outcome(tmp_path):
 
     assert evidence_collector.calls == ["c1", "c2"]
     assert proxy_collector.calls == ["c1", "c2"]
+
+
+import os
+from pathlib import Path
+
+import yaml
+
+from toy_agent import run_batch
+from toy_agent.run_batch import BatchResult
+from toy_agent.schema import Verdict
+
+
+def _dataset_yaml_entry(case_id: str) -> dict:
+    return {
+        "case_id": case_id, "label": "benign", "technique_target": None, "rationale": "r",
+        "transcript": {"session_id": case_id, "turns": [{"seq": 0, "role": "user", "content": "hi", "tool_call": None}], "stop_reason": None},
+    }
+
+
+def _write_dataset(dataset_dir: Path, case_ids: list[str]) -> None:
+    dataset_dir.mkdir(parents=True, exist_ok=True)
+    for case_id in case_ids:
+        (dataset_dir / f"{case_id}.yaml").write_text(yaml.safe_dump(_dataset_yaml_entry(case_id)), encoding="utf-8")
+
+
+def test_main_requires_exactly_two_arguments():
+    try:
+        run_batch.main([])
+        assert False, "expected SystemExit"
+    except SystemExit as exc:
+        assert exc.code == 2
+
+
+def test_main_never_modifies_the_dataset_dir(tmp_path, monkeypatch):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+    before = (dataset_dir / "c1.yaml").read_text(encoding="utf-8")
+
+    def fake_execute_batch(dataset, output_dir, *, api_key=""):
+        case = dataset[0]
+        return BatchResult(
+            cases=[case],
+            verdicts=[Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")],
+            total_count=1, executed_count=1, breaker_tripped=False,
+        )
+
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    run_batch.main([str(dataset_dir), str(run_output_dir)])
+
+    after = (dataset_dir / "c1.yaml").read_text(encoding="utf-8")
+    assert before == after
+
+
+def test_main_writes_a_report_declaring_operational_parameters(tmp_path, monkeypatch):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+
+    def fake_execute_batch(dataset, output_dir, *, api_key=""):
+        case = dataset[0]
+        return BatchResult(
+            cases=[case],
+            verdicts=[Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")],
+            total_count=1, executed_count=1, breaker_tripped=False,
+        )
+
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    run_batch.main([str(dataset_dir), str(run_output_dir)])
+
+    report = (run_output_dir / "report.md").read_text(encoding="utf-8")
+    assert f"agent_timeout_s={run_batch.AGENT_TIMEOUT_S}" in report
+    assert f"detector_timeout_s={run_batch.DETECTOR_TIMEOUT_S}" in report
+    assert f"circuit_breaker_threshold={run_batch.BREAKER_THRESHOLD}" in report
+
+
+def test_main_declares_a_circuit_breaker_trip_in_the_report(tmp_path, monkeypatch):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1", "c2"])
+
+    def fake_execute_batch(dataset, output_dir, *, api_key=""):
+        case = dataset[0]
+        return BatchResult(
+            cases=[case],
+            verdicts=[Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="error")],
+            total_count=2, executed_count=1, breaker_tripped=True,
+            last_infra_rationale="docker compose exec failed to start the agent invocation",
+        )
+
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    run_batch.main([str(dataset_dir), str(run_output_dir)])
+
+    report = (run_output_dir / "report.md").read_text(encoding="utf-8")
+    assert "1/2" in report
+    assert "docker compose exec failed to start the agent invocation" in report
+
+
+def test_main_reads_the_detector_api_key_from_the_environment(tmp_path, monkeypatch):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+    monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
+
+    captured = {}
+
+    def fake_execute_batch(dataset, output_dir, *, api_key=""):
+        captured["api_key"] = api_key
+        case = dataset[0]
+        return BatchResult(
+            cases=[case],
+            verdicts=[Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")],
+            total_count=1, executed_count=1, breaker_tripped=False,
+        )
+
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    run_batch.main([str(dataset_dir), str(run_output_dir)])
+
+    assert captured["api_key"] == "sk-test-key"
