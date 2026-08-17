@@ -769,12 +769,16 @@ tracciamento vendor confermate presenti su stderr (non silenziosamente perse —
 ispezionabili come prova diagnostica). Suite completa: 169 passed, 2 skipped (168 + 1
 nuovo test).
 
-**Nota di scope**: il redirect copre la finestra costruzione-adapter + `evaluate()`, non
-il path di cleanup post-`TimeoutError` (`adapter.terminate_subprocesses()`, fuori dal
-blocco `with`) — nessuna evidenza che quel path stampi su stdout, non esteso lì senza
-prova concreta (stesso principio di "fix alla causa radice, niente correzioni
-preventive non evidenziate" di `systematic-debugging`). Se emergesse un caso analogo su
-quel path, è un follow-up separato, non riaperto qui.
+**Nota di scope** (rafforzata dalla review, 2026-08-17): il redirect copre la finestra
+costruzione-adapter + `evaluate()`, non il path di cleanup post-`TimeoutError`
+(`adapter.terminate_subprocesses()`, fuori dal blocco `with`). Non solo manca
+evidenza che quel path stampi su stdout — è strutturalmente innocuo anche se lo
+facesse: `orchestrator.py` (righe 138-163) legge `json.loads()` sullo stdout del
+detector solo quando `returncode == 0`; sul path `TimeoutError` il `returncode` è
+sempre diverso da zero (`SystemExit(1)`), quindi l'orchestratore non tenta mai di
+parsare quello stdout — un'eventuale stampa lì non potrebbe riprodurre il fallimento
+di Gap 11 (`status: "ok"` con stdout corrotto). Se emergesse un caso analogo su quel
+path per un motivo diverso, è un follow-up separato, non riaperto qui.
 
 **Trovato da**: stessa sessione di Task 8 di Plan 4 (2026-08-17) di Gap 10, ma è
 un problema distinto — non il model id, la pipeline dietro le quinte del
@@ -830,15 +834,7 @@ finire silenziosamente nel bucket "errore" delle metriche invece che essere
 misurato, sottostimando sistematicamente la recall reale del detector proprio
 sui casi più significativi.
 
-**Prossimo passo**: non deciso. Fix concettualmente contenuto — isolare
-(es. `contextlib.redirect_stdout`) o instradare su `stderr` lo stdout durante
-la finestra della chiamata `adapter.evaluate(data)` dentro
-`evaluate_case.py::main()` — ma tocca solo `detector_adapter`, mai
-`toy_agent`/`run_batch.py`: fuori dal perimetro di Plan 4, da programmare
-come piccola correzione dedicata (con relativo test che effettivamente
-eserciti un path che stampa su stdout, non solo un mock che non lo fa mai,
-visto che è esattamente il tipo di scenario che i test esistenti non hanno
-intercettato).
+**Prossimo passo**: nessuno — chiuso, vedi "Stato" e la nota di verifica sopra.
 
 ## Gap 12 — `case_id` raggiunge il detector come `session_id`, canale di fuga non verificabile da questo repo
 
