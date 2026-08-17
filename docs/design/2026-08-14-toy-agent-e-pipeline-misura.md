@@ -854,6 +854,14 @@ sotto test").
 
 ## Orchestrazione del run (risoluzione Gap 6)
 
+**Nota di lettura (aggiunta 2026-08-17)**: questa sezione descrive "l'orchestratore" come
+un componente unico che fa sia l'invocazione per-`TestCase` sia il loop sull'intero
+dataset. Gap 9 (16/8) ha diviso questo in due: `orchestrator.py::run_test_case()` fa
+girare un solo `TestCase` alla volta; il loop sull'intero dataset è un modulo separato,
+progettato in `docs/design/2026-08-17-plan4-batch-orchestrator-design.md` (Plan 4). I
+punti 1-3 sotto restano corretti come descrizione concettuale della sequenza, ma per la
+ripartizione tra i due moduli concreti vedi Plan 4, non questa sezione.
+
 Vedi `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 6: né l'`Adapter`
 (`evaluate(transcript) -> Verdict`, un `Transcript` alla volta) né il modulo metriche
 (che assume `list[Verdict]` già esistente) coprono la sequenza completa. L'orchestratore

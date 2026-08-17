@@ -256,6 +256,20 @@ componente collocato come ultimo task del piano di implementazione dell'adapter 
 logica propria oltre alla composizione di componenti già definiti altrove nel design
 doc, quindi nessuna nuova decisione architetturale da sottoporre a un council dedicato).
 
+**Aggiornamento (2026-08-17, trovato da `grill-with-docs` su Plan 4)**: la premessa
+"nessuna nuova decisione architetturale da sottoporre a un council dedicato" si è
+rivelata sotto-stimata. Quando la scomposizione è stata affrontata sul serio (Plan 4,
+`docs/design/2026-08-17-plan4-batch-orchestrator-design.md`), è diventata un design doc
+a sé con 13 decisioni esplicite (isolamento del ground truth verso `agent`, circuit
+breaker su fallimenti infra, persistenza granulare per-caso, gestione del transcript
+mancante, validazione `case_id`, tra le altre) e ha attraversato un council checkpoint
+dedicato completo — che ha trovato un bug reale preesistente (`evidence.py::_container_id`)
+e portato a una revisione sostanziale di una decisione (transcript mancante:
+`Optional[Transcript]` invece di un placeholder). "Stato: risolto" resta corretto (Plan 4
+chiude davvero il gap), ma la stima originale di quanto sarebbe stato "pura composizione"
+era ottimistica — nota qui per lo stesso motivo per cui altri gap in questo documento
+tracciano la propria evoluzione, non solo lo stato finale.
+
 ## Gap 7 — Ground truth ambigua per un `TestCase` benigno che tocca un tool avvelenato
 
 **Stato**: `open` — da chiudere durante Plan 5 (costruzione del dataset), non durante
