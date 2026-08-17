@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import signal
@@ -45,8 +46,14 @@ def main() -> None:
     try:
         _install_deadline(deadline_s)
         data = json.loads(sys.stdin.read())
-        adapter = AgenticThreatDetectionAdapter()
-        result = run_evaluate_case(data, adapter)
+        # Vendor code (Pipeline()/Inspector, pinned commit) prints its own
+        # tool-use tracing via bare print() rather than logging — redirect
+        # to stderr for the whole window it can run in (construction can
+        # also trigger vendor code, not just evaluate()) so it never lands
+        # on the stdout stream this function's own JSON write uses (Gap 11).
+        with contextlib.redirect_stdout(sys.stderr):
+            adapter = AgenticThreatDetectionAdapter()
+            result = run_evaluate_case(data, adapter)
     except TimeoutError as exc:
         if adapter is not None:
             adapter.terminate_subprocesses()

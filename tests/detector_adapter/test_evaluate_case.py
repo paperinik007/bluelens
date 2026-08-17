@@ -24,6 +24,19 @@ class FakeAdapter:
         self.terminate_called = True
 
 
+class NoisyFakeAdapter(FakeAdapter):
+    """Simulates real vendor Inspector code (pinned aidr commit): it prints
+    tool-use tracing directly to stdout via a bare print(), not the logging
+    module, whenever it invokes a tool during analysis (Gap 11, found live
+    during Plan 4's Task 8 manual verification — the vendor's tracing lines
+    landed on the same stdout stream evaluate_case.py writes its verdict
+    JSON to, breaking json.loads() on the combined output)."""
+
+    def evaluate(self, transcript):
+        print("[inspector] tool_use: get_source_code(server_names=['toy_support'])")
+        return super().evaluate(transcript)
+
+
 class SlowFakeAdapter(FakeAdapter):
     """Sleeps past the internal deadline before returning — the only way to
     exercise the real signal.setitimer mechanism without mocking signal
@@ -52,6 +65,16 @@ def test_main_writes_only_the_verdict_json_to_stdout(monkeypatch, capsys):
     captured = capsys.readouterr()
     assert captured.err == ""
     assert json.loads(captured.out) == fake_verdict
+
+
+def test_main_isolates_vendor_stdout_noise_from_the_verdict_json(monkeypatch, capsys):
+    fake_verdict = {"case_id": "c1", "tool_name": "x", "status": "ok", "label": "malicious"}
+    monkeypatch.setattr(evaluate_case_module.sys, "stdin", io.StringIO(json.dumps({"session_id": "c1", "turns": []})))
+    monkeypatch.setattr(evaluate_case_module, "AgenticThreatDetectionAdapter", lambda: NoisyFakeAdapter(result=fake_verdict))
+    evaluate_case_module.main()
+    captured = capsys.readouterr()
+    assert json.loads(captured.out) == fake_verdict
+    assert "tool_use" in captured.err
 
 
 def test_main_exits_nonzero_on_adapter_exception_never_touching_stdout(monkeypatch, capsys):
