@@ -1,8 +1,8 @@
 # Design: Plan 4 — batch driver e orchestrazione del run (risoluzione Gap 6)
 
-Status: brainstorming, council checkpoint e grill-with-docs completati (esiti in fondo
-al documento). Prossimo passo: spec self-review, poi review finale dell'utente prima di
-scrivere il piano di implementazione.
+Status: brainstorming, council checkpoint, grill-with-docs e review finale dell'utente
+completati (esiti in fondo al documento). Prossimo passo: scrivere il piano di
+implementazione (`writing-plans`).
 
 ## Obiettivo
 
@@ -240,12 +240,45 @@ se un run è riproducibile o di distinguere risultati ottenuti con parametri div
 run e l'altro (council-advocate). Collocazione: parte 3 della struttura report già definita
 nel design doc principale ("Metodologia e limiti dichiarati") — non una nuova sezione.
 
+### 14. Fallimento di conversione dict→dataclass (aggiunta dopo review utente, 2026-08-17)
+
+`verdict_from_dict`/`transcript_from_dict` (decisione 3) possono sollevare un'eccezione
+su un dict grezzo che non rispetta i vincoli della dataclass — non ipotetico:
+`detector_adapter/adapter.py::detection_result_to_verdict` passa `result.confidence` dal
+vendor senza clamping, e `Verdict.__post_init__` (`schema.py`) solleva `ValueError` se
+`confidence` esce da `[0, 1]`. Un detector basato su LLM può produrre un valore fuori
+range su uno dei 40-60 casi live senza che nulla a monte lo impedisca.
+
+Il batch loop cattura l'eccezione al momento della conversione — dopo la persistenza dei
+dati grezzi (punto 6), quindi il dict originale, anche malformato, resta sempre
+ispezionabile su disco — e costruisce al suo posto un `Verdict` di fallback con
+`status="error"`, `error_kind="conversion"`, `rationale` che riporta solo il nome della
+classe dell'eccezione (stessa disciplina già in uso in `run_case.py::main()` — mai
+propagare il messaggio grezzo dell'eccezione, potrebbe contenere dati del vendor). Il
+`TestCase` corrispondente viene comunque costruito con `label`/`technique_target`/
+`rationale` dal ground truth già in memoria (decisione 2, indipendente dalla conversione)
+e `transcript=None` (decisione 4) quando anche `transcript_from_dict` fallisce o non è
+applicabile.
+
+`error_kind: "conversion"` è trattato come `"application"` ai fini del circuit breaker
+(decisione 8): azzera il contatore dei fallimenti infra consecutivi, non lo incrementa —
+non è un segnale di instabilità dell'infrastruttura Docker, è un problema di forma dei
+dati applicativi.
+
+**Perché** (trovato in review utente, non dal council): senza questa decisione, un
+singolo valore malformato prodotto dal vendor su uno solo dei 40-60 casi avrebbe fatto
+morire l'intero processo `run_batch.py` prima di produrre `report.md` — la stessa classe
+di rischio già affrontata per il bug di `evidence.py::_container_id()` (decisione 8), qui
+sul lato conversione invece che sul lato raccolta prove. Costo marginale: un blocco
+try/except al punto della conversione, nessuna nuova infrastruttura.
+
 ## Testing
 
 - `run_batch.py`: test dell'orchestrazione del loop con un `run_test_case` finto e un
   collector di prove finto (stesso stile di `tests/toy_agent/test_orchestrator.py`, che già
   finge `run_command`) — nessun Docker reale richiesto per testare la logica del loop
-  (circuit breaker, isolamento ground truth, persistenza per-caso, fallback transcript).
+  (circuit breaker, isolamento ground truth, persistenza per-caso, fallback transcript,
+  fallback su fallimento di conversione dict→dataclass, decisione 14).
 - `serialization.py`: round-trip `dict → dataclass → dict` testato direttamente.
 - Verifica end-to-end contro lo stack reale: fuori scope per i test automatici (stessa
   scelta già fatta per `verify_sourcelens.py`, Gap 4 — verificato manualmente una volta),
@@ -260,7 +293,7 @@ nel design doc principale ("Metodologia e limiti dichiarati") — non una nuova 
 | Il ground truth (`label`/`technique_target`/`rationale`) non deve mai transitare nel JSON inviato ad `agent` | Test: ispezionare il dict passato a `run_test_case()` dal batch loop per un caso con ground truth noto, verificare che contenga solo `case_id` e il seed turn, nessuna chiave `label`/`technique_target`/`rationale` |
 | Nessun `case_id` del dataset deve mai essere assente dall'output finale (`list[TestCase]`/`list[Verdict]` passate a `compute_metrics`), anche su fallimento (Gap 6) | Test: eseguire un batch con un caso che fa fallire `run_test_case()` e verificare che il `case_id` compaia comunque in entrambe le liste finali |
 | `run_batch.py` deve interrompersi dopo 3 fallimenti `error_kind: "infra"` consecutivi, senza tentare i casi residui | Test: simulare 3 `Verdict` infra consecutivi e verificare che il loop non chiami `run_test_case()` per il caso successivo |
-| Un `Verdict` non-infra (application o ok) deve azzerare il contatore del circuit breaker | Test: sequenza infra, infra, ok, infra, infra — verificare che il batch non si interrompa (il contatore è tornato a 2, non 4) |
+| Un `Verdict` non-infra (application, conversion, o ok) deve azzerare il contatore del circuit breaker | Test: sequenza infra, infra, ok, infra, infra — verificare che il batch non si interrompa (il contatore è tornato a 2, non 4) |
 | I dati grezzi (`verdict`, `transcript`) di un caso devono essere persistiti su disco subito dopo la sua esecuzione, non solo a fine batch | Test: interrompere l'esecuzione a metà batch (es. eccezione forzata dopo il caso N) e verificare che `verdicts.jsonl`/`raw/` contengano comunque le entry dei primi N casi |
 | Un report generato dopo un trip del circuit breaker deve dichiarare esplicitamente quanti casi sono stati eseguiti e perché si è interrotto | Test: forzare un trip e verificare che il `report.md` prodotto contenga sia il conteggio M/T sia il testo del `rationale` diagnostico dell'ultimo fallimento infra |
 | `dataset_dir` non deve mai essere modificato da un'esecuzione di `run_batch.py` | Test: calcolare un hash dei file in `dataset_dir` prima e dopo un run completo, verificare che siano identici |
@@ -270,6 +303,7 @@ nel design doc principale ("Metodologia e limiti dichiarati") — non una nuova 
 | La raccolta prove non deve far crashare l'intero batch se `docker compose ps -q` ritorna output vuoto | Test: forzare `_container_id()` a ricevere output vuoto e verificare che il batch continui (o registri un fallimento per il singolo caso) invece di sollevare un'eccezione non gestita che interrompe `run_batch.py` |
 | Il report finale deve dichiarare i parametri operazionali (timeout agent/detector, soglia circuit breaker) usati per il run (decisione 13) | Test: ispezionare `report.md` prodotto e verificare che `setup_notes` contenga i tre valori |
 | Un `TestCase` con `transcript=None` (fallimento agent, decisione 4 rivista) non deve mai causare un errore nella generazione del report | Test: eseguire `render_report()` con un caso `transcript=None`/`Verdict.status="error"` tra gli input e verificare che non sollevi eccezioni e non compaia nella sezione "Casi concreti" |
+| Un fallimento di `verdict_from_dict`/`transcript_from_dict` su un caso non deve mai far crashare l'intero batch né far mancare quel `case_id` dalle liste finali (decisione 14) | Test: far sollevare un'eccezione a `verdict_from_dict` per un caso e verificare che il batch continui, che il `case_id` compaia comunque in `list[TestCase]`/`list[Verdict]` con `Verdict.status == "error"` e `error_kind == "conversion"`, e che il dict grezzo originale resti comunque scritto su disco (decisione 6) |
 
 ## Esito council checkpoint (2026-08-17)
 
@@ -312,6 +346,22 @@ rifiniture minori aggiunte insieme: il vincolo `case_id` (decisione 12) reso esp
 come eredità per Plan 5; la collocazione dei parametri operazionali nel report
 (decisione 13) agganciata alla parte 3 della struttura report già definita nel design
 doc principale. Nessun altro branch di peso trovato.
+
+## Esito review finale dell'utente (2026-08-17)
+
+Documento letto per intero dall'utente dopo council checkpoint e grill-with-docs.
+Verifica indipendente delle affermazioni fattuali del documento contro il codice reale
+(`schema.py`, `evidence.py`, `orchestrator.py`, `metrics.py`, `report.py`, `run_case.py`,
+`detector_adapter/adapter.py`) e contro `gap-tracking.md`/il design doc principale/
+`pyproject.toml`: nessuna discrepanza trovata.
+
+Un gap non coperto da alcuna decisione né dal council è stato trovato: nessuna decisione
+gestiva il caso in cui `verdict_from_dict`/`transcript_from_dict` sollevano un'eccezione
+sul dict grezzo restituito da `run_test_case()` — rischio concreto, non ipotetico, dato
+che `detection_result_to_verdict` passa `confidence` dal vendor senza clamping contro il
+vincolo `[0, 1]` di `Verdict.__post_init__`. Risolto con la decisione 14 (fallback a un
+`Verdict` di errore con `error_kind: "conversion"`, che non incrementa il circuit
+breaker). Nessun altro punto del documento contestato.
 
 ## Fuori scope per questo piano (dichiarato esplicitamente)
 
