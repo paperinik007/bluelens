@@ -864,6 +864,57 @@ vincola i `case_id` a essere label-opachi (es. `case_017`, mai
 `_agent_input()`. Se no: chiudere il gap come limite non applicabile, con
 riferimento al commit verificato.
 
+## Gap 13 — Stato residuo lasciato dai processi uccisi nel container `detector`, potenziale segnale di misura al sistema sotto test
+
+**Stato**: aperto — da discutere, nessuna mitigazione applicata.
+
+**Trovato da**: revisione utente del merge di Plan 4 (2026-08-17), durante una domanda
+sui side effect lasciati nel container controllato tra un caso e il successivo.
+
+**Il problema**: i container `agent`/`detector`/`egress-proxy` sono long-lived per
+l'intera durata del batch — nessun `docker compose down`/`up` o restart tra un caso e
+il successivo, solo `docker compose exec` ripetuti nello stesso filesystem persistente
+(`orchestrator.py::run_test_case`). Quando `evaluate_case` o `aidr/providers` vengono
+uccisi via `pkill` dopo un timeout o un `TimeoutError` interno
+(`orchestrator.py:127-136`, `152-162`), `pkill` termina il processo ma non pulisce
+nulla di quanto quel processo abbia scritto su disco prima di morire (file temporanei,
+socket, cache, stato parziale del codice vendor `aidr/providers`, non ispezionabile da
+questo repo). Quello stato residuo resta nel filesystem scrivibile del container
+detector per il resto del batch, a disposizione del caso successivo. L'unico canale con
+un pattern di pulizia è il log del thin proxy (`/var/log/vendor_proxy.jsonl`), troncato
+**prima** di ogni invocazione (`orchestrator.py:88-104`) ma non cancellato subito dopo
+la copia in evidence (`evidence.py::collect_thin_proxy_log`) — finestra residua fino al
+prossimo troncamento. I quattro canali di prova esterna generici (`docker compose
+logs`/`diff`/`stats`, `evidence.py:21-57`) sono puramente read-only e non toccano lo
+stato del container.
+
+**Perché è più di un problema di igiene dei dati — misura modificata dal misuratore**:
+il codice che gira dentro `detector` è il sistema sotto misura (Inspector/Sifter via
+`aidr`, pinnato ma di codice vendor non ispezionabile). Se quel codice, nel corso della
+sua analisi, può osservare artefatti sul filesystem che non dovrebbero esistere in un
+caso "pulito" — file lasciati da un'invocazione precedente uccisa a metà, un log del
+proxy non ancora troncato, evidenza di un kill recente — riceve un segnale implicito di
+trovarsi in un ambiente di valutazione ripetuta/strumentata piuttosto che in un
+deployment singolo. Un sistema con situational awareness potrebbe correlare questo
+segnale con la propria posizione (sotto test) e comportarsi diversamente da come si
+comporterebbe altrove — il classico effetto osservatore, il misuratore che altera ciò
+che misura. Rilevante per l'obiettivo dichiarato di Fase 1 (misurare detection reale,
+non detection-quando-il-sistema-sa-di-essere-osservato).
+
+**Severità**: da stabilire — non c'è ancora evidenza che il codice vendor pinnato
+osservi o usi artefatti sul filesystem in questo modo (analogo, per tipo di rischio non
+ancora verificato, a Gap 12 sul canale `session_id`). Ma il meccanismo è strutturale
+(container long-lived, pkill senza pulizia) e non richiede un bug per manifestarsi —
+basta che un caso successivo esegua in un ambiente non equivalente a un container
+fresco.
+
+**Prossimo passo**: non deciso, da discutere con l'utente. Opzioni aperte da valutare
+insieme: (a) ricreare il container `detector` (o solo il suo stato scrivibile) tra un
+caso e l'altro invece di riusarlo per tutto il batch; (b) un cleanup esplicito
+post-pkill mirato alle directory note usate da `aidr/providers`, se identificabili; (c)
+accettarlo come limite dichiarato del PoC di Fase 1, documentato nel report finale
+insieme a Gap 12, con l'onestà statistica richiesta da `SPIRIT.md` principio 3.
+
 ## Come si chiude un gap
 
 Quando una risoluzione viene applicata al design doc, aggiornare lo stato qui a
