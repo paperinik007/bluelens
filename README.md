@@ -18,8 +18,10 @@ di FareedKhan-dev. Design completo — toy agent, pipeline di misura indipendent
 tool testato, schema dati, adapter, modulo metriche — passato per council checkpoint e
 grill-with-docs. Vedi [`docs/design/2026-08-14-toy-agent-e-pipeline-misura.md`](docs/design/2026-08-14-toy-agent-e-pipeline-misura.md).
 Implementazione in corso: Plan 1 (toy agent), Plan 2 (modulo metriche/report), Plan 3
-(container di controllo con egress di rete ristretto a `openrouter.ai`) e Gap 9 (split
-del container di controllo in `agent`/`detector` isolati, vedi "Struttura" sotto) sono
+(container di controllo con egress di rete ristretto a `openrouter.ai`), Gap 9 (split
+del container di controllo in `agent`/`detector` isolati, vedi "Struttura" sotto) e Plan 4
+(`run_batch.py`, il batch orchestrator che fa girare l'intero dataset attraverso
+`agent`/`detector` e produce il report finale, vedi "Come eseguire" sotto) sono
 completi e testati.
 
 ## Struttura
@@ -58,6 +60,22 @@ docker compose up -d
 
 Attenzione: `docker compose config` stampa entrambe le chiavi in chiaro — non
 eseguirlo in una sessione di terminale condivisa o loggata.
+
+Con lo stack sopra (`docker compose up -d`), il batch orchestrator si esegue **sull'host**,
+non dentro un container:
+
+```
+python -m toy_agent.run_batch <dataset_dir> <run_output_dir>
+```
+
+`run_batch.py` legge `DETECTOR_OPENROUTER_API_KEY` direttamente dall'ambiente del processo
+Python host (la stessa variabile impostata in `.env`, ma letta qui dall'host, non passata
+attraverso Docker — va quindi esportata anche nella shell da cui si lancia il comando, non
+solo in `.env`). `<dataset_dir>` è una directory di file YAML `TestCase` (Plan 5); non viene
+mai scritta. In `<run_output_dir>` atterrano `report.md` (il report finale), `verdicts.jsonl`
+(un `Verdict` grezzo per riga, un run per file — riscritto da zero a ogni esecuzione),
+`raw/` (i transcript grezzi per caso) e una sottodirectory di prove esterne per `case_id`
+(prodotta da `evidence.py`).
 
 ## Licenza
 

@@ -305,6 +305,21 @@ try/except al punto della conversione, nessuna nuova infrastruttura.
 | Un `TestCase` con `transcript=None` (fallimento agent, decisione 4 rivista) non deve mai causare un errore nella generazione del report | Test: eseguire `render_report()` con un caso `transcript=None`/`Verdict.status="error"` tra gli input e verificare che non sollevi eccezioni e non compaia nella sezione "Casi concreti" |
 | Un fallimento di `verdict_from_dict`/`transcript_from_dict` su un caso non deve mai far crashare l'intero batch né far mancare quel `case_id` dalle liste finali (decisione 14) | Test: far sollevare un'eccezione a `verdict_from_dict` per un caso e verificare che il batch continui, che il `case_id` compaia comunque in `list[TestCase]`/`list[Verdict]` con `Verdict.status == "error"` e `error_kind == "conversion"`, e che il dict grezzo originale resti comunque scritto su disco (decisione 6) |
 
+**Nota (aggiunta in fase di final review, 2026-08-17, Finding 4)**: la riga sopra parla di
+`error_kind == "conversion"` come se fosse un campo direttamente ispezionabile sui dati
+persistiti — non lo è. `Verdict` non ha (e non deve avere, stessa decisione 14) un campo
+`error_kind`: il marcatore vive solo come sottostringa nel testo di
+`Verdict.rationale` in memoria (es. `"conversion failed: ValueError"`), prodotto da
+`_fallback_verdict()` in `run_batch.py`. La riga **grezza** corrispondente in
+`verdicts.jsonl` per un caso di fallimento di conversione mostra invece lo `status`
+*originale*, pre-validazione, prodotto dal detector — tipicamente `"ok"`, non `"error"` —
+perché nulla a monte lo aveva marcato come errore prima che `verdict_from_dict()` fallisse
+sulla conversione. È una discrepanza reale e attesa tra la prova grezza su disco e la vista
+in memoria/report, non un bug. `run_batch.py::_setup_notes()` ora espone un conteggio
+`verdict_conversion_failures=N` (e, simmetricamente, `transcript_conversion_failures=N`)
+nel report — è quello il segnale di riconciliazione per chi nota la discrepanza
+ispezionando `verdicts.jsonl` (Finding 1, final review).
+
 ## Esito council checkpoint (2026-08-17)
 
 Roster completo (`council-skeptic`, `council-risk`, `council-pragmatist`,
