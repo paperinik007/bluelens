@@ -5,22 +5,57 @@ import os
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Mapping
 
 import httpx
 
 # aidr/serving/model_client.py (vendor, pinned commit 7fad14d2478707e68a09b8ecd9942dec8fde1614)
 # sends `model` as the literal tier name ("sifter"/"inspector"/"embed"), not a real
-# OpenRouter model id (design doc, "Setup pratico del detector sotto test").
-TIER_TO_MODEL: dict[str, str] = {
-    # qwen/qwen3-4b-instruct-2507 was retired from OpenRouter's catalog
-    # (confirmed via a live probe: "not a valid model ID") — replaced with
-    # another small/fast model to preserve the sifter tier's cost/latency
-    # role rather than promoting to the larger "inspector" model.
-    "sifter": "deepseek/deepseek-v4-flash",
+# OpenRouter model id (design doc, "Setup pratico del detector sotto test"). This map is
+# entirely ours — a workaround for not running the vendor's own local vLLM setup — so it
+# is contingent to this vendor's tier convention, not structural to the measurer
+# (principio 8, SPIRIT.md; gap-tracking doc, Gap 10).
+#
+# Criterio di selezione (Gap 10, deciso 2026-08-18): il modello dichiarato dal vendor se
+# ancora disponibile; altrimenti il più vicino della stessa famiglia, verificato dal vivo
+# (mai fidarsi solo della scheda prodotto — "qwen/qwen3-4b" risultava attivo sulla pagina
+# OpenRouter ma il probe reale rispondeva 404 "No endpoints found"); un salto di famiglia
+# solo se nessuna alternativa della stessa famiglia risponde davvero.
+DEFAULT_TIER_TO_MODEL: dict[str, str] = {
+    # Qwen/Qwen3-4B-Instruct-2507 (dichiarato dal vendor) e la variante base
+    # qwen/qwen3-4b sono entrambe irraggiungibili su OpenRouter (probe live: 400
+    # "not a valid model ID" / 404 "No endpoints found"). qwen/qwen3-8b è la più
+    # vicina della stessa famiglia confermata raggiungibile (probe live: 200 OK,
+    # servito da Alibaba) — sostituisce il precedente deepseek/deepseek-v4-flash,
+    # che era un salto di famiglia non necessario.
+    "sifter": "qwen/qwen3-8b",
     "inspector": "qwen/qwen3-30b-a3b-instruct-2507",
     "embed": "qwen/qwen3-embedding-4b",
 }
+
+# Env var per tier, per rendere la mappa configurabile senza editare il sorgente
+# (Gap 10, parte 1 — un catalogo di provider terzo invecchia nel tempo).
+TIER_TO_ENV_VAR: dict[str, str] = {
+    "sifter": "SIFTER_MODEL",
+    "inspector": "INSPECTOR_MODEL",
+    "embed": "EMBED_MODEL",
+}
+
+
+def build_tier_to_model(env: Mapping[str, str] | None = None) -> dict[str, str]:
+    """Build the tier->model id map from env vars, falling back to the default per tier.
+
+    A present-but-empty env var (e.g. docker compose substituting an unset .env
+    entry as "") is treated the same as absent — `or default`, not `.get(var, default)`.
+    """
+    source = env if env is not None else os.environ
+    return {
+        tier: source.get(TIER_TO_ENV_VAR[tier]) or default
+        for tier, default in DEFAULT_TIER_TO_MODEL.items()
+    }
+
+
+TIER_TO_MODEL: dict[str, str] = build_tier_to_model()
 
 # Port -> OpenRouter path, matching model_client.py's hardcoded ports:
 # 8100=sifter, 8101=inspector (both chat completions), 8102=embed (embeddings).

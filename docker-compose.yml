@@ -35,6 +35,9 @@ services:
       OPENROUTER_API_KEY: ${DETECTOR_OPENROUTER_API_KEY}
       HTTPS_PROXY: http://egress-proxy:3128
       VENDOR_PROXY_LOG_PATH: /var/log/vendor_proxy.jsonl
+      SIFTER_MODEL: ${SIFTER_MODEL}
+      INSPECTOR_MODEL: ${INSPECTOR_MODEL}
+      EMBED_MODEL: ${EMBED_MODEL}
     cap_drop:
       - ALL
     security_opt:

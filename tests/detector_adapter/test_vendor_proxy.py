@@ -7,11 +7,31 @@ import httpx
 import pytest
 
 from detector_adapter.vendor_proxy import (
+    DEFAULT_TIER_TO_MODEL,
     TIER_TO_MODEL,
     build_forwarder,
+    build_tier_to_model,
     remap_tier,
     serve_forever,
 )
+
+
+def test_build_tier_to_model_uses_defaults_when_env_is_empty():
+    assert build_tier_to_model({}) == DEFAULT_TIER_TO_MODEL
+
+
+def test_build_tier_to_model_env_override_wins_per_tier():
+    result = build_tier_to_model({"SIFTER_MODEL": "vendor/custom-sifter"})
+    assert result["sifter"] == "vendor/custom-sifter"
+    assert result["inspector"] == DEFAULT_TIER_TO_MODEL["inspector"]
+    assert result["embed"] == DEFAULT_TIER_TO_MODEL["embed"]
+
+
+def test_build_tier_to_model_treats_blank_env_value_as_unset():
+    # docker compose substitutes an unset .env entry as an empty string, not an
+    # absent key — must fall back to the default, not use "".
+    result = build_tier_to_model({"SIFTER_MODEL": ""})
+    assert result["sifter"] == DEFAULT_TIER_TO_MODEL["sifter"]
 
 
 def test_remap_tier_rewrites_model_field():

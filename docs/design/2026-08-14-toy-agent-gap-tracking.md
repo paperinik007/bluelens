@@ -713,7 +713,43 @@ persistente su disco tra `TestCase`.
 
 ## Gap 10 — Selezione dei tre modelli vendor hardcoded, non configurabile
 
-**Stato**: aperto — nessuna risoluzione applicata al design doc.
+**Stato**: risolto nel codice (2026-08-18) — entrambe le parti.
+
+**Risoluzione**:
+- **Parte 1 (configurabilità)**: `src/detector_adapter/vendor_proxy.py::build_tier_to_model()`
+  legge `SIFTER_MODEL`/`INSPECTOR_MODEL`/`EMBED_MODEL` da env var, con
+  `DEFAULT_TIER_TO_MODEL` come fallback (anche per un valore presente ma vuoto — caso
+  reale con `docker compose` e un `.env` non compilato). `TIER_TO_MODEL` resta il
+  risultato già costruito a import-time, compatibile con tutto il codice/test esistente.
+  Env var esposte nel `detector` container via `docker-compose.yml`, documentate in
+  `.env.example` in una sezione distinta da quella dell'API key, con motivazione
+  esplicita (principio 8: contingente a questo vendor, non generale al misuratore).
+  **Generalizza**: un futuro aggiornamento del catalogo OpenRouter (o un vendor diverso
+  con un proprio schema di tier) si affronta editando `.env`, mai il sorgente.
+- **Parte 2 (selezione oculata)**: criterio deciso e applicato concretamente, non solo
+  teorico — verificato leggendo la struttura pubblica del setup dichiarato dal vendor
+  (`aidr/serving/launch.sh`, non l'implementazione dei detector) e con probe live diretti
+  su OpenRouter (non fidarsi della sola scheda prodotto: `qwen/qwen3-4b` risultava attivo
+  sulla pagina ma il probe reale rispondeva 404 "No endpoints found"). Il tier "sifter",
+  sostituito ad-hoc con `deepseek/deepseek-v4-flash` (salto di famiglia non necessario),
+  è ora `qwen/qwen3-8b` (stessa famiglia Qwen3 del modello dichiarato dal vendor per
+  quel ruolo, `Qwen3-4B-Instruct-2507`, confermato raggiungibile dal vivo). Criterio
+  documentato nel commento sopra `DEFAULT_TIER_TO_MODEL`: modello dichiarato dal vendor
+  se disponibile, altrimenti il più vicino della stessa famiglia verificato dal vivo, un
+  salto di famiglia solo se nessuna alternativa della stessa famiglia risponde davvero.
+  **Non generalizza automaticamente**: i valori di `DEFAULT_TIER_TO_MODEL` restano
+  contingenti a questo vendor (correttamente dichiarato come tale nel commento) — un
+  futuro ritiro di uno di questi tre modelli richiederà di riapplicare lo stesso criterio
+  a mano, non è un controllo automatizzato.
+
+**Verificato**: suite completa 172 passed, 2 skipped (3 nuovi test su
+`build_tier_to_model`: default quando l'env è vuoto, override per singolo tier, valore
+vuoto trattato come assente).
+
+<details>
+<summary>Contenuto originale del gap (evidenza storica, conservata)</summary>
+
+**Stato originale**: aperto — nessuna risoluzione applicata al design doc.
 
 **Trovato da**: discussione con l'utente durante il Task 8 (verifica manuale
 end-to-end) di Plan 4, 2026-08-17, innescata da un fallimento reale osservato
@@ -769,10 +805,12 @@ della misura (non solo composizione, a differenza di Gap 6) nella misura in
 cui un cambio di modello silenzioso/estemporaneo altera cosa viene
 confrontato contro i numeri dichiarati dal vendor.
 
-**Prossimo passo**: non deciso. Discussione di design dedicata necessaria
+**Prossimo passo originale**: non deciso. Discussione di design dedicata necessaria
 prima di implementare qualunque soluzione — fuori dal perimetro di Plan 4
 (tocca solo `detector_adapter`, mai `toy_agent`/`run_batch.py`) e non ancora
 schedulata in una sequenza di piani.
+
+</details>
 
 ## Gap 11 — Il vincolo di stdout pulito su `evaluate_case.py` è dichiarato ma non applicato al codice vendor
 
