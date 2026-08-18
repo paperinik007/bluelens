@@ -224,7 +224,14 @@ le metriche su un campione già piccolo (20-30 casi per label, 40-60 totali). Il
 `technique_detected` è singolare (non lista): verificato su `aidr/detector/base.py`
 (commit `7fad14d`, vedi sezione Adapter) che `DetectionResult.technique` del vendor
 sotto test è una singola stringa (`"N/A"` se nessuna tecnica attribuita), coerente con
-`TestCase.technique_target` anch'esso singolare.
+`TestCase.technique_target` anch'esso singolare. **Scelta contingente a questo vendor,
+non strutturale** (principio 8, `SPIRIT.md`): a differenza dei dettagli d'implementazione
+confinati all'adapter (vedi sotto, sezione Adapter, `server_name`/`tool_name`),
+`technique_detected` vive nello schema condiviso `Verdict`/modulo metriche — un vendor
+Fase 2 con attribuzione multi-tecnica romperebbe silenziosamente la metrica strict
+(confronto per stringa singola in `metrics.py`) invece di fallire in modo visibile. Da
+rivalutare esplicitamente quando un secondo detector viene aggiunto, non prima (YAGNI,
+un solo vendor in Fase 1).
 
 `cost_usd` non viene letto direttamente dal vendor: `DetectionResult` espone solo
 `in_tokens`/`out_tokens` (mai un costo in dollari), quindi il modulo metriche deve

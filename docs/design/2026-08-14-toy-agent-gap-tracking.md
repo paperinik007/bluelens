@@ -1311,3 +1311,35 @@ Quando una risoluzione viene applicata al design doc, aggiornare lo stato qui a
 si decide di accettarlo come limite (non risolverlo), lo stato diventa "accettato come
 limite dichiarato" e va comunque riportato nel report finale (sezione Report del design
 doc), coerentemente col principio di onestà statistica di `SPIRIT.md`.
+
+**Check obbligatorio prima di proporre una chiusura** (principio 8, `SPIRIT.md`, vedi
+anche `docs/notes/principio-strutturale-vs-contingente.md`): dichiarare esplicitamente,
+come parte della proposta di chiusura stessa — non a margine, non solo se richiesto —
+se la soluzione regge per un vendor futuro con condizioni diverse da quelle osservate
+oggi, o se vale solo per il caso/vendor attuale. Se vale solo per il caso attuale, la
+chiusura non basta così com'è: va reso un parametro esplicito e dichiarato per ogni
+audit, oppure segnato come limite accettato con la ragione per cui non generalizza —
+mai chiuso implicitamente come se fosse strutturale.
+
+## Registro delle verifiche legate al commit vendor pinnato
+
+Trovata dall'audit sistematico "principio 8" del 2026-08-18 (vedi
+`docs/notes/principio-strutturale-vs-contingente.md`, punto 2): diverse conclusioni di
+design si fondano su una lettura del codice vendor a un commit pinnato specifico
+(`7fad14d2478707e68a09b8ecd9942dec8fde1614`), ciascuna correttamente dichiarata come
+tale nel proprio documento — ma senza un elenco unico. Un futuro aggiornamento del pin
+dipende oggi dal ricordarsi di cercare in tutti i design doc, non da un controllo
+centralizzato. Elenco delle verifiche attive che vanno ricontrollate a ogni bump del pin:
+
+| Verifica | Dove | Cosa assume |
+|---|---|---|
+| Chiamate di rete/filesystem non dichiarate | `docs/design/2026-08-15-aidr-vendor-network-fs-review.md` | Nessuna scrittura/lettura fuori da quanto dichiarato dal "Container di controllo" |
+| Stato persistente su disco dei tre provider MCP | `docs/design/2026-08-16-mcp-provider-persistent-state-review.md` | Nessun residuo di contenuto attribuibile a un `TestCase` precedente in `.mcp.json`/provider |
+| `technique_detected` singolare | `docs/design/2026-08-14-toy-agent-e-pipeline-misura.md`, sezione "Schema di misura" (`aidr/detector/base.py`) | `DetectionResult.technique` del vendor è una stringa singola, mai una lista |
+| Orchestrazione Sifter→Inspector incapsulata in `Pipeline().analyze()` | stesso file, sezione "Adapter" (`aidr/detector/pipeline.py`) | L'adapter non deve invocare Sifter/Inspector separatamente |
+| Setup vLLM (modelli/GPU per Sifter/Inspector/ThreatLens) | stesso file, sezione "Setup pratico" (`aidr/serving/launch.sh`) | Modelli e requisiti hardware dichiarati nel doc corrispondono al lancio reale del vendor |
+
+Voci esplicitamente escluse: le vecchie evidenze di Gap 12 (lettura vendor per
+`session_id`) restano nel doc solo come materiale storico conservato, marcate "assorbito
+nel Gap 14" — non sono più la base di nessuna decisione attiva, quindi non richiedono
+ricontrollo a ogni bump del pin.

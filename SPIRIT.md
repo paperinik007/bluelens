@@ -70,6 +70,18 @@ misure.
    codice a restare altrettanto trasparente (tipo copyleft/share-alike), così che chi
    copia questo lavoro e poi lo richiude diventi visibilmente il vendor opaco che questo
    progetto contesta.
+8. **Strutturale prima di contingente.** Una garanzia del misuratore vale solo se regge
+   per costruzione — per l'interfaccia dichiarata, per un parametro esplicito — mai perché
+   *oggi*, per *questo* vendor, sembra vera per osservazione. Un comportamento osservato in
+   un unico vendor pinnato non è una garanzia: è un dato che scade al prossimo commit o al
+   prossimo tool testato. Ogni scelta infrastrutturale che dipende da condizioni
+   specifiche del misurato (incluso come il misurato stesso dichiara di essere stato
+   misurato) va resa un parametro esplicito e dichiarato per ogni audit, mai cablata come
+   se fosse universale. Lo stesso standard richiesto ai vendor (principio 3, onestà
+   statistica: mai un numero secco spacciato per verità assoluta) vale per come il
+   misuratore viene costruito — uno strumento con scorciatoie valide solo per il caso di
+   oggi ricade nello stesso difetto "self-reported" che questo progetto contesta (vedi
+   "Perché esiste questo repo").
 
 ## Primo obiettivo concreto (Fase 1)
 
