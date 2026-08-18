@@ -1112,11 +1112,75 @@ misurato dal vivo)** — corregge al ribasso la stima "costo medio" data inizial
   caso, attribuzione delle prove ambigua, in conflitto con la sequenzialità già decisa
   altrove nel progetto) — **non raccomandato**, è un problema diverso da quello che ha
   aperto questo gap.
-- **Conclusione provvisoria**: tra "repulisti su container riusato" e "ricostruzione
-  per-caso", la seconda chiude anche B8 (che il repulisti da solo non può chiudere) e
-  sembra economica su entrambi gli assi — potrebbe valere più della prima, capovolgendo
-  la stima iniziale. Non ancora confermato: serve una misura reale del tempo di avvio in
-  questo ambiente specifico prima di decidere, il ragionamento sopra è sulla carta.
+- **Conclusione provvisoria (rivista sotto)**: tra "repulisti su container riusato" e
+  "ricostruzione per-caso", la seconda chiude anche B8 (che il repulisti da solo non può
+  chiudere) e sembra economica su entrambi gli assi — potrebbe valere più della prima,
+  capovolgendo la stima iniziale. Non ancora confermato: serve una misura reale del tempo
+  di avvio in questo ambiente specifico prima di decidere, il ragionamento sopra è sulla
+  carta.
+
+**Considerazione aggiuntiva (2026-08-18) — di nuovo capovolge la conclusione provvisoria
+sopra, con un argomento indipendente dal costo**: l'utente ha posto la domanda "in quale
+dei due scenari (un ambiente aperto per tutti i test, o un ambiente riaperto per ogni
+test) si muove la dichiarazione del sistema che stiamo valutando?" Verificato leggendo la
+struttura pubblica del benchmark del vendor (non l'implementazione dei detector — qui si
+verifica sotto quale condizione il vendor dichiara di aver misurato, non se un segnale è
+"sicuro", stesso uso legittimo già fatto per Gap 15 sotto): `aidr/gauntlet/runner.py`,
+`run_gauntlet()` — `Pipeline()` viene istanziata **una sola volta** (`pipe = Pipeline()`),
+e la stessa istanza (`self.sifter`/`self.inspector`, costruiti una volta in
+`Pipeline.__init__`) viene riusata per tutte e 300 le sessioni del benchmark, anche
+eseguite in parallelo (fino a 8 thread), senza nessun reset esplicito tra una sessione e
+l'altra.
+
+I numeri dichiarati dal vendor (P=1.0, R=0.667) sono quindi stati misurati nel **primo
+scenario**: un ambiente aperto una volta, tutte le sessioni ci girano dentro, poi si
+chiude — non "ambiente nuovo per sessione". Questo è un argomento di **fedeltà alla
+condizione di misura dichiarata**, distinto e indipendente dalla stima di costo sopra, e
+punta nella direzione opposta alla ricostruzione per-caso: se l'obiettivo è restare
+comparabili col numero dichiarato dal vendor, il container riusato (con repulisti mirato
+per B4-B7) non è solo più economico — è anche più fedele alle condizioni della loro
+stessa misura. B8 (età del container) resta comunque un problema di elusione (il problema
+generale di questo gap) indipendente da questa considerazione di fedeltà — ma ora le due
+preoccupazioni (fedeltà alla misura vendor, costo) puntano nella stessa direzione (tenere
+il container riusato), invece che in direzioni opposte come sembrava dalla sola stima di
+costo.
+
+**Conseguenza architetturale (2026-08-18) — il ciclo di vita del container come parametro
+dell'orchestratore, non una scelta cablata nell'infrastruttura**: dalla considerazione
+sopra segue che "container riusato" non va fissato come *la* risposta definitiva
+nell'infrastruttura — è una coincidenza che oggi i due argomenti (teoria della misura
+generale, dichiarazione di *questo* vendor) puntino nella stessa direzione. Un prossimo
+tool sotto audit (Fase 2) potrebbe dichiarare condizioni di misura diverse (es. un'istanza
+per sessione, stateless) — a quel punto i due argomenti punterebbero in direzioni opposte,
+e una scelta cablata oggi sarebbe sbagliata per quel vendor. Stesso principio già usato
+per Gap 12→14 ("il nostro strumento deve funzionare sempre, non solo per il vendor di
+turno"), qui applicato non a un segnale ma alla scelta architetturale del ciclo di vita
+del container.
+
+**Trattamento**: il ciclo di vita del container (riusato per tutto il lotto / ricreato per
+ogni caso) diventa un **parametro esplicito dell'orchestratore**, parte dichiarata della
+metodologia di misura per ogni audit (coerente con `SPIRIT.md` principio 2, "metodologia
+dichiarata prima dei risultati") — non un dettaglio implementativo nascosto. Per ogni
+audit si sceglie il valore guardando (a) cosa dichiara il misurato sulle proprie
+condizioni di misura, quando lo si sa (come qui, con Gauntlet), (b) il pavimento di
+sicurezza della teoria della misura generale (B4-B7 puliti comunque, sempre,
+indipendentemente dal parametro scelto).
+
+**Implicazione pratica**: oggi questo non è realmente un parametro — il ciclo di vita del
+container non è sotto controllo di `orchestrator.py`/`run_batch.py`, è assunto già avviato
+dall'esterno (`docker compose up` fatto a monte, containers che restano su per tutto il
+lotto per costruzione attuale). Per diventare un vero parametro, l'orchestratore deve
+acquisire il controllo esplicito di avvio/arresto — è lì che si aggancia la proposta già
+emersa nella stima di costo sopra, `docker compose run --rm` come meccanismo per la
+modalità "ricrea per caso".
+
+**Beneficio aggiuntivo individuato (non ancora valutato se vale il costo)**: una volta che
+il ciclo di vita è un parametro selezionabile, lo stesso dataset può girare in entrambe le
+modalità e i risultati P/R confrontati — un confronto che *il vendor stesso non ha mai
+fatto* sul proprio tool. Una divergenza tra le due modalità sarebbe di per sé un risultato
+pubblicabile (evidenza diretta di effetto osservatore/fuga di stato), coerente con la
+trasparenza richiesta da `SPIRIT.md`. Utilità non ancora stabilita — da valutare quando si
+arriva alla sessione di design dedicata.
 
 **Verifica empirica non ancora fatta per nessuna voce B**: l'inventario sopra è costruito
 per enumerazione (cosa *potrebbe* essere osservabile da un processo con visibilità di
@@ -1130,17 +1194,29 @@ strutturale di B2.
 **Prossimo passo**: trattamento di ogni voce non ancora deciso — da riprendere in una
 sessione di design dedicata (probabile secondo checkpoint con confronto di approcci e
 trade-off, come già fatto per Gap 9, non una singola correzione isolata). Punto di
-partenza proposto per quella sessione: decidere se questa famiglia di segnali riceve una
-risposta strutturale uniforme (costosa ma valida per ogni vendor futuro, non solo questo)
-o un trattamento misto — fix economici e strutturali per A1/A2 subito, verifica empirica
-mirata (vedi sopra) prima di investire nella ricostruzione per-caso del container per
-B2/B4-B8, limite dichiarato esplicito per il ritmo/tempistica (B2, versione "ritmo
-umano") con la motivazione onesta richiesta da `SPIRIT.md` principio 3.
+partenza proposto per quella sessione, aggiornato dopo le considerazioni sopra:
+- fix economici e strutturali per A1/A2 subito;
+- il ciclo di vita del container (riusato vs ricreato per caso) diventa un parametro
+  esplicito dell'orchestratore, non una scelta cablata (vedi "Conseguenza architetturale"
+  sopra) — disegnare come questo parametro si espone (`run_batch.py`? config?) e come
+  l'orchestratore acquisisce il controllo reale di avvio/arresto (`docker compose run
+  --rm` per la modalità "ricrea per caso");
+- per l'audit corrente su questo vendor, il valore di default pende verso **container
+  riusato con repulisti mirato per B4-B7** (economico, e più fedele alla condizione di
+  misura dichiarata dal vendor — `Pipeline()` unica, riusata per le 300 sessioni), con B8
+  (età del container) come limite dichiarato esplicito residuo — da confermare con la
+  verifica empirica ancora mancante (vedi sopra);
+- valutare se vale il costo di un confronto P/R tra le due modalità (beneficio aggiuntivo
+  sopra), come esperimento metodologico proprio di questo progetto;
+- limite dichiarato esplicito anche per il ritmo/tempistica (B2, versione "ritmo umano")
+  con la motivazione onesta richiesta da `SPIRIT.md` principio 3.
 
 ## Gap 15 — Granularità/espressività di un "test": primitiva atomica vs sceneggiature composte (emerge da Gap 14)
 
-**Stato**: aperto — principio architetturale condiviso, non ancora una decisione di
-design. Da approfondire prima di, o insieme a, Plan 5.
+**Stato**: aperto ma non bloccante per Plan 5 — principio architetturale condiviso, non
+ancora una decisione di design. Il dubbio specifico "il nostro `TestCase` a un seed turn è
+comparabile alle 'sessioni' dichiarate dal vendor?" è stato verificato e chiuso (vedi
+sotto, "Verifica fatta"): nessun disallineamento, non serve risolverlo prima di Plan 5.
 
 **Trovato da**: continuazione diretta della discussione che ha prodotto Gap 14
 (2026-08-18). Una volta stabilito che la creazione/distruzione del container `detector` è
@@ -1197,9 +1273,36 @@ deliberata) — dipende dalla soluzione di Gap 14 (il controllo pieno sul contai
 una domanda di design distinta, rilevante soprattutto per Plan 5 (costruzione del
 dataset).
 
-**Prossimo passo**: non ancora deciso — probabile sessione di design dedicata
-(architetturale, non una correzione isolata) prima di, o insieme a, Plan 5, dato che è lì
-che lo schema dei `TestCase`/eventuali sceneggiature prende forma concreta.
+**Verifica fatta (2026-08-18)** — dubbio sollevato dall'utente: il vendor dichiara la
+propria capacità su "sessioni" (300, benchmark Gauntlet); se nella realtà una sessione è
+una sequenza di comandi in uno stesso ambiente, e il nostro `TestCase` è vincolato a un
+solo turno seed in ingresso, il confronto coi numeri dichiarati (P=1.0, R=0.667) sarebbe
+tra costrutti diversi — non valido.
+
+Verificato leggendo la struttura pubblica del benchmark del vendor (non l'implementazione
+dei detector — qui si verifica cosa il vendor dichiara di misurare, non se un segnale è
+"sicuro", uso legittimo distinto dal caso vietato da Gap 14, vedi lì la "Correzione di
+metodo"): `aidr/gauntlet/runner.py::record_session()` prende anch'esso un solo
+`task.user_prompt` (singolare) e lo passa a un agente autonomo istruito a "run the full
+tool chain to completion" — l'agente decide da sé quante chiamate a tool fare, producendo
+una traiettoria multi-messaggio che diventa **una** sessione (`AgentEvent`). È la stessa
+identica struttura del nostro `toy_agent`: `run_case.py::run_case()` prende un solo
+`scenario` seed e lo passa a `run_agent()` (`agent_loop.py`), che esegue un loop ReAct
+fino a `max_turns=8`, producendo un `Transcript` multi-turno.
+
+**Esito**: nessun disallineamento. Il vincolo "un solo seed turn in ingresso"
+(`_extract_scenario()`) non equivale a "una sola azione nella sessione consegnata al
+detector" — entrambi i sistemi usano lo schema "un'istruzione innesca un'esecuzione
+agentica multi-step, il tutto diventa una sessione". Il confronto P/R fianco a fianco già
+previsto dal design doc (`docs/design/2026-08-14-toy-agent-e-pipeline-misura.md:892`)
+resta valido su questo asse specifico. Gap 15 non va promosso a prerequisito urgente di
+Plan 5 per questo motivo.
+
+**Prossimo passo**: non più urgente sull'asse verificato sopra (granularità seed-turn vs
+sessione multi-step, già allineata al vendor). Resta aperta, ma non bloccante, la domanda
+distinta della modalità 2 sopra — più sessioni/ticket separati nello stesso ambiente
+persistente nel tempo — da riprendere in una sessione di design dedicata quando utile,
+senza vincolo di sequenza rispetto a Plan 5.
 
 ## Come si chiude un gap
 
