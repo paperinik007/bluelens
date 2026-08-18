@@ -1273,6 +1273,20 @@ deliberata) — dipende dalla soluzione di Gap 14 (il controllo pieno sul contai
 una domanda di design distinta, rilevante soprattutto per Plan 5 (costruzione del
 dataset).
 
+**Sintesi emersa discutendo Gap 7 (2026-08-18)** — unifica il parametro ciclo-di-vita-
+container di Gap 14 e la sovrastruttura sceneggiature di questo gap sotto un unico
+requisito, da portare alla sessione di design dedicata: la struttura di configurazione
+dell'input di un test/run non va progettata intorno al bisogno di oggi con un parametro
+aggiunto qui e uno là — va progettata come **una struttura di configurazione generale**,
+di cui il caso in esame oggi (il nostro dataset, contro questo vendor, con queste
+condizioni) è solo una delle configurazioni esprimibili, non l'unica prevista dal
+disegno. Concretamente: ciclo-di-vita-container, granularità del test (atomico vs
+sceneggiatura), e ogni dimensione futura (es. riprodurre fedelmente le condizioni di
+misura dichiarate da un vendor, non solo testarlo con la nostra) dovrebbero essere
+dimensioni dello stesso schema di configurazione, non parametri incollati uno alla volta.
+Stesso principio 8 di `SPIRIT.md`, applicato qui al livello della configurazione stessa
+invece che alla singola scelta.
+
 **Verifica fatta (2026-08-18)** — dubbio sollevato dall'utente: il vendor dichiara la
 propria capacità su "sessioni" (300, benchmark Gauntlet); se nella realtà una sessione è
 una sequenza di comandi in uno stesso ambiente, e il nostro `TestCase` è vincolato a un
