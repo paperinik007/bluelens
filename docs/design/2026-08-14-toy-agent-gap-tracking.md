@@ -838,7 +838,13 @@ sui casi più significativi.
 
 ## Gap 12 — `case_id` raggiunge il detector come `session_id`, canale di fuga non verificabile da questo repo
 
-**Stato**: aperto — rischio da verificare, non un difetto confermato.
+**Stato**: **assorbito nel Gap 14** (2026-08-18) — unificato con Gap 13 sotto un unico
+problema generale ("segnali che rivelano una sessione di test"). La verifica fatta qui
+sotto resta valida come evidenza di supporto (per il commit vendor pinnato, `session_id`
+non compare in nessun prompt), ma non è più trattata come la risoluzione: verificare
+contro un solo commit vendor non garantisce nulla sul prossimo vendor che questo progetto
+controllerà — vedi Gap 14, sezione "Correzione di metodo". Contenuto originale conservato
+sotto per la sola evidenza tecnica.
 
 **Trovato da**: revisione finale whole-branch di Plan 4 (opus, 2026-08-17), durante
 la verifica end-to-end della catena di composizione tra i moduli.
@@ -883,7 +889,9 @@ riferimento al commit verificato.
 
 ## Gap 13 — Stato residuo lasciato dai processi uccisi nel container `detector`, potenziale segnale di misura al sistema sotto test
 
-**Stato**: aperto — da discutere, nessuna mitigazione applicata.
+**Stato**: **assorbito nel Gap 14** (2026-08-18) — unificato con Gap 12 sotto un unico
+problema generale. Contenuto originale conservato sotto per la sola evidenza tecnica
+(l'enumerazione completa, aggiornata, vive in Gap 14).
 
 **Trovato da**: revisione utente del merge di Plan 4 (2026-08-17), durante una domanda
 sui side effect lasciati nel container controllato tra un caso e il successivo.
@@ -931,6 +939,267 @@ caso e l'altro invece di riusarlo per tutto il batch; (b) un cleanup esplicito
 post-pkill mirato alle directory note usate da `aidr/providers`, se identificabili; (c)
 accettarlo come limite dichiarato del PoC di Fase 1, documentato nel report finale
 insieme a Gap 12, con l'onestà statistica richiesta da `SPIRIT.md` principio 3.
+
+## Gap 14 — Segnali che rivelano al detector di essere sotto test (unifica Gap 12 + Gap 13)
+
+**Stato**: in discussione — enumerazione dei segnali completa (a questa data), trattamento
+di ognuno non ancora deciso.
+
+**Trovato da**: unificazione esplicita, richiesta dall'utente (2026-08-18), di Gap 12
+(`session_id`/`case_id`) e Gap 13 (stato residuo nel container `detector`) sotto un unico
+problema generale — durante la discussione su come chiudere Gap 12, l'utente ha corretto
+il metodo di indagine usato in questa sessione (vedi sotto), il che ha allargato lo scope
+a un problema più ampio di entrambi i gap originali.
+
+**Il problema generale**: nessuna chiamata né alcuno stato residuo lasciato dal nostro
+strumento di misura deve permettere al detector — o a chi ne ha scritto il codice, oggi o
+in futuro — di distinguere una sessione di test da una organica. Un sistema sotto misura
+che riconosce di essere osservato può comportarsi diversamente durante il test rispetto al
+mondo reale (situational awareness / effetto osservatore), invalidando la misura alla
+radice, prima ancora di guardare cosa risponde. Rilevante per l'obiettivo dichiarato di
+Fase 1 (misurare detection reale, non detection-quando-il-sistema-sa-di-essere-osservato)
+e per `SPIRIT.md` in generale.
+
+**Correzione di metodo (vale per ogni gap futuro di questa famiglia, non solo questo)**:
+la prima proposta di chiusura del Gap 12 in questa sessione si basava sulla lettura del
+codice vendor pinnato, per verificare se `session_id` venisse effettivamente usato in un
+prompt inviato al modello. L'utente ha corretto questo approccio: **il detector va
+trattato come una scatola nera** — si conosce e si controlla solo il confine
+ingresso/uscita dichiarato dall'interfaccia, mai l'implementazione interna, perché (a) una
+verifica sul codice vale solo per il commit congelato di oggi, non per il prossimo tool di
+rilevamento che questo progetto controllerà in una futura Fase 2, e (b) è lo stesso
+criterio già scelto per la decisione di Gap 9: "quale confine regge senza doversi fidare
+della disciplina di chi scrive il codice dall'altra parte", non "qual è il rischio più
+economico da coprire oggi, per questo vendor". Applicando il criterio corretto (enumerare
+solo l'interfaccia dichiarata e ciò che è osservabile da un processo con normale
+visibilità di sistema dentro il container, mai leggere l'implementazione vendor per
+giustificare un campo come "sicuro"), è emerso subito un segnale più grave di quello
+originale del Gap 12, che l'approccio precedente aveva fatto ignorare: `source="toy_agent"`
+(tabella A, voce A2 sotto) — il nome del progetto dichiarato letteralmente nel payload.
+
+**Inventario dei segnali** (enumerazione a questa data, fatta guardando solo il confine
+ingresso/uscita, mai l'implementazione vendor):
+
+*A — payload dichiarato (l'oggetto `AgentEvent` che il contratto d'interfaccia del
+detector richiede comunque di costruire, `detector_adapter/adapter.py`,
+`transcript_dict_to_agent_event()`):*
+
+| # | Campo | Valore oggi | Segnale? |
+|---|---|---|---|
+| A1 | `session_id` | = il nostro `case_id` (es. `malicious_001`) | **Sì — rivela l'etichetta di verità** |
+| A2 | `source` | costante `"toy_agent"` (`adapter.py:57`) | **Sì — dichiara letteralmente il nome del progetto di misura** |
+| A3 | `declared_servers` | costante `["toy_support"]` | **No** — verificato e scartato, vedi sotto |
+| A4 | `timestamp` | orario reale della chiamata (`datetime.now(timezone.utc)`) | Aperto — sembra organico isolatamente, ma tutte le chiamate di uno stesso lotto sono ravvicinate nel tempo (vedi B2) |
+| A5 | Forma dei `messages` (`call_id` sempre `call_{seq}`, sempre esattamente un turno seed utente) | scritta da noi | Aperto — pattern strutturale non ancora valutato a fondo, distinto dal contenuto della conversazione |
+
+*B — cosa può osservare un processo che gira dentro il container `detector`, oltre al
+payload dichiarato (assumendo, per prudenza da scatola nera, che un detector — oggi o
+futuro — possa avere strumenti con visibilità di sistema oltre ai 3 tool MCP che gli
+registriamo noi):*
+
+| # | Canale | Segnale? |
+|---|---|---|
+| B1 | Nome della variabile d'ambiente `OPENROUTER_API_KEY` nel container | **No** — verificato: generico dentro il container, il prefisso `DETECTOR_`/`AGENT_` esiste solo lato host (`.env`), mai visibile da dentro |
+| B2 | Ritmo/tempistica tra una chiamata e l'altra (container long-lived, chiamate ravvicinate per tutto il lotto) | **Sì, potenziale** |
+| B3 | Traffico verso il modello instradato dal nostro proxy sostitutivo invece che dall'endpoint reale (differenze di rete/latenza osservabili) | Aperto — non ancora valutato |
+| B4 | Processi zombie/orfani in `ps`, residuo di un `pkill` che non ha ucciso in tempo tutti i figli | **Sì, potenziale** |
+| B5 | Core dump su disco da un processo terminato con segnale | **Sì, potenziale** — non valutato quanto sia realistico in questo ambiente, ma se esistesse sarebbe il canale più rivelatore di tutti (potenzialmente contenuto di conversazione di un caso precedente) |
+| B6 | File `.pyc`/`__pycache__`, scritti dall'interprete Python a ogni `import`, non dal codice applicativo | **Sì, potenziale ma debole** — contenuto generico (bytecode, non dati di caso), ma la loro esistenza/data rivela un ambiente riusato ripetutamente |
+| B7 | Socket di rete rimasti aperti da sottoprocessi MCP uccisi a metà | **Sì, potenziale** |
+| B8 | Età/tempo di attività del container stesso | **Sì, potenziale** — segnale strutturale che nessun cleanup di file può correggere, intrinseco a un container long-lived |
+
+*C — canali esterni al container, verificati e scartati durante l'enumerazione:*
+
+| # | Canale | Esito |
+|---|---|---|
+| C1 | Log Docker del container (`docker logs detector`) | **Non applicabile** — `docker compose exec` (come invochiamo il detector per ogni caso) non scrive mai in quel flusso, e comunque non sarebbe leggibile dal processo interno (nessun accesso al demone Docker, `cap_drop: ALL`, rete interna) |
+| C2 | Log del thin-proxy (`/var/log/vendor_proxy.jsonl`) | Già tracciato (Gap 13 originale) — troncato prima di ogni invocazione da `orchestrator.py`, ma non cancellato subito dopo la copia in evidence: finestra residua fino al prossimo troncamento |
+
+**Punti verificati e scartati** (non richiedono ulteriore trattamento, per la ragione
+indicata, non perché "il codice vendor non li legge"):
+- **A3** (`declared_servers` costante): non è un segnale — è una proprietà vera e coerente
+  del sistema simulato, non un artefatto del test. Il nostro `toy_agent` ha un solo set
+  fisso di 6 strumenti sotto un solo server logico; qualunque sessione reale generata da
+  questo stesso agente, testata o no, mostrerebbe la stessa costanza (un'azienda con un
+  singolo tool di supporto interno vedrebbe la stessa regolarità in produzione).
+- **B1**: verificato sul nostro `docker-compose.yml` — nome generico dentro il container.
+- **C1**: verificato sul nostro `docker-compose.yml`/entrypoint — canale non raggiungibile
+  né dal detector né rilevante per l'invocazione per-caso.
+
+**Stima di costo per un trattamento strutturale** (per orientare la decisione futura, non
+ancora una scelta — vedi "Prossimo passo"):
+- **A1** (`session_id`): economico. Generare un identificativo opaco per invocazione (es.
+  UUID) invece di riusare `case_id`, con l'orchestratore — che già conosce il vero
+  `case_id` in autonomia, lo usa già per ogni verdetto d'errore — a sovrascrivere il campo
+  `case_id` del verdetto restituito prima di usarlo, indipendentemente da cosa il detector
+  rimandi indietro. Percorso già tracciato riga per riga: `run_case.py:54` (dove nasce
+  l'accoppiamento) e `orchestrator.py:170` (dove va applicata la sovrascrittura, unico
+  punto debole — ogni altro ramo già usa il `case_id` locale, mai l'eco del detector).
+  Generalizza a qualunque vendor futuro, non solo a questo.
+- **A2** (`source`): stesso ordine di grandezza di A1 — una costante da sostituire con
+  qualcosa che non dichiari il nome del progetto (es. `"agent"`, o un valore plausibile
+  per una integrazione reale).
+- **B4-B8** (residuo di container riusato): vedi decomposizione dedicata subito sotto —
+  non tutte e cinque le voci hanno lo stesso costo di trattamento, la scomposizione
+  restringe di molto cosa richiede davvero la ricostruzione del container.
+- **B2 ritmo/tempistica** (versione strutturale = imitare un ritmo umano organico):
+  sconsigliato anche a livello di principio, non solo di costo — non esiste un riferimento
+  credibile di "che ritmo ha un utente umano reale" da imitare in modo verificabile,
+  rischio concreto di sforzo ingegneristico speso senza un bersaglio definito.
+- **B3** (traffico instradato dal proxy sostitutivo): costo non ancora stimato, non
+  approfondito in questa sessione.
+
+**Decomposizione B4-B8 — "repulisti" vs ricostruzione reale del container (2026-08-18,
+osservazione dell'utente)**: "container nuovo o container riusato" non è un'unica
+decisione — si spacca in due assi indipendenti: (1) quali residui devono tornare come
+all'inizio prima del caso successivo, (2) se per farlo serve davvero ricostruire il
+container o basta pulirlo bene ("repulisti" mirato, verificato empiricamente, non solo
+scritto e assunto corretto). Applicando questo a ognuna delle cinque voci:
+
+- **B4 (processi zombie/orfani)** — pulibile con un pattern di kill più affidabile di
+  quello attuale, verificato con `ps aux` che non resti nulla dopo.
+- **B5 (core dump)** — pulibile: cercarli ed eliminarli esplicitamente prima del caso
+  successivo.
+- **B6 (`.pyc`/`__pycache__`)** — pulibile, il più semplice: evitabile anche a monte con
+  `PYTHONDONTWRITEBYTECODE=1` nell'ambiente del container, invece di ripulirli ogni volta.
+- **B7 (socket di rete aperti)** — pulibile in pratica (si chiudono uccidendo il processo
+  che li tiene), stesso limite di affidabilità di B4.
+- **B8 (età/tempo di attività del container)** — **non pulibile, per nessun repulisti**.
+  Qualitativamente diverso dagli altri quattro: non è uno stato che si sporca e si pulisce,
+  è una proprietà intrinseca del container (da quando il suo processo principale è
+  partito). Solo una vera ricostruzione del container elimina questo segnale specifico.
+
+**Conseguenza per la decisione**: la ricostruzione completa del container non serve per
+chiudere quattro residui su cinque — quelli si chiudono con un repulisti economico, purché
+verificato empiricamente (vedi sotto). Resta un'unica domanda isolata, più piccola: quanto
+vale la pena spendere per eliminare anche B8, che non ha alternativa economica alla
+ricostruzione — dato che è un segnale indiretto (età del container) rispetto a un segnale
+diretto come `session_id`/`case_id` (A1).
+
+**Stima di costo della ricostruzione per-caso del container `detector` (2026-08-18,
+ragionamento sul nostro `Dockerfile`/`entrypoint.sh`/`orchestrator.py`, non ancora
+misurato dal vivo)** — corregge al ribasso la stima "costo medio" data inizialmente:
+
+- **Tempo di esecuzione**: la parte pesante (clone del repo vendor, installazione
+  dipendenze) avviene una sola volta alla build dell'immagine, non all'avvio del
+  container — avviare un nuovo container da un'immagine già costruita è economico.
+  L'unico lavoro che `entrypoint.sh` rifà a ogni avvio è avviare il thin-proxy e
+  aspettare che apra le sue tre porte (~1-2s in pratica, tetto di sicurezza 4s/porta).
+  L'handshake MCP di Inspector con i tre provider (la parte davvero lenta) **già oggi
+  riparte da zero a ogni caso**, container riusato o no, perché ogni caso è comunque un
+  nuovo processo `evaluate_case.py`. Il costo aggiuntivo della ricostruzione del
+  container si somma a un costo già pagato oggi, ed è comunque piccolo rispetto alle
+  vere chiamate LLM (fino a 8 turni Inspector per caso).
+- **Costo di ingegneria**: `docker compose run --rm <servizio>` offre nativamente il
+  ciclo di vita "container nuovo, esegui, distruggi" — sostituire i `docker compose exec`
+  attuali con questo potrebbe semplificare `orchestrator.py` invece di appesantirlo (il
+  passo che oggi tronca manualmente il log del thin-proxy prima di ogni caso diventerebbe
+  superfluo, un container nuovo parte con quel file già vuoto).
+- **Complicazione reale trovata**: `evidence.py::collect_case_evidence` raccoglie
+  `docker diff`/`docker stats`/log **dopo** che il caso è finito, oggi possibile perché il
+  container resta vivo per il caso successivo. Con `--rm` il container sparirebbe prima
+  della raccolta — va invertito l'ordine (raccogliere le prove prima di distruggere il
+  container), vincolo non previsto finché non si è ripercorso il flusso reale.
+- **"Container template"**: non serve costruirne uno separato — l'immagine Docker già
+  costruita *è* il template (i layer con le dipendenze installate sono riusati
+  automaticamente a ogni avvio). Uno snapshot ulteriore (es. `docker commit` post-warmup)
+  risparmierebbe 1-2s già oggi trascurabili — non ne vale la pena.
+- **"N container per N test"**: va distinto in due letture diverse. Un container nuovo
+  per caso, uno alla volta (sequenziale) = la stessa cosa della ricostruzione per-caso
+  sopra, economica. N container avviati **in parallelo** è una domanda di velocità/
+  throughput, non di isolamento dai segnali — introduce complicazioni non motivate dal
+  problema di questo gap (log del thin-proxy condiviso non più troncabile per singolo
+  caso, attribuzione delle prove ambigua, in conflitto con la sequenzialità già decisa
+  altrove nel progetto) — **non raccomandato**, è un problema diverso da quello che ha
+  aperto questo gap.
+- **Conclusione provvisoria**: tra "repulisti su container riusato" e "ricostruzione
+  per-caso", la seconda chiude anche B8 (che il repulisti da solo non può chiudere) e
+  sembra economica su entrambi gli assi — potrebbe valere più della prima, capovolgendo
+  la stima iniziale. Non ancora confermato: serve una misura reale del tempo di avvio in
+  questo ambiente specifico prima di decidere, il ragionamento sopra è sulla carta.
+
+**Verifica empirica non ancora fatta per nessuna voce B**: l'inventario sopra è costruito
+per enumerazione (cosa *potrebbe* essere osservabile da un processo con visibilità di
+sistema), non per osservazione diretta. Un run reale con ispezione mirata (es. `ps aux`,
+`ls /proc`, ricerca di core dump, controllo `__pycache__`/socket aperti dentro il
+container `detector` subito dopo un `pkill` indotto deliberatamente) darebbe evidenza
+concreta di quali voci B4-B8 sono presenti davvero in questo ambiente, invece di essere
+solo teoricamente possibili — utile prima di decidere quanto investire nel trattamento
+strutturale di B2.
+
+**Prossimo passo**: trattamento di ogni voce non ancora deciso — da riprendere in una
+sessione di design dedicata (probabile secondo checkpoint con confronto di approcci e
+trade-off, come già fatto per Gap 9, non una singola correzione isolata). Punto di
+partenza proposto per quella sessione: decidere se questa famiglia di segnali riceve una
+risposta strutturale uniforme (costosa ma valida per ogni vendor futuro, non solo questo)
+o un trattamento misto — fix economici e strutturali per A1/A2 subito, verifica empirica
+mirata (vedi sopra) prima di investire nella ricostruzione per-caso del container per
+B2/B4-B8, limite dichiarato esplicito per il ritmo/tempistica (B2, versione "ritmo
+umano") con la motivazione onesta richiesta da `SPIRIT.md` principio 3.
+
+## Gap 15 — Granularità/espressività di un "test": primitiva atomica vs sceneggiature composte (emerge da Gap 14)
+
+**Stato**: aperto — principio architetturale condiviso, non ancora una decisione di
+design. Da approfondire prima di, o insieme a, Plan 5.
+
+**Trovato da**: continuazione diretta della discussione che ha prodotto Gap 14
+(2026-08-18). Una volta stabilito che la creazione/distruzione del container `detector` è
+sotto il nostro pieno controllo (Gap 14, stima di costo), l'utente ha osservato che questo
+lascia aperta una domanda mai posta finora: cosa può essere "un test" — una singola
+chiamata isolata, o una sequenza più o meno lunga di comandi/interazioni, dato che il
+confine di isolamento (il container) è comunque scelto da noi.
+
+**Il problema**: l'infrastruttura di container (crea/esegui/distruggi) è agnostica
+rispetto a cosa succede al suo interno — ma la struttura applicativa già costruita sopra è
+oggi cablata specificamente sul modello "una chiamata a colpo": un solo turno seed in
+ingresso (`run_case.py::_extract_scenario`, righe 38-39, rifiuta esplicitamente
+`len(turns) != 1`), un'invocazione detector per invocazione agente (1:1,
+`orchestrator.run_test_case()`), un verdetto per caso (`schema.py`/`metrics.py`, mai una
+sequenza). Una prima lettura di questi vincoli (mia, poi corretta dall'utente) li trattava
+come limitazioni da rimuovere per supportare test più elaborati.
+
+**La correzione (osservazione dell'utente)**: i vincoli sopra non sono limitazioni da
+rimuovere — sono il confine di una **primitiva atomica corretta**, che deve restare
+esattamente com'è. "Test più elaborati" (sceneggiature, sequenze di comandi) non
+richiedono modificarla: si costruiscono componendo quella primitiva da un livello sopra
+(una nuova funzione/modulo di orchestrazione che la chiama più volte in sequenza),
+esattamente come `orchestrator.py` stesso è già "pura composizione, nessuna decisione
+architetturale propria" sopra agente e detector (Gap 6) — lo stesso pattern, un livello
+più in alto. Principio generale dell'utente: "è informazione, come la utilizziamo è
+utilità" — la primitiva è l'informazione (corretta, stabile), la sovrastruttura è
+l'utilità (il modo in cui la componiamo per uno scopo specifico); vanno tenute separate
+perché ognuna resti chiara, funzionale, concreta e corretta al proprio livello.
+
+**Due modalità distinte, entrambe abilitate dal controllo pieno sul ciclo di vita del
+container (Gap 14)**:
+1. Sceneggiatura composta da invocazioni su container **separati e freschi** (una
+   primitiva per container) — resta atomica per ogni singola chiamata, la sequenza è solo
+   un'orchestrazione esterna di più test indipendenti.
+2. Sceneggiatura composta da invocazioni **multiple nello stesso container**,
+   deliberatamente — utile specificamente per testare come si comporta il detector quando
+   vede più interazioni collegate nello stesso ambiente. Diverso dalla fuga di stato
+   accidentale che Gap 14 previene: qui sarebbe uno scenario costruito consapevolmente per
+   essere osservato, non un incidente.
+
+**Cosa resta genuinamente aperto** (lavoro additivo, non revisione del corretto):
+- Cosa deve essere, esattamente, la sovrastruttura — un nuovo tipo a un livello più alto
+  di `TestCase` (una sequenza), non una modifica allo schema esistente.
+- Semantica dell'etichetta di verità per una sequenza: vale per l'intera sceneggiatura, o
+  per singola interazione al suo interno?
+- Quale delle due modalità sopra (container per invocazione vs. container condiviso
+  deliberato) usare, e quando — sono strumenti per domande di misura diverse, non
+  alternative esclusive tra loro.
+
+**Perché non è lo stesso problema di Gap 14**: Gap 14 riguarda se il detector può
+accorgersi di essere sotto test (fuga di segnali, involontaria). Questo gap riguarda cosa
+un "test" può *essere* come unità di misura (granularità/espressività, per scelta
+deliberata) — dipende dalla soluzione di Gap 14 (il controllo pieno sul container) ma è
+una domanda di design distinta, rilevante soprattutto per Plan 5 (costruzione del
+dataset).
+
+**Prossimo passo**: non ancora deciso — probabile sessione di design dedicata
+(architetturale, non una correzione isolata) prima di, o insieme a, Plan 5, dato che è lì
+che lo schema dei `TestCase`/eventuali sceneggiature prende forma concreta.
 
 ## Come si chiude un gap
 
