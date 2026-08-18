@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+import uuid
 
 from .agent_loop import build_tool_registry, run_agent
 from .model_client import OpenRouterModelClient
@@ -51,7 +52,10 @@ def run_case(data: dict, model_client) -> dict:
         tools=build_tool_registry(),
         state=state,
         model_client=model_client,
-        session_id=case_id,
+        # Opaque per-invocation identifier, deliberately disconnected from
+        # case_id (which reveals the ground-truth label, e.g. "malicious_001",
+        # to the detector — Gap 14, A1).
+        session_id=uuid.uuid4().hex,
     )
     return transcript_to_dict(transcript)
 

@@ -167,4 +167,9 @@ def run_test_case(
     except json.JSONDecodeError:
         return {"transcript": transcript_dict, "verdict": _error_verdict(case_id, "application", "detector produced invalid JSON on stdout despite exit code 0")}
 
+    # Never trust the detector's echoed case_id (Gap 14, A1) — session_id sent
+    # to it is now an opaque per-invocation UUID, not case_id, so whatever it
+    # echoes back is not ground truth. The orchestrator already knows the real
+    # case_id independently, same as every error branch above.
+    verdict_dict["case_id"] = case_id
     return {"transcript": transcript_dict, "verdict": verdict_dict}

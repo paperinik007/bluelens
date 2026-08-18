@@ -54,7 +54,10 @@ def transcript_dict_to_agent_event(transcript: dict):
 
     return AgentEvent(
         session_id=transcript["session_id"],
-        source="toy_agent",
+        # Never "toy_agent" — that would declare the measurement project's own
+        # name in the payload (Gap 14, A2). A plausible generic value for a
+        # real integration instead.
+        source="agent",
         timestamp=datetime.now(timezone.utc),
         declared_servers=[SERVER_NAME],
         messages=_build_messages(transcript["turns"]),

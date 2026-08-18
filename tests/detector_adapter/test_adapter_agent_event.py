@@ -29,6 +29,13 @@ def test_agent_event_carries_session_id_and_declares_toy_support():
     assert ev.declared_servers == ["toy_support"]
 
 
+def test_agent_event_source_does_not_reveal_the_project_name():
+    # Gap 14, A2: source="toy_agent" declared the measurement project's name
+    # literally in the payload the detector receives.
+    ev = transcript_dict_to_agent_event(_TRANSCRIPT)
+    assert ev.source != "toy_agent"
+
+
 def test_tool_turn_produces_dotted_tool_name_and_a_result_message():
     ev = transcript_dict_to_agent_event(_TRANSCRIPT)
     calling = [m for m in ev.messages if m.message_type == "tool_calling"]

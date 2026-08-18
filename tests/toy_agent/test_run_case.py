@@ -1,4 +1,5 @@
 import json
+import uuid
 
 import pytest
 
@@ -76,10 +77,26 @@ def test_transcript_to_dict_round_trips_a_tool_turn():
 def test_run_case_produces_a_transcript_dict_for_the_seed_scenario():
     client = FakeModelClient([ModelReply(content="All set!", tool_calls=[], cost_usd=0.001)])
     result = run_case(_SEED_INPUT, client)
-    assert result["session_id"] == "case_001"
     assert result["turns"][0]["content"] == "Can you help me?"
     assert result["turns"][-1]["content"] == "All set!"
     assert result["stop_reason"] == "completed"
+
+
+def test_run_case_session_id_is_an_opaque_uuid_disconnected_from_case_id():
+    # Gap 14, A1: session_id must never echo case_id — case_id reveals the
+    # ground-truth label (e.g. "malicious_001") to the detector.
+    client = FakeModelClient([ModelReply(content="All set!", tool_calls=[], cost_usd=0.001)])
+    result = run_case(_SEED_INPUT, client)
+    assert result["session_id"] != _SEED_INPUT["case_id"]
+    assert uuid.UUID(result["session_id"]).hex == result["session_id"]
+
+
+def test_run_case_session_id_is_unique_per_invocation():
+    client_a = FakeModelClient([ModelReply(content="All set!", tool_calls=[], cost_usd=0.001)])
+    client_b = FakeModelClient([ModelReply(content="All set!", tool_calls=[], cost_usd=0.001)])
+    result_a = run_case(_SEED_INPUT, client_a)
+    result_b = run_case(_SEED_INPUT, client_b)
+    assert result_a["session_id"] != result_b["session_id"]
 
 
 def test_main_writes_only_the_transcript_json_to_stdout(monkeypatch, capsys):
@@ -94,7 +111,8 @@ def test_main_writes_only_the_transcript_json_to_stdout(monkeypatch, capsys):
     captured = capsys.readouterr()
     assert captured.err == ""
     parsed = json.loads(captured.out)
-    assert parsed["session_id"] == "case_001"
+    assert parsed["session_id"] != _SEED_INPUT["case_id"]
+    assert uuid.UUID(parsed["session_id"]).hex == parsed["session_id"]
 
 
 def test_main_exits_nonzero_and_writes_to_stderr_on_bad_input(monkeypatch, capsys):

@@ -1003,8 +1003,42 @@ insieme a Gap 12, con l'onestà statistica richiesta da `SPIRIT.md` principio 3.
 
 ## Gap 14 — Segnali che rivelano al detector di essere sotto test (unifica Gap 12 + Gap 13)
 
-**Stato**: in discussione — enumerazione dei segnali completa (a questa data), trattamento
-di ognuno non ancora deciso.
+**Stato**: in discussione — A1/A2 (tabella A) **risolti nel codice (2026-08-18)**, il resto
+dell'enumerazione (A3-A5, B1-B8, C1-C2) resta con trattamento non ancora deciso.
+
+**Risoluzione applicata (2026-08-18) — A1/A2**: entrambe le parti generalizzano per
+costruzione (principio 8, `SPIRIT.md`) — non dipendono da alcun comportamento osservato
+del vendor pinnato, chiudono un canale strutturale indipendentemente da chi legge il
+payload in futuro (oggi `aidr`, un vendor diverso in Fase 2).
+- **A1**: `src/toy_agent/run_case.py` genera `session_id=uuid.uuid4().hex` per invocazione
+  (prima: `session_id=case_id`). `src/toy_agent/orchestrator.py::run_test_case`
+  sovrascrive incondizionatamente `verdict_dict["case_id"] = case_id` (la variabile locale
+  già nota, non l'eco del detector) prima di restituire il risultato — unico punto che si
+  fidava dell'eco del detector, ogni ramo d'errore già usava il `case_id` locale.
+- **A2**: `src/detector_adapter/adapter.py::transcript_dict_to_agent_event` usa
+  `source="agent"` invece di `source="toy_agent"`.
+- **Test** (TDD, seam = funzioni pubbliche `run_case`/`main`, `run_test_case`,
+  `transcript_dict_to_agent_event`): `tests/toy_agent/test_run_case.py` (session_id
+  diverso da case_id, formato UUID, univoco per invocazione),
+  `tests/toy_agent/test_orchestrator.py` (verdetto del detector con `case_id` estraneo
+  viene sovrascritto col vero `case_id`), `tests/detector_adapter/test_adapter_agent_event.py`
+  (`source != "toy_agent"` — test gated da `aidr`, skippato su questo host Windows, eseguito
+  solo nel container `detector`). Suite: 175 passed, 2 skipped (invariato — stesso gate
+  `aidr` di prima, nessun nuovo skip introdotto).
+- **Verifica end-to-end reale (2026-08-18)**: `docker compose up -d --build` (stack
+  completo, non mock), un caso reale fatto girare attraverso
+  `toy_agent.orchestrator.run_test_case` end-to-end (`agent` → `detector`). Transcript
+  prodotto: `session_id` = `3da9b5097eb541979cc79cf61344da08` (32 caratteri esadecimali,
+  formato UUID valido) — diverso da `case_id` = `gap14_verify_001`. Verdict finale:
+  `case_id` = `gap14_verify_001` (il vero case_id, non l'eco del detector) — confermato
+  che l'orchestratore lo impone correttamente. Nessun errore lanciato da `aidr.AgentEvent`
+  con `source="agent"`, confermando che il valore è accettato dalla libreria vendor reale.
+  Nota ambientale incontrata e risolta durante questa verifica, non legata a Gap 14: i due
+  `entrypoint.sh` (`docker/agent/`, `docker/detector/`) avevano terminatori CRLF residui su
+  questo checkout Windows (stesso problema di riproducibilità già notato come rischio
+  residuo in Gap 4, mai affrontato lì) — normalizzati a LF sul disco locale, nessuna
+  modifica risultante in `git diff` (`.gitattributes` dichiara già `eol=lf` per `*.sh`, il
+  file su disco non era mai stato rinormalizzato dopo l'aggiunta dell'attributo).
 
 **Trovato da**: unificazione esplicita, richiesta dall'utente (2026-08-18), di Gap 12
 (`session_id`/`case_id`) e Gap 13 (stato residuo nel container `detector`) sotto un unico
@@ -1047,8 +1081,8 @@ detector richiede comunque di costruire, `detector_adapter/adapter.py`,
 
 | # | Campo | Valore oggi | Segnale? |
 |---|---|---|---|
-| A1 | `session_id` | = il nostro `case_id` (es. `malicious_001`) | **Sì — rivela l'etichetta di verità** |
-| A2 | `source` | costante `"toy_agent"` (`adapter.py:57`) | **Sì — dichiara letteralmente il nome del progetto di misura** |
+| A1 | `session_id` | **Risolto (2026-08-18)** — era = il nostro `case_id` (es. `malicious_001`); ora `uuid.uuid4().hex` generato per invocazione in `run_case.py`, scollegato da `case_id` | Era **Sì — rivelava l'etichetta di verità** |
+| A2 | `source` | **Risolto (2026-08-18)** — era costante `"toy_agent"`; ora `"agent"` in `adapter.py` | Era **Sì — dichiarava letteralmente il nome del progetto di misura** |
 | A3 | `declared_servers` | costante `["toy_support"]` | **No** — verificato e scartato, vedi sotto |
 | A4 | `timestamp` | orario reale della chiamata (`datetime.now(timezone.utc)`) | Aperto — sembra organico isolatamente, ma tutte le chiamate di uno stesso lotto sono ravvicinate nel tempo (vedi B2) |
 | A5 | Forma dei `messages` (`call_id` sempre `call_{seq}`, sempre esattamente un turno seed utente) | scritta da noi | Aperto — pattern strutturale non ancora valutato a fondo, distinto dal contenuto della conversazione |
@@ -1256,7 +1290,8 @@ strutturale di B2.
 sessione di design dedicata (probabile secondo checkpoint con confronto di approcci e
 trade-off, come già fatto per Gap 9, non una singola correzione isolata). Punto di
 partenza proposto per quella sessione, aggiornato dopo le considerazioni sopra:
-- fix economici e strutturali per A1/A2 subito;
+- ~~fix economici e strutturali per A1/A2 subito~~ — **fatto (2026-08-18)**, vedi
+  "Risoluzione applicata (2026-08-18) — A1/A2" sopra;
 - il ciclo di vita del container (riusato vs ricreato per caso) diventa un parametro
   esplicito dell'orchestratore, non una scelta cablata (vedi "Conseguenza architetturale"
   sopra) — disegnare come questo parametro si espone (`run_batch.py`? config?) e come

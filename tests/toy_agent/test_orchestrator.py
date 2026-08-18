@@ -45,6 +45,22 @@ def test_happy_path_returns_the_transcript_and_the_detector_verdict():
     assert runner.calls[2][1] == _TRANSCRIPT_JSON  # agent's stdout piped straight into detector's stdin
 
 
+def test_verdict_case_id_is_overwritten_with_the_true_case_id():
+    # Gap 14, A1: session_id is now an opaque per-invocation UUID (never
+    # case_id), so the detector's echoed case_id must never be trusted —
+    # the orchestrator already knows the real case_id independently.
+    detector_verdict = json.dumps(
+        {"case_id": "some-opaque-uuid-the-detector-echoed-back", "tool_name": "x", "status": "ok", "label": "benign"}
+    ).encode()
+    runner = ScriptedRunner([
+        CommandResult(returncode=0, stdout=_TRANSCRIPT_JSON, stderr=b""),
+        _TRUNCATE_OK,
+        CommandResult(returncode=0, stdout=detector_verdict, stderr=b""),
+    ])
+    result = run_test_case(_TEST_CASE, run_command=runner)
+    assert result["verdict"]["case_id"] == "case_001"
+
+
 def test_agent_failed_to_start_is_classified_as_infra():
     runner = ScriptedRunner([CommandResult(returncode=-1, stdout=b"", stderr=b"", failed_to_start=True)])
     result = run_test_case(_TEST_CASE, run_command=runner)
