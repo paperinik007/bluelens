@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import shlex
 import subprocess
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Callable
 
 CommandRunner = Callable[[list[str], bytes, float], "CommandResult"]
@@ -52,6 +54,7 @@ def _error_verdict(case_id: str, error_kind: str, detail: str) -> dict:
 def run_test_case(
     test_case: dict,
     *,
+    command_index: int,
     agent_timeout_s: float = 120.0,
     detector_timeout_s: float = 180.0,
     run_command: CommandRunner = default_command_runner,
@@ -85,20 +88,24 @@ def run_test_case(
     except json.JSONDecodeError:
         return {"transcript": None, "verdict": _error_verdict(case_id, "application", "agent produced invalid JSON on stdout despite exit code 0")}
 
-    # Truncate the thin proxy's cumulative log immediately before this
-    # invocation (council-risk finding, Gap 9 targeted council): vendor_proxy
-    # runs as one long-lived background process for the whole detector
-    # container's life, so without this its log mixes entries from every
-    # prior case — the same per-case_id attribution problem the design doc
-    # already solved for docker diff/stats (Task 8), never extended to this
-    # channel until now. Mirrors the "fresh state per invocation" pattern
-    # already established for Gap 5's WorldState reset. Best-effort: a
-    # failure here degrades evidence attribution for this one case, it never
-    # blocks detection itself — sequential execution (design doc) means a
-    # failed truncate at worst leaves this case's log entries mixed with the
-    # previous case's, not with a concurrent one.
+    # Append-only marker instead of truncating (design doc, Gap 14/15,
+    # 'Raccolta prove del thin-proxy log'): the old truncation existed only
+    # for per-case attribution (vendor_proxy runs as one long-lived process
+    # for the detector container's whole life), never a security mechanism —
+    # deleting log content in the observed container proves nothing about
+    # what the container itself retains. The marker turns the log into a
+    # complete, continuous corpus for the whole sequence instead: nothing is
+    # ever lost, and command_index (this command's position in the calling
+    # sequence, supplied by execute_sequence) plus case_id let a reader
+    # attribute every line without needing to isolate files per case.
+    marker = json.dumps({
+        "marker": True,
+        "case_id": case_id,
+        "command_index": command_index,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    })
     run_command(
-        ["docker", "compose", "exec", "-T", "detector", "sh", "-c", f"> {THIN_PROXY_LOG_PATH}"],
+        ["docker", "compose", "exec", "-T", "detector", "sh", "-c", f"echo {shlex.quote(marker)} >> {THIN_PROXY_LOG_PATH}"],
         b"",
         10.0,
     )
