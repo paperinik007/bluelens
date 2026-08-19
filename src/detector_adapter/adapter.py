@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from datetime import datetime, timezone
 from typing import Any
 
@@ -35,7 +36,7 @@ def _build_messages(turns: list[dict]) -> list[Any]:
                 arguments=call["arguments"],
                 result=call.get("result"),
                 status=call.get("status", "ok"),
-                call_id=f"call_{seq}",
+                call_id=uuid.uuid4().hex,
             )
             messages.append(ChatMessage(seq=seq, role="assistant", message_type="tool_calling", content="", tool_calls=[usage]))
             messages.append(ChatMessage(seq=seq, role="tool", message_type="tool_result", content=call.get("result") or ""))

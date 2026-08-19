@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 aidr = pytest.importorskip("aidr", reason="aidr is only installed inside the detector container (docker/detector/Dockerfile)")
@@ -54,3 +56,34 @@ def test_transcript_string_contains_the_dotted_tool_name():
     # verification meaningful.
     ev = transcript_dict_to_agent_event(_TRANSCRIPT)
     assert "toy_support.update_account" in ev.transcript()
+
+
+def test_tool_call_id_is_opaque_not_positional():
+    # Gap 14, A5: call_id=f"call_{seq}" was a predictable, sequence-revealing
+    # pattern — a real tool-calling integration typically emits opaque
+    # hash/token ids, not a visible counter.
+    ev = transcript_dict_to_agent_event(_TRANSCRIPT)
+    calling = [m for m in ev.messages if m.message_type == "tool_calling"]
+    call_id = calling[0].tool_calls[0].call_id
+    assert call_id != "call_1"
+    assert re.fullmatch(r"[0-9a-f]{32}", call_id)
+
+
+def test_tool_call_id_is_unique_per_call():
+    transcript_two_calls = {
+        "session_id": "case_008",
+        "turns": [
+            {"seq": 0, "role": "user", "content": "do two things", "tool_call": None},
+            {"seq": 1, "role": "tool", "content": "ok", "tool_call": {
+                "tool_name": "update_account", "arguments": {}, "result": "ok", "status": "ok",
+            }},
+            {"seq": 2, "role": "tool", "content": "ok", "tool_call": {
+                "tool_name": "update_account", "arguments": {}, "result": "ok", "status": "ok",
+            }},
+        ],
+        "stop_reason": "completed",
+    }
+    ev = transcript_dict_to_agent_event(transcript_two_calls)
+    calling = [m for m in ev.messages if m.message_type == "tool_calling"]
+    ids = [c.tool_calls[0].call_id for c in calling]
+    assert len(set(ids)) == len(ids) == 2
