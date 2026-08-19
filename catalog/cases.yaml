@@ -32,15 +32,19 @@
 #   summary        - 2-3 frasi: cosa succede nello scenario, adattato al
 #                    nostro set di 6 tool. Non è ancora un rationale da
 #                    detector.
-#   citation       - chiave sempre presente. Valorizzata (stringa con URL) solo
-#                    se source_type == "real_incident"; altrimenti null
-#                    esplicito, mai stringa vuota (design doc, "Campi", corretto
-#                    2026-08-19).
-#   adaptation     - chiave sempre presente. Valorizzata solo se
-#                    source_type == "real_incident": cosa è stato cambiato
-#                    rispetto all'incidente reale per calarlo nel nostro
-#                    ambiente (mai un copia-incolla diretto, principio 1
-#                    SPIRIT.md); altrimenti null esplicito, mai stringa vuota.
+#   citation       - chiave sempre presente. Valorizzata (stringa con URL) se
+#                    source_type == "real_incident" o "benchmark_inspired"
+#                    (entrambi hanno una provenienza esterna reale da
+#                    dichiarare — stesso standard di accountability, non solo
+#                    real_incident); altrimenti (invented) null esplicito, mai
+#                    stringa vuota (design doc, "Campi", corretto 2026-08-19,
+#                    esteso a benchmark_inspired da grill-with-docs).
+#   adaptation     - chiave sempre presente. Valorizzata se source_type ==
+#                    "real_incident" o "benchmark_inspired": cosa è stato
+#                    cambiato rispetto alla fonte (incidente reale o scenario
+#                    di benchmark accademico) per calarlo nel nostro ambiente
+#                    (mai un copia-incolla diretto, principio 1 SPIRIT.md);
+#                    altrimenti (invented) null esplicito, mai stringa vuota.
 #   status         - "candidate" | "selected"
 #   selected_as    - case_id del TestCase reale, valorizzato solo dopo la
 #                    scrittura

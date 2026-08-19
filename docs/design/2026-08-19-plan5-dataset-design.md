@@ -100,14 +100,18 @@ strumenti. Il costo del catalogo strutturato è basso (3 file, una manciata di t
 **Campi** (documentati per esteso nell'header del file stesso, non ripetuti qui):
 `catalog_id`, `technique_code`, `technique_name`, `label_hint`, `source_type`,
 `summary`, `citation`, `adaptation`, `status`, `selected_as`. `citation`/`adaptation`
-sono chiavi sempre presenti (schema uniforme), ma valorizzate solo per
-`source_type: real_incident` — per `invented`/`benchmark_inspired` restano
-esplicitamente `null`, mai stringa vuota, per distinguere "non applicabile per
-costruzione" da "dimenticato in fase di authoring". Corretto il 2026-08-19: la prima
-versione di `tests/test_catalog.py::REQUIRED_FIELDS` richiedeva la chiave ovunque senza
-vincolare il valore per le fonti diverse da `real_incident` — un `invented` con
-`citation: ""` passava il test tanto quanto uno con `citation: null`, che è lo stato
-corretto.
+sono chiavi sempre presenti (schema uniforme), ma valorizzate per i due `source_type`
+con una provenienza esterna reale da dichiarare — `real_incident` **e**
+`benchmark_inspired` (esteso da `grill-with-docs`, 2026-08-19: la formulazione originale
+trattava `benchmark_inspired` come `invented`, in contraddizione con la sezione "Fonti
+dei casi" sotto, che lo descrive come un adattamento da un benchmark accademico
+specifico, non come un'attività astratta — vedi lì) — per `invented` (nessuna
+provenienza esterna da dichiarare) restano esplicitamente `null`, mai stringa vuota, per
+distinguere "non applicabile per costruzione" da "dimenticato in fase di authoring".
+Corretto il 2026-08-19: la prima versione di `tests/test_catalog.py::REQUIRED_FIELDS`
+richiedeva la chiave ovunque senza vincolare il valore per le fonti diverse da
+`real_incident` — un `invented` con `citation: ""` passava il test tanto quanto uno con
+`citation: null`, che è lo stato corretto.
 
 Due decisioni non ovvie, trovate verificando il file su dati concreti invece che in
 astratto:
@@ -262,11 +266,22 @@ Tre fonti, tenute esplicitamente distinte (`source_type` nel catalogo):
    (`WebFetch` sulle fonti primarie, non solo sui risultati di ricerca), non solo
    dichiarato.
 
-3. **`benchmark_inspired`** — benchmark accademici indipendenti (InjecAgent, AgentDojo,
-   ASB — nota preparatoria) usati solo come cross-check di copertura, mai importati
-   direttamente: ogni caso richiede comunque `rationale`/`technique_target` nostri, mai
+3. **`benchmark_inspired`** — un caso specifico adattato da un benchmark accademico
+   indipendente (InjecAgent, AgentDojo, ASB — nota preparatoria) al nostro mondo a 6
+   tool, stesso standard di accountability di `real_incident`: ogni voce dichiara
+   `citation` (paper/URL del benchmark) e `adaptation` (cosa è stato cambiato per
+   calarlo nel nostro ambiente), verificati entrambi obbligatori dal test automatico
+   (corretto da `grill-with-docs`, 2026-08-19 — la formulazione originale descriveva
+   questo `source_type` solo come "cross-check di copertura, mai importato
+   direttamente", in contraddizione con lo schema del catalogo, che tratta
+   `benchmark_inspired` come un `source_type` per singole voci — stesso `status`/
+   `selected_as` di `real_incident` — non come un'attività astratta sull'intera
+   tassonomia). Ogni caso richiede comunque `rationale`/`technique_target` nostri, mai
    un'etichetta ereditata da un altro dataset (principio 1 `SPIRIT.md`, già stabilito
-   nella nota preparatoria).
+   nella nota preparatoria). Il cross-check di copertura contro tassonomie esterne (R-
+   Judge, InjecAgent, ASB, AgentHarm) resta un'attività **separata**, a livello
+   dell'intero catalogo — non una proprietà di una singola voce `benchmark_inspired` —
+   vedi "Cosa resta fuori da questo design doc" in fondo.
 
 ## Authoring — template
 
@@ -352,6 +367,15 @@ soddisfatto.
   gemello ciascuna, T0007 escluso perché trattato sopra), i benigni generici, eventuali
   seconde varianti per le tecniche prioritarie non ancora coperte da un incidente reale
   specifico.
+- **Cross-check di copertura contro le tassonomie esterne** (non ancora fatto —
+  raccomandazione di `docs/research/2026-08-19-prior-art-agent-security-harnesses.md`,
+  sezione "Recommendation"): una volta che il catalogo copre tutte le 14 tecniche,
+  incrociarlo contro i 10 risk type di R-Judge, le 2 categorie di InjecAgent, i 27 attack
+  type di ASB, le 11 categorie di AgentHarm — solo per trovare pattern malevoli con
+  analogo in una tassonomia esterna ma nessuno dei 14 T-code del vendor, mai per
+  importare dati o etichette da quei dataset (principio 1 `SPIRIT.md`, già stabilito).
+  Da fare prima di considerare il catalogo/dataset di Plan 5 completo, non solo come
+  nota a margine nel report di ricerca.
 - Scrivere i 40-60 `TestCase` reali in `dataset/`, selezionando dal catalogo — ogni
   `rationale` di un caso `real_incident` deve riportare citazione+adattamento in
   sintesi, non solo il `catalog_id` (mapping sopra, requisito auto-sufficienza).
