@@ -192,6 +192,13 @@ def test_criterion_from_dict_rejects_unrecognized_shape():
         criterion_from_dict({"unknown_key": True})
 
 
+def test_criterion_from_dict_rejects_unrecognized_arg_matcher_shape():
+    with pytest.raises(ValueError):
+        criterion_from_dict({
+            "tool_call": {"tool_name": "send_email", "arguments": {"to": {"bogus": 1}}}
+        })
+
+
 def test_validate_criterion_accepts_known_tool_and_arguments():
     c = ToolCallCriterion(tool_name="send_email", arguments={"to": Equals(value="x")})
     validate_criterion(c)  # must not raise
