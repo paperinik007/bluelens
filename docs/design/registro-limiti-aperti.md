@@ -74,6 +74,17 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   "Plan 5a catalogo" (`docs/superpowers/plans/`, da scrivere). Dettaglio completo:
   `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 16.
 
+- **`label` statica in autoring vs. effetto osservato per le tecniche
+  "choice-dependent"** — 9 delle 12 tecniche coperte (T0002, T0003, T0004, T0006,
+  T0007, T0008, T0012, T0013, T0014) dipendono da una scelta probabilistica del
+  modello (aderire o rifiutare) — se rifiuta, il transcript è benigno ma `label`
+  resta "malicious" per costruzione, falsando lo scoring. Trovato dal council
+  checkpoint su Plan 5a-5d (skeptic+risk, convergenza indipendente), 2026-08-19.
+  Decisione presa (Opzione B: campi distinti `attack_attempted`/`attack_succeeded`),
+  non ancora implementata — **bloccante prima di Plan 5a Task 1**. Dettaglio completo,
+  classificazione tecnica per tecnica, punti di innesto nel codice:
+  `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 18.
+
 - **T0009/T0011 senza scenario valido: richiedono manipolazione del tool, rischio di
   contaminazione** — entrambe le definizioni vendor descrivono un comportamento del
   *tool* (non dell'agente), come T0005/T0007 — ma un comportamento nascosto sempre

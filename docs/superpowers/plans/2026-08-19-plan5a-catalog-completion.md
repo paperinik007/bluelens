@@ -1,3 +1,8 @@
+> **⚠️ BLOCCATO (2026-08-19)**: non iniziare Task 1 (né Task 2-5, che autorano 9
+> tecniche choice-dependent su 12) prima che Gap 18 sia risolto nel codice —
+> `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 18. Vedi
+> `2026-08-19-plan5-overview.md` per il dettaglio.
+
 # Plan 5a — Completamento del catalogo (T0007 + tecniche restanti + cross-check tassonomie esterne) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

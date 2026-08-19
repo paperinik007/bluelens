@@ -1,5 +1,13 @@
 # Plan 5 — panoramica dei 4 piani di implementazione
 
+> **⚠️ BLOCCATO (2026-08-19, dopo council checkpoint)**: Plan 5a Task 1 e ogni altro
+> task che autora uno scenario "choice-dependent" (9 tecniche su 12 — vedi Gap 18)
+> **non devono partire** prima che Gap 18 sia risolto nel codice (schema
+> `attack_attempted`/`attack_succeeded`, scoring in `metrics.py`, calcolo in
+> `sequence.py`). Dettaglio: `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap
+> 18. Serve un piano di implementazione dedicato per Gap 18 prima di riprendere
+> l'esecuzione di questi 4 piani.
+
 Indice, non contenuto: il lavoro residuo di Plan 5 (dataset di audit, design doc
 `docs/design/2026-08-19-plan5-dataset-design.md`) è strutturato in 4 piani separati
 invece di uno solo, per rispettare lo Scope Check di `superpowers:writing-plans`
