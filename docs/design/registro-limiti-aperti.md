@@ -52,4 +52,16 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
 
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
-Nessuno ancora — registro appena creato (2026-08-19).
+- **Nessun controllo di raggiungibilità dei modelli tier prima di un run reale** —
+  `SIFTER_MODEL`/`INSPECTOR_MODEL`/`EMBED_MODEL` venivano usati (espliciti in `.env` o
+  default nel codice) senza nessuna verifica preventiva: un modello deprecato/irraggiungibile
+  su OpenRouter si scopriva solo a batch già iniziato, o mai se il default silenzioso
+  restava sbagliato (Gap 10 lo dichiara esplicitamente: "un catalogo di provider terzo
+  invecchia nel tempo" — è già successo una volta con `qwen/qwen3-4b`, listato come attivo
+  ma 404 al probe reale). Trovato discutendo perché lasciare `SIFTER_MODEL` ecc. vuoti in
+  `.env` vanificava lo scopo di Gap 10 (2026-08-19). Risolto: `src/toy_agent/preflight.py`,
+  `preflight_check_models()` — una chiamata OpenRouter minima per ogni tier configurato,
+  prima che `run_batch.py` apra qualunque container; fail-fast (`sys.exit(1)`) se uno
+  risponde errore. Verificato sia con mock (`tests/toy_agent/test_preflight.py`) sia dal
+  vivo contro OpenRouter reale (successo sui 3 modelli configurati, fallimento reale su un
+  model id inventato).

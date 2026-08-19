@@ -10,6 +10,7 @@ from . import evidence
 from .dataset import load_dataset
 from .metrics import compute_metrics
 from .orchestrator import CommandRunner, default_command_runner, run_test_case
+from .preflight import preflight_check_models
 from .report import render_report
 from .schema import TestCase
 from .sequence import BatchResult, CloseStep, CommandStep, KNOWN_CONTAINERS, OpenStep, execute_sequence
@@ -120,6 +121,13 @@ def main(argv: list[str] | None = None) -> None:
 
     dataset = load_dataset(dataset_dir)
     api_key = os.environ.get("DETECTOR_OPENROUTER_API_KEY", "")
+
+    preflight_failures = preflight_check_models(os.environ, api_key)
+    if preflight_failures:
+        for failure in preflight_failures:
+            print(f"preflight model check failed: {failure}", file=sys.stderr)
+        sys.exit(1)
+
     result = execute_batch(dataset, run_output_dir, container_lifecycle=parsed.container_lifecycle, api_key=api_key)
 
     metrics = compute_metrics(result.metric_cases, result.metric_verdicts)
