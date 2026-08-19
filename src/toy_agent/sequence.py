@@ -232,6 +232,7 @@ def execute_sequence(
                 technique_target=ground_truth.technique_target,
                 rationale=ground_truth.rationale,
                 transcript=transcript_obj,
+                attack_success_criteria=ground_truth.attack_success_criteria,
             )
             cases.append(case_obj)
             verdicts.append(verdict_obj)
