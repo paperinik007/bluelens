@@ -510,6 +510,21 @@ design, ma un rischio concreto per la prossima sessione di autoring (Plan 5c, fu
 scope qui) — chi autora il criterio T0010 deve saperlo prima di scrivere lo scenario,
 non scoprirlo dopo che i numeri strict tornano confusi.
 
+**Nota di processo sulla ricerca di collisioni (trovato dall'utente in revisione,
+2026-08-19)**: la collisione T0005/T0010 sopra è stata trovata **opportunisticamente**
+(un caso emerso durante la verifica di un criterio specifico), non da un controllo
+incrociato sistematico su tutte le coppie dei 16 criteri illustrativi. Verifica
+dell'utente su un'altra coppia: T0005 (variante `status`,
+`status_update_triggers_hidden_admin_escalation`) e T0014 (entrambe le varianti)
+condividono lo stesso `update_account(field="status")` — qui distinti dal `value`
+(riattivazione vs. disattivazione), un dettaglio che il transcript reale porta ma che
+il DSL illustrativo di questo documento non controlla esplicitamente (nessun matcher su
+`value` negli esempi sopra). A differenza di T0005/T0010, il contenuto reale qui *è*
+distinguibile — non è lo stesso difetto, quindi non blocca questo design — ma conferma
+che la ricerca va rifatta in modo sistematico (tutte le coppie, non la prima trovata)
+quando Plan 5c autora i criteri reali, non lasciata al caso di quali coppie sono state
+guardate durante il design.
+
 ## Requisito → Verifica
 
 | Requisito | Verifica eseguibile |
