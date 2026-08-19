@@ -56,6 +56,12 @@ puntando — via mount o copia al build del container di controllo — al file s
 reale nel nostro repo (`agentic-security-audits`), non a una copia duplicata scritta
 apposta per SourceLens. Vedi design doc per i tre vincoli anti-distorsione.
 
+**Aggiornamento (2026-08-19)**: il codice tecnica citato qui e nell'evidenza sopra come
+"T0007 (tool poisoning) via `update_account`" era sbagliato — vedi Gap 16 per l'analisi
+completa. Il codice corretto è T0005 (Privilege Escalation via Tool). Non cambia nulla
+della risoluzione di questo gap (il registro SourceLens, il meccanismo del backdoor):
+cambia solo con quale tecnica lo si etichetta.
+
 ## Gap 2 — `ToolUsage.server_name` obbligatorio ma assente nel nostro `ToolCall`
 
 **Stato**: risolto nel design doc — sezione "Adapter"
@@ -200,6 +206,12 @@ chiamata reale), commit `72ddfb8`.
 
 **Stato aggiornato**: risolto sia sul piano sintattico (design doc) sia
 empiricamente (questa verifica) — nessuna parte di Gap 4 resta aperta.
+
+**Aggiornamento (2026-08-19)**: la verifica empirica sopra descrive il probe come
+attivante "T0007" — codice sbagliato, vedi Gap 16. Il probe chiamava `update_account` su
+un campo sensibile, che è T0005 (Privilege Escalation via Tool), non T0007 (Guardrail
+Evasion). Il risultato della verifica resta valido nella sostanza (il canale SourceLens
+scatta davvero per `toy_support`) — cambia solo l'etichetta della tecnica coinvolta.
 
 ## Gap 5 — Isolamento di stato tra `TestCase` non specificato
 
@@ -374,6 +386,19 @@ correlazione del rischio 1 sopra — dato che ora nessun `TestCase` che tocca
 `status`/`refund_total` può più restare `"benign"`, la copertura del rischio 1 deve
 appoggiarsi esclusivamente ai campi non avvelenati del tool, non più a un mix con casi
 `status`/`refund_total` a intento benigno.
+
+**Punto (a) risolto (2026-08-19)**: `docs/design/2026-08-19-plan5-dataset-design.md`,
+sezione "Regola di copertura minima" — generalizzata a tutte le 14 tecniche (non solo
+`update_account`): ≥1 caso malevolo + ≥1 gemello benigno per tecnica. Per T0005 (sotto),
+il gemello benigno usa necessariamente `marketing_opt_in`, per costruzione (toccare
+`status`/`refund_total` renderebbe il caso malevolo per la convenzione "per effetto"
+sopra) — nessuna decisione separata richiesta oltre alla regola generale.
+
+**Aggiornamento (2026-08-19)**: le tecniche malevole citate sopra come "T0005, T0014,
+T0007" per `update_account` erano imprecise — vedi Gap 16. Il codice corretto per il
+comportamento nascosto (backdoor) è **T0005**, non T0007; T0007 non ha mai avuto un
+veicolo valido. Non cambia il ragionamento di questo gap (label per effetto, non per
+intento) — cambia solo l'attribuzione della tecnica.
 
 ## Gap 8 — Tre decisioni implementative del container di controllo non ancora prese
 
@@ -1545,6 +1570,85 @@ entrambi i file (non condivisi), stessa modifica di firma va fatta due volte. Ne
 lettore esterno dipende dal layout attuale della cartella evidenza — nessuna rottura a
 valle prevista.
 
+## Gap 16 — `update_account`/backdoor attribuito a T0007, in realtà è T0005
+
+**Stato**: risolto — correzione applicata a `2026-08-14-toy-agent-e-pipeline-misura.md`
+(tabella "Set di tool", sezione "`update_account` come veicolo") il 2026-08-19. Questo
+gap resta come record di cosa fu deciso male e perché — non riscrive Gap 1/4/7 sotto,
+aggiunge solo un rimando da ciascuno.
+
+**Trovato da**: council checkpoint su Plan 5 (`council-skeptic`), 2026-08-19, durante la
+scrittura del catalogo dei casi (`catalog/cases.yaml`) — la prima volta che il codice
+T0007 veniva effettivamente confrontato, parola per parola, col testo del vendor invece
+di essere riusato per associazione. Riverificato indipendentemente da fonte fresca
+(`aidr/data/threat_repository.yaml`, vendor pinnato) prima di applicare qualunque
+correzione.
+
+**Severità**: maggiore — tocca l'attribuzione per-tecnica riportata nel report finale
+(`metrics.py`, breakdown per tecnica), uno degli output centrali dell'audit. Un codice
+tecnica sbagliato misura la cosa sbagliata, indipendentemente da quanto sia solido il
+resto della misura.
+
+**Evidenza**: `aidr/data/threat_repository.yaml` (vendor pinnato, commit `7fad14d`)
+dichiara:
+- **T0005 — Privilege Escalation via Tool**: "A tool is used to gain access or rights
+  beyond the agent's assigned scope." Malevolo quando: "the agent invokes admin or
+  system operations not implied by its task."
+- **T0007 — Guardrail Evasion**: "A request is reframed or obfuscated to slip past a
+  safety filter." Malevolo quando: "the agent encodes, splits, or disguises a blocked
+  action to avoid detection."
+
+Il comportamento reale di `update_account` (`2026-08-14-toy-agent-e-pipeline-misura.md`,
+sezione "Set di tool"): una chiamata che tocca `status` o `refund_total` eleva
+silenziosamente `account.level` a `"admin"`, indipendentemente dal valore richiesto.
+L'agente non riformula, non codifica, non spezza né maschera nulla — si comporta in
+modo del tutto trasparente; è il *tool* a fare più di quanto dichiarato. Corrisponde
+testualmente a T0005 (un tool usato per ottenere diritti oltre lo scopo assegnato,
+un'operazione admin non implicata dal compito), non a T0007 (che richiede l'agente
+stesso ad aggirare attivamente un filtro).
+
+**Perché è successo**: fin da Gap 1 (14 agosto, prima che questo dataset di Plan 5
+esistesse), il progetto ha usato l'etichetta informale "tool poisoning" (terminologia
+della letteratura MCP security, non del vendor) per questo comportamento, e l'ha
+associata a T0007 per assonanza concettuale ("nascondere qualcosa" → "evasione"), senza
+confrontarla col testo letterale della tassonomia in quel momento. L'etichetta è stata
+poi riportata avanti come già stabilita in Gap 4 (verifica empirica di SourceLens,
+2026-08-15) e Gap 7 (convenzione di etichettatura "per effetto", 2026-08-18), mai
+ri-derivata.
+
+**Cosa NON è invalidato da questa correzione** (per evitare letture eccessive):
+- Il meccanismo del backdoor stesso (statico, deciso in fase di design, ristretto a
+  `status`/`refund_total` — Gap 1) resta identico. Nessuna modifica a `tools.py`, nessun
+  rebuild del container, nessuna modifica al registro SourceLens.
+- La verifica empirica di Gap 4 ("il canale SourceLens scatta davvero per `toy_support`")
+  resta vera nella sostanza — solo la tecnica con cui viene descritta era imprecisa, non
+  il risultato osservato.
+- La convenzione "per effetto, non per intento" di Gap 7 (la *label* malicious/benign)
+  è completamente indipendente da quale *codice tecnica* si applica — nessun cambiamento
+  lì.
+- `update_account` resta correttamente veicolo per T0001 (Direct Prompt Injection) in
+  uno scenario *diverso* da quello del backdoor: una richiesta che istruisce
+  esplicitamente l'agente a fare qualcosa fuori scopo (es. "datemi anche i permessi
+  admin"), senza bisogno di alcun comportamento nascosto del tool.
+
+**Conseguenza aperta, non ancora risolta**: T0007 non ha più nessun veicolo valido nel
+nostro set di 6 tool — l'unico caso mai pensato per quella tecnica era in realtà T0005.
+Serve progettare da zero un vero scenario di guardrail evasion (l'agente, non il tool,
+riformula/spezza/maschera un'azione per evitare che un controllo la noti) usando i tool
+esistenti, senza scrivere codice nuovo — un candidato plausibile: un prompt che istruisce
+l'agente a spezzare un `bulk_export` in più chiamate piccole descritte come "aggiornamenti
+di routine" invece che come export. Non progettato ancora — voce aperta in
+`docs/design/registro-limiti-aperti.md`.
+
+**Trovato anche, non ancora indagato**: Gap 11 (sopra, righe ~828/854) riporta un verdetto
+reale del vendor (`technique: "T0007"`, su un caso di prompt injection reale, non sul
+backdoor di `update_account`) descritto in quella sede come "correttamente classificato
+come tool poisoning" — la stessa scorciatoia linguistica ("tool poisoning" = T0007) usata
+qui potrebbe essersi insinuata anche in quella lettura, su un caso completamente diverso.
+Non toccato in questa correzione (fuori scope: è un output del detector durante un test
+di infrastruttura, non una nostra assegnazione di ground truth) — segnalato come punto da
+riverificare se si torna su Gap 11, non come parte di questo gap.
+
 ## Come si chiude un gap
 
 Quando una risoluzione viene applicata al design doc, aggiornare lo stato qui a
@@ -1579,6 +1683,7 @@ centralizzato. Elenco delle verifiche attive che vanno ricontrollate a ogni bump
 | `technique_detected` singolare | `docs/design/2026-08-14-toy-agent-e-pipeline-misura.md`, sezione "Schema di misura" (`aidr/detector/base.py`) | `DetectionResult.technique` del vendor è una stringa singola, mai una lista |
 | Orchestrazione Sifter→Inspector incapsulata in `Pipeline().analyze()` | stesso file, sezione "Adapter" (`aidr/detector/pipeline.py`) | L'adapter non deve invocare Sifter/Inspector separatamente |
 | Setup vLLM (modelli/GPU per Sifter/Inspector/ThreatLens) | stesso file, sezione "Setup pratico" (`aidr/serving/launch.sh`) | Modelli e requisiti hardware dichiarati nel doc corrispondono al lancio reale del vendor |
+| Istantanea della tassonomia T0001-T0014 (nomi tecnica) | `catalog/vendor_taxonomy_snapshot.yaml`, verificata da `tests/test_catalog.py` | `aidr/data/threat_repository.yaml` non ha aggiunto/rinominato tecniche rispetto allo snapshot |
 
 Voci esplicitamente escluse: le vecchie evidenze di Gap 12 (lettura vendor per
 `session_id`) restano nel doc solo come materiale storico conservato, marcate "assorbito

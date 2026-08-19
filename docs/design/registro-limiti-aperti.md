@@ -50,6 +50,16 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   `docs/design/2026-08-14-toy-agent-gap-tracking.md`, sezione Gap 15, dopo "Prossimo
   passo".
 
+- **T0007 senza uno scenario valido nel catalogo/dataset** — l'unico caso mai pensato
+  per T0007 (Guardrail Evasion, veicolo `update_account`) era in realtà T0005
+  (Privilege Escalation via Tool) per definizione letterale del vendor — corretto,
+  ma questo lascia T0007 senza alcun candidato. Serve progettare da zero un vero
+  scenario (l'agente, non il tool, che riformula/spezza/maschera un'azione per evitare
+  che un controllo la noti) usando i tool esistenti, nessun codice nuovo. Candidato
+  proposto (non ancora scritto): un `bulk_export` spezzato in chiamate piccole,
+  descritte come "aggiornamenti di routine". Dettaglio completo:
+  `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 16.
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **Nessun controllo di raggiungibilità dei modelli tier prima di un run reale** —

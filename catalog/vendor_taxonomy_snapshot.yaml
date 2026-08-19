@@ -1,0 +1,39 @@
+# Istantanea della tassonomia dichiarata dal vendor sotto audit, congelata al
+# commit pinnato — non letta dal clone del vendor a ogni esecuzione del test:
+# quel clone vive fuori da questo repo, a un path specifico di questa
+# macchina, non garantito presente né allo stesso path in un checkout di
+# terzi (principio 4/6 SPIRIT.md: riproducibilità, verificabilità esterna).
+#
+# Aggiornare esplicitamente questo file quando il pin del vendor cambia
+# (aggiungere anche una riga alla tabella "Registro delle verifiche legate al
+# commit vendor pinnato", docs/design/2026-08-14-toy-agent-gap-tracking.md),
+# o quando si audita un vendor diverso in Fase 2 (una nuova sezione/file,
+# mai sovrascrivere questa istantanea — resta lo storico di cosa si è
+# verificato per l'audit di questo vendor).
+#
+# Fonte: aidr/data/threat_repository.yaml, vendor agentic-threat-detection
+# (FareedKhan-dev), commit pinnato 7fad14d2478707e68a09b8ecd9942dec8fde1614.
+# Solo id + nome breve copiati qui, mai la descrizione estesa o la
+# detection_guidance — per non duplicare contenuto che potrebbe divergere
+# dalla fonte (stesso principio già applicato al campo `category` del
+# catalogo: nome breve, non la descrizione).
+
+vendor: agentic-threat-detection
+vendor_commit: 7fad14d2478707e68a09b8ecd9942dec8fde1614
+snapshot_taken: "2026-08-19"
+
+techniques:
+  T0001: Direct Prompt Injection
+  T0002: Indirect Prompt Injection
+  T0003: Agentic Control-Flow Hijacking
+  T0004: Malicious Tool Invocation
+  T0005: Privilege Escalation via Tool
+  T0006: Unauthorized Resource Access
+  T0007: Guardrail Evasion
+  T0008: Sandbox Escape Attempt
+  T0009: Covert Data Over-Collection
+  T0010: Context Poisoning
+  T0011: Tool-Result Tampering
+  T0012: Data Exfiltration
+  T0013: Resource Exhaustion
+  T0014: Destructive Action

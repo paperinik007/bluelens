@@ -1,0 +1,84 @@
+# TEMPLATE — copia questo file in dataset/<case_id>.yaml e compila ogni campo.
+# Non è un TestCase valido così com'è (i valori sono placeholder tra <>) —
+# load_dataset() lo rifiuterebbe. I commenti sono solo una guida, cancellali
+# nel file reale se vuoi, non sono richiesti dallo schema.
+#
+# Vive qui (catalog/), non in dataset/, apposta: load_dataset() (src/toy_agent/
+# dataset.py) legge *ogni* *.yaml dentro dataset_dir — se questo template
+# finisse lì dentro con valori placeholder, farebbe fallire il caricamento
+# dell'intero dataset.
+#
+# WORKFLOW END-TO-END (prima di compilare questo file):
+#   1. Leggi catalog/cases.yaml — cerca una voce con status: candidate per la
+#      tecnica che ti serve (o category: benign se stai scrivendo un caso
+#      benigno generico).
+#   2. Se non c'è ancora una voce adatta, scrivine una nuova in
+#      catalog/cases.yaml prima di scrivere il TestCase (non il contrario) —
+#      il catalogo è dove si registra la fonte/il ragionamento, il TestCase è
+#      solo l'esecuzione di quella decisione.
+#   3. Compila questo template, citando il catalog_id della voce scelta nel
+#      rationale (vedi sotto) — non solo l'id, anche in sintesi
+#      citazione+adattamento se la voce è source_type: real_incident: un
+#      lettore del dataset pubblicato deve poter capire da dove viene il caso
+#      senza dover trovare/aprire catalog/cases.yaml.
+#   4. Dopo aver scritto il TestCase, torna su catalog/cases.yaml e imposta
+#      status: selected, selected_as: <il case_id appena scritto> sulla voce
+#      usata.
+#
+# REGOLA DEL "GEMELLO BENIGNO" (perché conta): ogni tecnica malevola nel
+# dataset deve avere anche un caso BENIGNO che usa lo stesso tool, con
+# intento e contenuto legittimi — mai scrivere solo il caso malevolo. Motivo:
+# se un tool compare solo in sessioni malevole, il detector sotto test
+# potrebbe imparare "questo tool = malevolo" senza mai ragionare sul
+# contenuto della sessione — una scorciatoia che gonfierebbe il recall
+# misurato per un motivo estraneo alla capacità che vogliamo misurare. Se
+# stai scrivendo un caso benigno che è il gemello di un caso malevolo
+# esistente, citalo nel rationale (case_id del gemello).
+
+# Identificatore univoco del caso. Deve nominare la MECCANICA/il trucco dello
+# scenario (quale tool, quale dettaglio distintivo lo rende degno di essere
+# nel dataset) — mai ripetere label o technique_target (già campi separati
+# sotto: sarebbe ridondante e, se la tecnica cambiasse, l'id mentirebbe in
+# silenzio). Per uno scenario a più step, nomina l'effetto/il trucco, non la
+# traccia letterale di ogni chiamata a tool — quel dettaglio va nel
+# rationale, non nell'id.
+# Pattern ammesso dallo schema: solo lettere, cifre, underscore, trattino.
+# Esempio: refund_without_authorization
+case_id: <mechanic_descriptive_slug>
+
+# "malicious" o "benign". Riflette l'EFFETTO della sessione, non l'intento
+# del prompt iniziale — un prompt onesto che attiva comunque un
+# comportamento nascosto malevolo (es. il backdoor di update_account, Gap 7)
+# resta label "malicious", anche se lo dichiari nel rationale.
+label: <malicious|benign>
+
+# Obbligatorio (un codice T00NN) se label è "malicious" — vedi
+# catalog/vendor_taxonomy_snapshot.yaml per i nomi delle tecniche. Deve
+# essere `null` se label è "benign": un caso benigno non può dichiarare una
+# tecnica target, anche se esercita lo stesso tool di un caso malevolo
+# collegato (il suo "gemello", vedi rationale sotto).
+technique_target: <T00NN|null>
+
+# Perché questo caso è nel dataset — scritto PRIMA di eseguire qualunque
+# detector (principio 2, SPIRIT.md: mai scritto o aggiustato dopo aver visto
+# un verdetto). Se il caso viene da una voce del catalogo (catalog/cases.yaml),
+# cita il suo catalog_id qui. Se questo è il "gemello benigno" di un caso
+# malevolo sulla stessa tecnica (impedisce la scorciatoia di correlazione,
+# vedi design doc), notalo esplicitamente e cita il case_id del gemello.
+rationale: >
+  <perché questo caso esiste, cosa dovrebbe rivelare sulla capacità del
+  detector, eventuali riferimenti a catalog_id o al caso gemello>
+
+transcript:
+  session_id: <stesso valore di case_id, per convenzione>
+  turns:
+    # Esattamente UN turno seed, ruolo "user" — l'agente genera da solo il
+    # resto della sessione (loop ReAct multi-turno, fino a 8 turni). Non
+    # aggiungere altri turni qui: run_case.py li rifiuta esplicitamente.
+    - seq: 0
+      role: user
+      content: >
+        <la richiesta del cliente, in linguaggio naturale — questo è l'unico
+        input che il toy agent riceve>
+      tool_call: null
+  stop_reason: null
