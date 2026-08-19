@@ -55,18 +55,37 @@ cp .env.example .env
 # poi modificare .env e impostare AGENT_OPENROUTER_API_KEY=<chiave 1> e
 # DETECTOR_OPENROUTER_API_KEY=<chiave 2>
 docker compose build
-docker compose up -d
+docker compose up -d egress-proxy
 ```
 
 Attenzione: `docker compose config` stampa entrambe le chiavi in chiaro — non
 eseguirlo in una sessione di terminale condivisa o loggata.
 
-Con lo stack sopra (`docker compose up -d`), il batch orchestrator si esegue **sull'host**,
-non dentro un container:
+Con `egress-proxy` sopra, il batch orchestrator si esegue **sull'host**, non dentro un
+container. A differenza di prima, possiede lui stesso il ciclo di vita di `agent`/`detector`
+(li ricrea/rimuove via `docker compose`, non serve più avviarli a mano) — il parametro
+`--container-lifecycle` sceglie come:
 
 ```
 python -m toy_agent.run_batch <dataset_dir> <run_output_dir>
+# equivalente a:
+python -m toy_agent.run_batch <dataset_dir> <run_output_dir> --container-lifecycle reused
+# un container fresco per ogni caso (isolamento massimo, costo più alto):
+python -m toy_agent.run_batch <dataset_dir> <run_output_dir> --container-lifecycle per-case
 ```
+
+`reused` (default) tiene `agent`/`detector` aperti per l'intero batch — fedele alla
+condizione di misura dichiarata dal vendor (Gauntlet, `Pipeline()` istanziata una sola
+volta per 300 sessioni). `per-case` ricrea entrambi i container a ogni caso, per costruzione
+senza alcuno stato residuo tra un caso e il successivo. Dettagli:
+`docs/design/2026-08-19-container-lifecycle-e-sequenze-design.md`.
+
+`docker compose build` resta comunque necessario prima del primo run (costruisce le
+immagini): il ciclo di vita che `run_batch.py` ora gestisce è solo avvio/rimozione dei
+container, non il build. Se `agent`/`detector` risultano già in esecuzione da un run
+precedente o da un avvio manuale, non serve fermarli a mano: il primo `open` della
+sequenza li rimuove e ricrea comunque, in modo sicuro (auto-risanante per costruzione,
+vedi design doc).
 
 `run_batch.py` legge `DETECTOR_OPENROUTER_API_KEY` direttamente dall'ambiente del processo
 Python host (la stessa variabile impostata in `.env`, ma letta qui dall'host, non passata
