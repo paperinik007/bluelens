@@ -1,7 +1,18 @@
+import json
+
 import pytest
 
 from toy_agent.orchestrator import CommandResult
-from toy_agent.sequence import CloseStep, CommandStep, OpenStep, validate_sequence, _close_container, _open_container
+from toy_agent.schema import TestCase, Transcript, Turn
+from toy_agent.sequence import (
+    CloseStep,
+    CommandStep,
+    OpenStep,
+    _close_container,
+    _open_container,
+    execute_sequence,
+    validate_sequence,
+)
 
 
 def test_valid_reused_sequence_passes():
@@ -69,3 +80,151 @@ def test_close_container_removes_never_just_stops():
     _close_container("agent", runner)
     assert runner.calls == [["docker", "compose", "rm", "-f", "-s", "-v", "agent"]]
     assert not any("stop" in call for call in runner.calls)
+
+
+def _ground_truth(case_id, label="benign", technique_target=None, rationale="r", seed_content="hi"):
+    transcript = Transcript(session_id=case_id, turns=[Turn(seq=0, role="user", content=seed_content)])
+    return TestCase(case_id=case_id, label=label, technique_target=technique_target, rationale=rationale, transcript=transcript)
+
+
+def _ok_result(case_id, label="benign", technique=None):
+    return {
+        "transcript": {"session_id": case_id, "turns": [], "stop_reason": "completed"},
+        "verdict": {
+            "case_id": case_id, "tool_name": "agentic_threat_detection", "status": "ok",
+            "label": label, "confidence": 0.9, "technique_detected": technique,
+            "rationale": "r", "cost_usd": None, "latency_s": 1.0,
+            "in_tokens": 10, "out_tokens": 5,
+        },
+    }
+
+
+def _infra_result(case_id):
+    return {
+        "transcript": None,
+        "verdict": {
+            "case_id": case_id, "tool_name": "agentic_threat_detection", "status": "error",
+            "error_kind": "infra", "label": None, "confidence": None, "technique_detected": None,
+            "rationale": "docker compose exec failed to start", "cost_usd": None, "latency_s": None,
+        },
+    }
+
+
+class ScriptedRunTestCase:
+    def __init__(self, script):
+        self._script = list(script)
+        self.calls = []
+
+    def __call__(self, test_case, *, command_index, agent_timeout_s, detector_timeout_s):
+        self.calls.append((test_case, command_index))
+        if not self._script:
+            raise AssertionError("script exhausted")
+        result = self._script.pop(0)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+
+class NoOpCommandRunner:
+    def __init__(self):
+        self.calls = []
+
+    def __call__(self, cmd, stdin_bytes, timeout_s):
+        self.calls.append(cmd)
+        return CommandResult(returncode=0, stdout=b"", stderr=b"")
+
+
+class RecordingEvidenceCollector:
+    def __init__(self):
+        self.calls = []
+
+    def __call__(self, case_id, services, evidence_dir):
+        self.calls.append(case_id)
+        return {}
+
+
+class RecordingProxyLogCollector:
+    def __init__(self):
+        self.calls = []
+
+    def __call__(self, case_id, evidence_dir, api_key):
+        self.calls.append(case_id)
+        return evidence_dir / case_id / "detector.vendor_proxy.jsonl"
+
+
+def _reused_sequence(case_ids):
+    return (
+        [OpenStep(containers=("agent", "detector"))]
+        + [CommandStep(case_id=cid, counts_toward_metric=True) for cid in case_ids]
+        + [CloseStep(containers=("agent", "detector"))]
+    )
+
+
+def test_command_step_reaches_run_test_case_with_its_position_in_the_sequence(tmp_path):
+    dataset = {"c1": _ground_truth("c1")}
+    steps = _reused_sequence(["c1"])
+    runner = ScriptedRunTestCase([_ok_result("c1")])
+
+    execute_sequence(steps, dataset, tmp_path, run_test_case_fn=runner,
+                      collect_case_evidence_fn=RecordingEvidenceCollector(),
+                      collect_thin_proxy_log_fn=RecordingProxyLogCollector(),
+                      run_command=NoOpCommandRunner())
+
+    sent_case, command_index = runner.calls[0]
+    assert sent_case["case_id"] == "c1"
+    assert command_index == 1  # steps[0] is the OpenStep, steps[1] is this command
+
+
+def test_open_and_close_are_issued_around_the_commands(tmp_path):
+    dataset = {"c1": _ground_truth("c1")}
+    steps = _reused_sequence(["c1"])
+    runner = ScriptedRunTestCase([_ok_result("c1")])
+    command_runner = NoOpCommandRunner()
+
+    execute_sequence(steps, dataset, tmp_path, run_test_case_fn=runner,
+                      collect_case_evidence_fn=RecordingEvidenceCollector(),
+                      collect_thin_proxy_log_fn=RecordingProxyLogCollector(),
+                      run_command=command_runner)
+
+    assert command_runner.calls[0] == ["docker", "compose", "rm", "-f", "-s", "-v", "agent"]
+    assert command_runner.calls[-1][:6] == ["docker", "compose", "rm", "-f", "-s", "-v"]
+
+
+def test_counts_toward_metric_false_is_excluded_from_the_metric_lists_but_kept_in_cases(tmp_path):
+    dataset = {"c1": _ground_truth("c1"), "c2": _ground_truth("c2")}
+    steps = [
+        OpenStep(containers=("agent", "detector")),
+        CommandStep(case_id="c1", counts_toward_metric=False),
+        CommandStep(case_id="c2", counts_toward_metric=True),
+        CloseStep(containers=("agent", "detector")),
+    ]
+    runner = ScriptedRunTestCase([_ok_result("c1"), _ok_result("c2")])
+
+    result = execute_sequence(steps, dataset, tmp_path, run_test_case_fn=runner,
+                               collect_case_evidence_fn=RecordingEvidenceCollector(),
+                               collect_thin_proxy_log_fn=RecordingProxyLogCollector(),
+                               run_command=NoOpCommandRunner())
+
+    assert [c.case_id for c in result.cases] == ["c1", "c2"]
+    assert [c.case_id for c in result.metric_cases] == ["c2"]
+    assert [v.case_id for v in result.verdicts] == ["c1", "c2"]
+    assert [v.case_id for v in result.metric_verdicts] == ["c2"]
+    # c1's raw verdict is still persisted to disk even though excluded from metrics
+    lines = (tmp_path / "verdicts.jsonl").read_text(encoding="utf-8").strip().splitlines()
+    assert json.loads(lines[0])["case_id"] == "c1"
+
+
+def test_circuit_breaker_trips_after_three_consecutive_infra_failures(tmp_path):
+    dataset = {f"c{i}": _ground_truth(f"c{i}") for i in range(1, 5)}
+    steps = _reused_sequence([f"c{i}" for i in range(1, 5)])
+    runner = ScriptedRunTestCase([_infra_result("c1"), _infra_result("c2"), _infra_result("c3")])
+
+    result = execute_sequence(steps, dataset, tmp_path, run_test_case_fn=runner,
+                               collect_case_evidence_fn=RecordingEvidenceCollector(),
+                               collect_thin_proxy_log_fn=RecordingProxyLogCollector(),
+                               run_command=NoOpCommandRunner())
+
+    assert len(runner.calls) == 3  # c4 never attempted
+    assert result.breaker_tripped is True
+    assert result.executed_count == 3
+    assert result.total_count == 4

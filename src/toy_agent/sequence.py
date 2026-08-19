@@ -1,9 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Union
+import json
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Callable, Optional, Union
 
-from .orchestrator import CommandRunner, default_command_runner
+from . import evidence
+from .orchestrator import CommandRunner, default_command_runner, run_test_case
+from .schema import TestCase, Verdict
+from .serialization import transcript_from_dict, verdict_from_dict
 
 # Only agent/detector are part of the sequence vocabulary — egress-proxy is
 # shared infrastructure, never managed by a sequence (design doc, "Meccanica
@@ -88,3 +93,170 @@ def validate_sequence(steps: list[SequenceStep], known_case_ids: set[str]) -> No
             raise TypeError(f"unknown sequence step type: {type(step).__name__}")
     if open_containers:
         raise ValueError(f"sequence ends with containers still open: {sorted(open_containers)}")
+
+
+@dataclass
+class BatchResult:
+    cases: list[TestCase]
+    verdicts: list[Verdict]
+    total_count: int
+    executed_count: int
+    breaker_tripped: bool
+    last_infra_rationale: Optional[str] = None
+    transcript_conversion_failure_count: int = 0
+    verdict_conversion_failure_count: int = 0
+    metric_cases: list[TestCase] = field(default_factory=list)
+    metric_verdicts: list[Verdict] = field(default_factory=list)
+
+
+def _agent_input(case: TestCase) -> dict:
+    """Reduced dict sent to run_test_case(): only case_id and the seed turn's
+    content — never label/technique_target/rationale (design doc decision 2,
+    Plan 4)."""
+    seed = case.transcript.turns[0]
+    return {
+        "case_id": case.case_id,
+        "transcript": {"turns": [{"seq": seed.seq, "role": seed.role, "content": seed.content, "tool_call": None}]},
+    }
+
+
+def _fallback_verdict(case_id: str, exc: Exception) -> Verdict:
+    return Verdict(
+        case_id=case_id,
+        tool_name="agentic_threat_detection",
+        status="error",
+        rationale=f"dict-to-dataclass conversion failed: {type(exc).__name__}",
+    )
+
+
+def _append_jsonl(path: Path, obj: dict) -> None:
+    with path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(obj) + "\n")
+
+
+def execute_sequence(
+    steps: list[SequenceStep],
+    dataset_by_case_id: dict[str, TestCase],
+    run_output_dir: Path,
+    *,
+    agent_timeout_s: float = 120.0,
+    detector_timeout_s: float = 180.0,
+    breaker_threshold: int = 3,
+    api_key: str = "",
+    run_test_case_fn: Callable[..., dict] = run_test_case,
+    collect_case_evidence_fn: Callable = evidence.collect_case_evidence,
+    collect_thin_proxy_log_fn: Callable = evidence.collect_thin_proxy_log,
+    run_command: CommandRunner = default_command_runner,
+) -> BatchResult:
+    """Drive `steps` through open/command/close (design doc, 'Esecuzione') —
+    the sequence-aware core that execute_batch (run_batch.py) generates its
+    default whole-dataset sequence on top of. Never imports detector_adapter
+    or aidr, same boundary run_test_case already declares."""
+    validate_sequence(steps, set(dataset_by_case_id.keys()))
+
+    raw_dir = run_output_dir / "raw"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    verdicts_path = run_output_dir / "verdicts.jsonl"
+    verdicts_path.write_text("", encoding="utf-8")
+
+    cases: list[TestCase] = []
+    verdicts: list[Verdict] = []
+    metric_cases: list[TestCase] = []
+    metric_verdicts: list[Verdict] = []
+    open_containers: set[str] = set()
+    consecutive_infra = 0
+    last_infra_rationale: Optional[str] = None
+    breaker_tripped = False
+    transcript_conversion_failure_count = 0
+    verdict_conversion_failure_count = 0
+    total_count = sum(1 for step in steps if isinstance(step, CommandStep))
+
+    for step_index, step in enumerate(steps):
+        if isinstance(step, OpenStep):
+            for service in step.containers:
+                _open_container(service, run_command)
+                open_containers.add(service)
+            continue
+
+        if isinstance(step, CloseStep):
+            for service in step.containers:
+                _close_container(service, run_command)
+                open_containers.discard(service)
+            continue
+
+        ground_truth = dataset_by_case_id[step.case_id]
+        case_id = ground_truth.case_id
+        result = run_test_case_fn(
+            _agent_input(ground_truth),
+            command_index=step_index,
+            agent_timeout_s=agent_timeout_s,
+            detector_timeout_s=detector_timeout_s,
+        )
+        raw_transcript_dict = result["transcript"]
+        raw_verdict_dict = result["verdict"]
+
+        # Persist raw data immediately, before any conversion attempt — a
+        # malformed dict stays inspectable on disk even if verdict_from_dict()
+        # below raises on it (Plan 4 decision 6, unchanged).
+        _append_jsonl(verdicts_path, raw_verdict_dict)
+        if raw_transcript_dict is not None:
+            (raw_dir / f"{case_id}.transcript.json").write_text(json.dumps(raw_transcript_dict), encoding="utf-8")
+
+        # External evidence unconditionally, before moving to the next step
+        # (Plan 4 decision 5) — evidence.py never raises on an unreachable
+        # container.
+        collect_case_evidence_fn(case_id, KNOWN_CONTAINERS, run_output_dir)
+        collect_thin_proxy_log_fn(case_id, run_output_dir, api_key)
+
+        conversion_failed = False
+        try:
+            verdict_obj = verdict_from_dict(raw_verdict_dict)
+        except Exception as exc:
+            conversion_failed = True
+            verdict_conversion_failure_count += 1
+            verdict_obj = _fallback_verdict(case_id, exc)
+
+        transcript_obj = None
+        if raw_transcript_dict is not None:
+            try:
+                transcript_obj = transcript_from_dict(raw_transcript_dict)
+            except Exception:
+                transcript_obj = None
+                transcript_conversion_failure_count += 1
+
+        case_obj = TestCase(
+            case_id=case_id,
+            label=ground_truth.label,
+            technique_target=ground_truth.technique_target,
+            rationale=ground_truth.rationale,
+            transcript=transcript_obj,
+        )
+        cases.append(case_obj)
+        verdicts.append(verdict_obj)
+        if step.counts_toward_metric:
+            metric_cases.append(case_obj)
+            metric_verdicts.append(verdict_obj)
+
+        breaker_kind = "conversion" if conversion_failed else raw_verdict_dict.get("error_kind")
+        if breaker_kind == "infra":
+            consecutive_infra += 1
+            last_infra_rationale = raw_verdict_dict.get("rationale")
+        else:
+            consecutive_infra = 0
+
+        if consecutive_infra >= breaker_threshold:
+            breaker_tripped = True
+            break
+
+    return BatchResult(
+        cases=cases,
+        verdicts=verdicts,
+        metric_cases=metric_cases,
+        metric_verdicts=metric_verdicts,
+        total_count=total_count,
+        executed_count=len(cases),
+        breaker_tripped=breaker_tripped,
+        last_infra_rationale=last_infra_rationale,
+        transcript_conversion_failure_count=transcript_conversion_failure_count,
+        verdict_conversion_failure_count=verdict_conversion_failure_count,
+    )
