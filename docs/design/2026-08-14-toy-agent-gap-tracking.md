@@ -1003,13 +1003,20 @@ insieme a Gap 12, con l'onestà statistica richiesta da `SPIRIT.md` principio 3.
 
 ## Gap 14 — Segnali che rivelano al detector di essere sotto test (unifica Gap 12 + Gap 13)
 
-**Stato**: **risolto nel design (2026-08-19)**, salvo B3 e la parte non ancora implementata
-(vedi sotto). A1/A2 (tabella A) risolti nel codice (2026-08-18). A3/B1/C1 verificati e
-scartati (2026-08-18). A4/A5/B2/B3/B4-B8/C2 risolti nel design il 2026-08-19 — vedi
-`2026-08-19-container-lifecycle-e-sequenze-design.md`, che unifica il trattamento con Gap
-15 sotto un unico schema (sequenza dichiarativa di passi `open`/`command`/`close`, ciclo
-di vita del container come parametro esplicito `--container-lifecycle={reused|per-case}`).
-Il codice che implementa quel design non è ancora scritto (prossimo piano).
+**Stato**: **risolto nel codice (2026-08-19)**, salvo B3 (limite dichiarato, non una
+chiusura — vedi sotto). A1/A2 (tabella A) risolti nel codice (2026-08-18). A3/B1/C1
+verificati e scartati (2026-08-18). B3 riclassificato dopo council da "verificato e
+scartato" a "accettato come limite dichiarato" (vedi sotto e il design doc, sezione
+"Chiusura di A4, A5, B2, B3"). A4/A5/B2/B4-B8/C2 risolti nel codice il 2026-08-19 — vedi
+`2026-08-19-container-lifecycle-e-sequenze-design.md` (design) e
+`docs/superpowers/plans/2026-08-19-container-lifecycle-sequences.md` (piano di
+implementazione, 7 task via `subagent-driven-development`, review pulita su ogni task),
+che unificano il trattamento con Gap 15 sotto un unico schema (sequenza dichiarativa di
+passi `open`/`command`/`close`, ciclo di vita del container come parametro esplicito
+`--container-lifecycle={reused|per-case}`). Verifica: suite host 193 passed / 2 skipped (i
+due skip attesi, aidr-gated); tabella Requisito→Verifica del design doc confermata riga
+per riga; verifica live di A5 (`call_id` opaco) eseguita dentro il container `detector`
+contro `aidr` reale, non solo unitaria.
 
 **Risoluzione applicata (2026-08-18) — A1/A2**: entrambe le parti generalizzano per
 costruzione (principio 8, `SPIRIT.md`) — non dipendono da alcun comportamento osservato
@@ -1324,10 +1331,13 @@ verificato in Gap 15). `call_id` sempre `call_{seq}` (`detector_adapter/adapter.
 un pattern reale, economico da correggere (identificativo opaco, es. `uuid.uuid4().hex`)
 — stessa fix wave di A1/A2, ancora da implementare.
 
-**B3 (traffico dal proxy sostitutivo)**: verificato e scartato, stessa categoria di
-A3/B1/C1 — l'interfaccia dichiarata (`AgentEvent`/`ToolUsage`) non porta alcun campo
-rete/latenza, e `detector` ha `cap_drop: ALL` — nessun canale porta questo dato al
-modello.
+**B3 (traffico dal proxy sostitutivo)**: **riclassificato dopo council (council-skeptic)
+da "verificato e scartato" a "accettato come limite dichiarato"** — la chiusura originale
+copriva solo il canale rete/sistema (l'interfaccia dichiarata `AgentEvent`/`ToolUsage` non
+porta campi rete/latenza, `detector` ha `cap_drop: ALL`), non il timing application-level
+che un client HTTP del vendor può misurare da sé senza alcuna capability. Resta un limite
+dichiarato, non una chiusura — vedi design doc, "Chiusura di A4, A5, B2, B3" e "Esito
+valutazione council".
 
 **C2 (log del thin-proxy non cancellato subito dopo la copia)**: risolto per costruzione
 — idea dell'utente, il troncamento (esistente solo per attribuzione per-caso, mai stato
@@ -1345,18 +1355,25 @@ per Plan 5+ (non in scope qui, coerente con la decisione di rimandare presa il
 confronto più sensibile del P/R aggregato tra le modalità `reused`/`per-case` — vedi il
 design doc, sezione "Idea candidata per Plan 5+".
 
-**Prossimo passo**: implementare il design (nuovo modulo sequenza, generatore del caso
-comune in `run_batch.py`, marcatore nel log, fix `call_id`) — sessione fresca per piano,
-non eseguito in questa sessione di design.
+**Implementato (2026-08-19)**: piano
+`docs/superpowers/plans/2026-08-19-container-lifecycle-sequences.md`, 7 task via
+`subagent-driven-development`, review pulita su ogni task — nuovo modulo `sequence.py`,
+generatore del caso comune in `run_batch.py`, marcatore nel log, fix `call_id` opaco
+(verificato dal vivo dentro il container `detector` contro `aidr` reale). Suite host: 193
+passed / 2 skipped (i due skip attesi, aidr-gated).
 
 ## Gap 15 — Granularità/espressività di un "test": primitiva atomica vs sceneggiature composte (emerge da Gap 14)
 
-**Stato**: **risolto nel design (2026-08-19)**, unificato con Gap 14 sotto un unico
-schema — vedi `2026-08-19-container-lifecycle-e-sequenze-design.md`. Il dubbio specifico
-"il nostro `TestCase` a un seed turn è comparabile alle 'sessioni' dichiarate dal
-vendor?" è stato verificato e chiuso separatamente (vedi sotto, "Verifica fatta"): nessun
-disallineamento. Il codice che implementa il design non è ancora scritto (prossimo
-piano).
+**Stato**: **risolto nel codice (2026-08-19)**, unificato con Gap 14 sotto un unico
+schema — vedi `2026-08-19-container-lifecycle-e-sequenze-design.md` (design) e
+`docs/superpowers/plans/2026-08-19-container-lifecycle-sequences.md` (piano di
+implementazione, 7 task via `subagent-driven-development`, review pulita su ogni task). Il
+dubbio specifico "il nostro `TestCase` a un seed turn è comparabile alle 'sessioni'
+dichiarate dal vendor?" è stato verificato e chiuso separatamente (vedi sotto, "Verifica
+fatta"): nessun disallineamento. Verifica del codice: suite host 193 passed / 2 skipped (i
+due skip attesi, aidr-gated); mapping Requisito→Verifica del design doc confermato riga
+per riga (filtro `counts_toward_metric` verificato dentro `execute_sequence`, mai in
+`metrics.py`).
 
 **Trovato da**: continuazione diretta della discussione che ha prodotto Gap 14
 (2026-08-18). Una volta stabilito che la creazione/distruzione del container `detector` è
