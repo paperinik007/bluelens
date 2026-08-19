@@ -1487,8 +1487,63 @@ Plan 5 per questo motivo.
 (`open`/`command`/`close`, booleano `counts_toward_metric` per singolo `command`) copre
 sia la modalità 1 (container per invocazione) sia la modalità 2 (sceneggiatura
 deliberata nello stesso ambiente persistente) come casi della stessa struttura, non due
-feature separate. Vedi `2026-08-19-container-lifecycle-e-sequenze-design.md`. Resta da
-implementare (prossimo piano, sessione fresca).
+feature separate. Vedi `2026-08-19-container-lifecycle-e-sequenze-design.md`. **Implementato
+il 2026-08-19** (vedi voce "Implementato" più sopra in questo stesso file, sezione C2).
+
+**Vincolo da decidere in Plan 5, prima di scrivere qualunque sceneggiatura deliberata
+reale (Gap 15 modalità 2)**: l'interfaccia di autoring per una sceneggiatura composta
+scritta a mano non sarà YAML diretto — gli utenti che le definiranno non sono tutti
+tecnici, e ragionano in tabelle Excel (colonna `case_id`, righe ripetute per più comandi
+sullo stesso caso, con o senza colonna indice esplicita). Servirà quindi un programma di
+traduzione Excel → sequenza (`list[SequenceStep]`), non ancora progettato — nessun
+precedente nel codice: `load_dataset()` (`src/toy_agent/dataset.py:53`) oggi parsa solo
+`*.yaml`, nessuna ingestione CSV/Excel esiste da nessuna parte nel progetto. Stesso
+principio già stabilito per la chiave su disco (vedi item subito sotto): l'indice di
+ripetizione per `case_id` va **sempre derivato dall'ordine delle righe**, mai scritto a
+mano dall'utente Excel — un indice manuale è una nuova classe di errore silenzioso
+(numerazione sbagliata, duplicata, con buchi), un indice derivato dalla posizione della
+riga non può mai sbagliare. Discusso 2026-08-19, non ancora progettato nel dettaglio
+(quali colonne, come esprimere `open`/`close` — impliciti per gruppo o espliciti in
+tabella).
+
+**Da implementare in Plan 5, non prima — fix della chiave su disco per `case_id`
+ripetuto in una sceneggiatura composta**: limite dichiarato oggi (design doc
+`2026-08-19-container-lifecycle-e-sequenze-design.md`, sezione "Limite dichiarato:
+sequenze composte con `case_id` ripetuto", righe 226-256) — il transcript grezzo e
+l'evidenza/log del thin-proxy sono chiavettati su disco per `case_id` da solo
+(`src/toy_agent/sequence.py:205,210-211`, che a sua volta passa a
+`collect_case_evidence`/`collect_thin_proxy_log` in `src/toy_agent/evidence.py`, righe
+32/72), quindi una sceneggiatura che ripete lo stesso `case_id` più volte sovrascrive
+silenziosamente sul disco tutto tranne l'ultima esecuzione. Non un bug attivo oggi:
+`load_dataset` impone `case_id` unici e le sequenze auto-generate (`reused`/`per-case`)
+non ripetono mai un `case_id` — irraggiungibile finché nessuna sceneggiatura scritta a
+mano lo fa davvero.
+
+Perché aspettare Plan 5: (a) oggi non esiste nessuna sceneggiatura composta reale con cui
+verificare il fix — lo si implementerebbe a scatola chiusa; (b) se davvero sarà Excel a
+generare le sceneggiature (vincolo sopra), è più probabile — non meno — che compaiano
+`case_id` ripetuti (un utente non tecnico pensa naturalmente "ripeti lo stesso test 3
+volte nello stesso ambiente"), quindi il traduttore Excel→sequenza e questo fix vanno
+disegnati insieme, non il secondo indovinato prima del primo.
+
+Soluzione già decisa (non solo proposta) per quando si implementa: un contatore
+**per-`case_id`**, non `command_index` grezzo — `seen_count[case_id]` incrementato a ogni
+`CommandStep` durante il ciclo in `execute_sequence`, usato come suffisso della chiave su
+disco (es. `c1.1.transcript.json`, `c1.2.transcript.json` — ordine di apparizione di
+quel `case_id`, leggibile da un umano). Scartato l'uso di `command_index` grezzo (posizione
+assoluta nello step_index, conta anche `open`/`close`) perché per una sceneggiatura scritta
+a mano lo scarto tra "n-esimo comando" e l'indice macchina è irregolare e non ricostruibile
+a colpo d'occhio.
+
+Costo stimato (verificato leggendo il codice, 2026-08-19): un singolo task SDD, non un
+piano a sé. Produzione (~15-20 righe, 2 file): `evidence.py` — le due funzioni guadagnano
+un parametro; `sequence.py` — 3 call site dentro `execute_sequence`, tutti hanno già
+l'informazione di posizione in scope. Test (il grosso del lavoro): `test_evidence.py` (4
+chiamate dirette), `test_sequence.py` + `test_run_batch.py` — i due test-double
+`RecordingEvidenceCollector`/`RecordingProxyLogCollector` sono duplicati letteralmente in
+entrambi i file (non condivisi), stessa modifica di firma va fatta due volte. Nessun
+lettore esterno dipende dal layout attuale della cartella evidenza — nessuna rottura a
+valle prevista.
 
 ## Come si chiude un gap
 
