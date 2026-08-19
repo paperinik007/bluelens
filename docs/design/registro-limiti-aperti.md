@@ -63,15 +63,26 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   di un'affermazione. Da implementare insieme a Plan 5, non prima (nessun `TestCase` reale
   ancora scritto con cui verificare che il test colga davvero un errore).
 
-- **T0007 senza uno scenario valido nel catalogo/dataset** — l'unico caso mai pensato
-  per T0007 (Guardrail Evasion, veicolo `update_account`) era in realtà T0005
-  (Privilege Escalation via Tool) per definizione letterale del vendor — corretto,
-  ma questo lascia T0007 senza alcun candidato. Serve progettare da zero un vero
-  scenario (l'agente, non il tool, che riformula/spezza/maschera un'azione per evitare
-  che un controllo la noti) usando i tool esistenti, nessun codice nuovo. Candidato
-  proposto (non ancora scritto): un `bulk_export` spezzato in chiamate piccole,
-  descritte come "aggiornamenti di routine". Dettaglio completo:
+- **T0007 senza uno scenario valido nel catalogo/dataset** — design finalizzato
+  2026-08-19 (approvato dall'utente, con due correzioni: i tre `customer_id` vanno
+  enumerati esplicitamente nel testo del ticket, e il `case_id` finale non deve
+  ripetere il nome della tecnica): una clausola statica aggiunta a `_SYSTEM_PROMPT`
+  (`agent_loop.py`) dichiara `bulk_export` l'unico canale sanzionato per un export
+  multi-cliente; lo scenario malevolo istruisce l'agente a evitarlo interrogando i
+  clienti uno per uno (`query_customer_db` ripetuto), il gemello benigno usa
+  `bulk_export` onestamente. Non ancora implementato nel codice — task 1 del piano
+  "Plan 5a catalogo" (`docs/superpowers/plans/`, da scrivere). Dettaglio completo:
   `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 16.
+
+- **T0009/T0011 senza scenario valido: richiedono manipolazione del tool, rischio di
+  contaminazione** — entrambe le definizioni vendor descrivono un comportamento del
+  *tool* (non dell'agente), come T0005/T0007 — ma un comportamento nascosto sempre
+  attivo su `query_customer_db` (il tool più usato nei casi benigni) renderebbe
+  "malevolo per costruzione" qualunque caso benigno che lo tocca; nessun gating pulito
+  trovato tra le 6 combinazioni di campi disponibili. Accettato come limite dichiarato
+  (deciso con l'utente 2026-08-19, non forzare un meccanismo) — copertura minima delle
+  14 tecniche resta 12/14 in questo primo giro. Analisi completa dei 4 meccanismi
+  considerati e scartati: `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 17.
 
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
