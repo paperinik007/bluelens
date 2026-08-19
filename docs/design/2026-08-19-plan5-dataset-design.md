@@ -43,13 +43,38 @@ Due directory nuove, sorelle di `docs/`/`src/`/`tests/` alla radice del repo —
 
 Livello separato tra "scenario di attacco/benigno documentato" e "`TestCase` scritto
 per la pipeline" — la stessa separazione primitiva/sovrastruttura già applicata a Gap
-15. **Motivazione primaria, presente in Plan 5 stesso** (non rimandata a un futuro
-ipotetico): la ricerca su un incidente reale spesso trova più candidati validi di
-quanti la regola di copertura ne richieda subito per quella tecnica — il catalogo
-assorbe il surplus senza costringere a scartare ricerca già fatta né a gonfiare il
-dataset oltre la regola. Motivazione secondaria: tracciabilità (perché un caso esiste,
-con quale citazione) e un beneficio collaterale di riuso per un'eventuale Fase 2 futura
-(non ancora annunciata come piano concreto) — principio 6 `SPIRIT.md`.
+15. **Motivazione primaria** (rivista il 2026-08-19, seconda sessione — vedi nota in
+fondo a questo paragrafo): il catalogo è per natura la base di dati completa degli
+scenari candidati disponibili, indipendente da `source_type` — una sessione di
+authoring pesca da lì le voci che le servono e dichiara perché nel `rationale` del
+`TestCase` risultante, senza dover rifare da zero la stessa ideazione ogni volta. Per
+`real_incident`/`benchmark_inspired` questo si traduce spesso in un surplus concreto: la
+ricerca su un incidente reale trova più candidati validi di quanti la regola di
+copertura ne richieda subito per quella tecnica — il catalogo assorbe il surplus senza
+costringere a scartare ricerca già fatta né a gonfiare il dataset oltre la regola. Per
+`invented` non c'è surplus di ricerca da assorbire, ma vale lo stesso principio di
+fondo: passare comunque dal catalogo tiene un solo workflow di authoring per tutte le
+fonti (vedi "Authoring — template" sotto, già source_type-agnostico), registra le
+varianti scartate anche quando nascono da ideazione pura invece che da letteratura, e
+tiene la bookkeeping di copertura (`status`/`selected_as` per tecnica) in un unico
+posto invece di spezzarla su due percorsi con due convenzioni diverse. Motivazione
+secondaria: tracciabilità (perché un caso esiste, con quale citazione, quando ce n'è
+una) e un beneficio collaterale di riuso per un'eventuale Fase 2 futura (non ancora
+annunciata come piano concreto) — principio 6 `SPIRIT.md`.
+
+**Convenzione d'ordine**: le voci `invented` si aggiungono in coda al file (dopo le
+voci `real_incident`/`benchmark_inspired` già presenti), mai interfogliate — coerente
+con l'append-only già dichiarato per la struttura dati sotto, e utile a chi scorre il
+file per distinguere a colpo d'occhio "scenari con provenienza esterna" da "scenari
+ideati per l'audit".
+
+*Nota sulla revisione (2026-08-19, seconda sessione, revisione indipendente post-council):
+la formulazione originale di questo paragrafo parlava solo di "ricerca su un incidente
+reale", lasciando implicito — senza motivarlo — che anche le voci `invented` (dichiarata
+maggioranza del dataset) passassero comunque dal catalogo. Non trovato dal council
+checkpoint di questa sessione, trovato da una revisione indipendente successiva. Nessun
+cambiamento di comportamento nel codice; corretta qui la motivazione, e un difetto di
+schema collegato (vedi "Campi" sotto e `tests/test_catalog.py`).*
 
 **Struttura dati**: un file YAML, non un database. Un vero DB (anche SQLite)
 comprometterebbe la trasparenza (principio 6: revisione da terzi via `git diff`/`git
@@ -74,7 +99,15 @@ rispetto a questo beneficio.
 
 **Campi** (documentati per esteso nell'header del file stesso, non ripetuti qui):
 `catalog_id`, `technique_code`, `technique_name`, `label_hint`, `source_type`,
-`summary`, `citation`, `adaptation`, `status`, `selected_as`.
+`summary`, `citation`, `adaptation`, `status`, `selected_as`. `citation`/`adaptation`
+sono chiavi sempre presenti (schema uniforme), ma valorizzate solo per
+`source_type: real_incident` — per `invented`/`benchmark_inspired` restano
+esplicitamente `null`, mai stringa vuota, per distinguere "non applicabile per
+costruzione" da "dimenticato in fase di authoring". Corretto il 2026-08-19: la prima
+versione di `tests/test_catalog.py::REQUIRED_FIELDS` richiedeva la chiave ovunque senza
+vincolare il valore per le fonti diverse da `real_incident` — un `invented` con
+`citation: ""` passava il test tanto quanto uno con `citation: null`, che è lo stato
+corretto.
 
 Due decisioni non ovvie, trovate verificando il file su dati concreti invece che in
 astratto:
@@ -249,7 +282,7 @@ benigno.
 | Requisito | Fonte | Verifica |
 |---|---|---|
 | "Ogni caso di test viene definito (tecnica target, esito atteso, ragionamento) prima di eseguire il tool" | `SPIRIT.md`, principio 2 (testo letterale) | `TestCase.rationale` obbligatorio e non vuoto (`schema.py`, `__post_init__`, già esistente). Disciplina processuale non automatizzabile: nessun `TestCase` va scritto/modificato dopo aver visto un verdetto — dichiarata qui, non testabile da codice. |
-| "un dataset... costruito a mano sulle 14 tecniche... poi arricchito con casi ispirati a incidenti reali documentati" | `SPIRIT.md`, "Primo obiettivo concreto" (testo letterale) | Copertura tecniche: **non ancora scritto** — verificato in questo self-review che nessun test attuale controlla questo (`grep T0001-T0014` su `tests/` trova solo valori di esempio arbitrari in test di schema, mai una verifica di copertura). Il requisito era già descritto nel design doc originale (`2026-08-14-toy-agent-e-pipeline-misura.md`, riga 966: "l'insieme di `technique_target` sui `TestCase` malevoli copre tutti i codici T0001-T0014"), scritto prima che esistesse qualunque `TestCase` reale — resta da implementare durante l'esecuzione di Plan 5, non prima (nessun dato su cui girare finché `dataset/` è vuota). Incidenti reali: soddisfatto dalle 4 voci `real_incident` nel catalogo, verificate da `tests/test_catalog.py` (citation+adaptation obbligatorie). |
+| "un dataset... costruito a mano sulle 14 tecniche... poi arricchito con casi ispirati a incidenti reali documentati" — **gate bloccante** (rivisto 2026-08-19, seconda sessione: verificato che `metrics.py`/`report.py` costruiscono la tabella per-tecnica solo dalle tecniche effettivamente presenti nel dataset — una tecnica scoperta non produce una riga vuota, sparisce senza segnale, esattamente come la contaminazione tool→label che ha già lo stesso status; nessuna ragione trovata per trattarle diversamente) | `SPIRIT.md`, "Primo obiettivo concreto" (testo letterale) | Copertura tecniche: **non ancora scritto** — verificato in questo self-review che nessun test attuale controlla questo (`grep T0001-T0014` su `tests/` trova solo valori di esempio arbitrari in test di schema, mai una verifica di copertura). Il requisito era già descritto nel design doc originale (`2026-08-14-toy-agent-e-pipeline-misura.md`, riga 966: "l'insieme di `technique_target` sui `TestCase` malevoli copre tutti i codici T0001-T0014"), scritto prima che esistesse qualunque `TestCase` reale — resta da implementare durante l'esecuzione di Plan 5, non prima (nessun dato su cui girare finché `dataset/` è vuota). **`run_batch.py` sul dataset completo e la pubblicazione del primo report non devono avvenire prima che questo test esista e passi** — stesso trattamento della riga anti-scorciatoia sotto, non un passo narrativo. Incidenti reali: soddisfatto dalle 4 voci `real_incident` nel catalogo, verificate da `tests/test_catalog.py` (citation+adaptation obbligatorie). |
 | **Nessuna scorciatoia di correlazione tool→label** (Gap 7 rischio 1, generalizzato a tutte le 14 tecniche in questa sessione) — **gate bloccante** (council-risk/advocate: senza questo, il rischio è pubblicare P/R/F1 contaminati senza che nessun controllo lo impedisca) | Questa sessione | Test da scrivere durante l'esecuzione di Plan 5 (non ancora scritto, richiede `dataset/` popolata): per ogni tool usato in ≥1 `TestCase` malevolo, verificare che esista ≥1 `TestCase` benigno che lo esercita. **`run_batch.py` sul dataset completo e la pubblicazione del primo report non devono avvenire prima che questo test esista e passi** — non un passo narrativo nella sequenza di lavoro, un prerequisito esplicito. |
 | Ogni `TestCase` selezionato dal catalogo resta coerente con la voce che lo ha originato (nessuna deriva silenziosa tra `catalog/cases.yaml` e `dataset/`) | Trovato dal council checkpoint (`council-risk`) | Test da scrivere durante l'esecuzione di Plan 5 (non ancora scritto): per ogni voce con `status: selected`, il `TestCase` in `dataset/<selected_as>.yaml` ha lo stesso `technique_target` di `technique_code` (quando `label_hint: malicious`) e la sua `rationale` cita il `catalog_id`. |
 | Il catalogo non duplica label/rationale finale del `TestCase` (rischio di divergenza silenziosa) | Questa sessione | Verificabile per costruzione: `REQUIRED_FIELDS` in `tests/test_catalog.py` non contiene né `label` né `rationale` — solo `label_hint` (etichetta attesa, non quella finale) e `summary` (scenario, non rationale da detector). |
@@ -297,9 +330,11 @@ soddisfatto.
   sintesi, non solo il `catalog_id` (mapping sopra, requisito auto-sufficienza).
 - Scrivere tre test ancora assenti (tutti in tabella sopra, nessuno esiste oggi —
   verificato con una ricerca in `tests/`, non solo dichiarato): copertura completa
-  delle 14 tecniche sui `TestCase` malevoli, anti-scorciatoia tool→label (gate
-  bloccante prima di eseguire il batch completo), coerenza catalogo↔dataset dopo la
-  selezione.
+  delle 14 tecniche sui `TestCase` malevoli (**gate bloccante**, allineato il
+  2026-08-19 all'anti-scorciatoia dopo aver verificato che una tecnica scoperta non
+  è visibile nel report senza questo test), anti-scorciatoia tool→label (**gate
+  bloccante** prima di eseguire il batch completo), coerenza catalogo↔dataset dopo la
+  selezione (non bloccante).
 - Aggiornare `README.md` per menzionare `dataset/`/`catalog/` e come sono legati
   (trovato assente dal council checkpoint, `council-advocate`) — rimandato a quando
   `dataset/` avrà contenuto reale, per non descrivere una struttura ancora vuota.

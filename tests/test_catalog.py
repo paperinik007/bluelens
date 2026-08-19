@@ -85,6 +85,22 @@ def test_real_incident_entries_declare_citation_and_adaptation():
     assert not offending, f"real_incident entries missing citation/adaptation: {offending}"
 
 
+def test_citation_and_adaptation_are_null_for_non_real_incident_entries():
+    """citation/adaptation are keys required on every entry (REQUIRED_FIELDS),
+    but only real_incident gives them content — everyone else must declare an
+    explicit null, never an empty string, so "not applicable by construction"
+    stays distinguishable from "forgotten during authoring" (design doc,
+    "Campi", corrected 2026-08-19)."""
+    offending = [
+        e["catalog_id"] for e in _load_entries()
+        if e["source_type"] != "real_incident"
+        and (e["citation"] is not None or e["adaptation"] is not None)
+    ]
+    assert not offending, (
+        f"non-real_incident entries with citation/adaptation not null: {offending}"
+    )
+
+
 def test_real_incident_citations_contain_a_url():
     offending = [
         e["catalog_id"] for e in _load_entries()

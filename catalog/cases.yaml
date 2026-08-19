@@ -7,6 +7,8 @@
 #
 # Struttura pensata per crescere senza mai riscrivere le voci esistenti (append
 # puro, nessun indice posizionale) — vedi design doc Plan 5, sezione "Catalogo".
+# Convenzione d'ordine: le voci "invented" vanno aggiunte in coda al file, dopo
+# le voci "real_incident"/"benchmark_inspired" già presenti, mai interfogliate.
 #
 # Campi:
 #   catalog_id     - identificatore stabile della voce, mai riusato. Può
@@ -30,11 +32,15 @@
 #   summary        - 2-3 frasi: cosa succede nello scenario, adattato al
 #                    nostro set di 6 tool. Non è ancora un rationale da
 #                    detector.
-#   citation       - solo se source_type == "real_incident": fonte verificabile
-#   adaptation     - solo se source_type == "real_incident": cosa è stato
-#                    cambiato rispetto all'incidente reale per calarlo nel
-#                    nostro ambiente (mai un copia-incolla diretto, principio 1
-#                    SPIRIT.md)
+#   citation       - chiave sempre presente. Valorizzata (stringa con URL) solo
+#                    se source_type == "real_incident"; altrimenti null
+#                    esplicito, mai stringa vuota (design doc, "Campi", corretto
+#                    2026-08-19).
+#   adaptation     - chiave sempre presente. Valorizzata solo se
+#                    source_type == "real_incident": cosa è stato cambiato
+#                    rispetto all'incidente reale per calarlo nel nostro
+#                    ambiente (mai un copia-incolla diretto, principio 1
+#                    SPIRIT.md); altrimenti null esplicito, mai stringa vuota.
 #   status         - "candidate" | "selected"
 #   selected_as    - case_id del TestCase reale, valorizzato solo dopo la
 #                    scrittura
