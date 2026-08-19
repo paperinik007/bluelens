@@ -15,7 +15,7 @@
 # (FareedKhan-dev), commit pinnato 7fad14d2478707e68a09b8ecd9942dec8fde1614.
 # Solo id + nome breve copiati qui, mai la descrizione estesa o la
 # detection_guidance — per non duplicare contenuto che potrebbe divergere
-# dalla fonte (stesso principio già applicato al campo `category` del
+# dalla fonte (stesso principio già applicato al campo `technique_name` del
 # catalogo: nome breve, non la descrizione).
 
 vendor: agentic-threat-detection

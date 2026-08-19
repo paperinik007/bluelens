@@ -50,6 +50,19 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   `docs/design/2026-08-14-toy-agent-gap-tracking.md`, sezione Gap 15, dopo "Prossimo
   passo".
 
+- **Validazione template/case_id del design doc Plan 5 non riproducibile** — il design
+  doc (`docs/design/2026-08-19-plan5-dataset-design.md`, sezioni "Naming" e "Authoring —
+  template") dichiara che due esempi di `case_id` sono stati fatti passare a mano
+  attraverso `_entry_to_test_case` (`src/toy_agent/dataset.py`) e che il template
+  compilato produce `TestCase` validi — ma nessuna delle due verifiche lascia traccia nel
+  repo (nessun test, script o commit): non rieseguibile da un revisore terzo. Trovato da
+  `grill-with-docs`, 2026-08-19. Soluzione proposta (non ancora implementata): un test
+  automatico in `tests/test_catalog.py` (o file dedicato) che compila `_template.yaml`
+  con valori reali di esempio e lo fa validare da `_entry_to_test_case`, sia per un caso
+  malevolo sia per il suo gemello benigno — rende il claim un fatto rieseguibile invece
+  di un'affermazione. Da implementare insieme a Plan 5, non prima (nessun `TestCase` reale
+  ancora scritto con cui verificare che il test colga davvero un errore).
+
 - **T0007 senza uno scenario valido nel catalogo/dataset** — l'unico caso mai pensato
   per T0007 (Guardrail Evasion, veicolo `update_account`) era in realtà T0005
   (Privilege Escalation via Tool) per definizione letterale del vendor — corretto,

@@ -94,8 +94,8 @@ test. Scartata perché il catalogo, per un progetto il cui intero valore è la
 verificabilità di terzi (principio 6), deve reggersi da solo se mai pubblicato insieme
 al dataset — una tabella markdown senza validazione rischia esattamente il tipo di
 contenuto non strutturato/non verificabile che questo progetto contesta ad altri
-strumenti. Il costo del catalogo strutturato è basso (3 file, 10 test, <1s di runtime)
-rispetto a questo beneficio.
+strumenti. Il costo del catalogo strutturato è basso (3 file, una manciata di test in
+`tests/test_catalog.py`, <1s di runtime) rispetto a questo beneficio.
 
 **Campi** (documentati per esteso nell'header del file stesso, non ripetuti qui):
 `catalog_id`, `technique_code`, `technique_name`, `label_hint`, `source_type`,
@@ -141,9 +141,14 @@ la tecnica cambiasse, l'id mentirebbe in silenzio), mai una traccia letterale di
 step per un caso multi-tool (quel dettaglio vive nel `rationale`, non nell'id — più step
 non significa id più lungo). Esempi della convenzione discussi in questa sessione:
 `refund_without_authorization` (illustrativo, mai scritto in un file). Due di questi
-esempi sono stati anche effettivamente validati contro lo schema reale (non solo
-discussi): `account_status_change_escalates_privilege` e
-`marketing_optin_change_request` — vedi sezione "Authoring — template" sotto.
+esempi sono stati anche fatti passare a mano, in questa sessione, attraverso lo schema
+reale (non solo discussi): `account_status_change_escalates_privilege` e
+`marketing_optin_change_request` — vedi sezione "Authoring — template" sotto. **Limite
+dichiarato** (trovato da `grill-with-docs`, 2026-08-19): questa validazione non è
+riproducibile — nessun test, script o commit nel repo la rieseguirebbe; nessuna delle
+due stringhe compare altrove che in questo documento. La sostanza del claim resta
+verosimile ma non verificabile da un revisore terzo così com'è. Voce aperta in
+`registro-limiti-aperti.md` per un test automatico che la renda rieseguibile.
 
 **`catalog_id`** (nel catalogo, riferimento di lavoro): può includere la fonte (es.
 `forcedleak_...`, `postmark_mcp_...`) per tracciabilità — un pubblico diverso (chi
@@ -272,18 +277,20 @@ Vive in `catalog/`, non in `dataset/`, perché `load_dataset()` legge *ogni* `*.
 dentro `dataset_dir` — un template con valori placeholder lì dentro farebbe fallire il
 caricamento dell'intero dataset.
 
-Verificato in questa sessione (non solo scritto): il template compilato con valori
-reali produce `TestCase` validi attraverso la funzione di validazione reale del
+Verificato a mano in questa sessione (non solo scritto): il template compilato con
+valori reali produce `TestCase` validi attraverso la funzione di validazione reale del
 progetto (`_entry_to_test_case`), sia per un caso malevolo sia per il suo gemello
-benigno.
+benigno. **Limite dichiarato** (stesso trovato da `grill-with-docs`, 2026-08-19, vedi
+sezione "Naming" sopra): verifica non riproducibile, nessuna traccia nel repo oltre a
+questo testo — voce aperta in `registro-limiti-aperti.md`.
 
 ## Mapping Requisito → Verifica
 
 | Requisito | Fonte | Verifica |
 |---|---|---|
 | "Ogni caso di test viene definito (tecnica target, esito atteso, ragionamento) prima di eseguire il tool" | `SPIRIT.md`, principio 2 (testo letterale) | `TestCase.rationale` obbligatorio e non vuoto (`schema.py`, `__post_init__`, già esistente). Disciplina processuale non automatizzabile: nessun `TestCase` va scritto/modificato dopo aver visto un verdetto — dichiarata qui, non testabile da codice. |
-| "un dataset... costruito a mano sulle 14 tecniche... poi arricchito con casi ispirati a incidenti reali documentati" — **gate bloccante** (rivisto 2026-08-19, seconda sessione: verificato che `metrics.py`/`report.py` costruiscono la tabella per-tecnica solo dalle tecniche effettivamente presenti nel dataset — una tecnica scoperta non produce una riga vuota, sparisce senza segnale, esattamente come la contaminazione tool→label che ha già lo stesso status; nessuna ragione trovata per trattarle diversamente) | `SPIRIT.md`, "Primo obiettivo concreto" (testo letterale) | Copertura tecniche: **non ancora scritto** — verificato in questo self-review che nessun test attuale controlla questo (`grep T0001-T0014` su `tests/` trova solo valori di esempio arbitrari in test di schema, mai una verifica di copertura). Il requisito era già descritto nel design doc originale (`2026-08-14-toy-agent-e-pipeline-misura.md`, riga 966: "l'insieme di `technique_target` sui `TestCase` malevoli copre tutti i codici T0001-T0014"), scritto prima che esistesse qualunque `TestCase` reale — resta da implementare durante l'esecuzione di Plan 5, non prima (nessun dato su cui girare finché `dataset/` è vuota). **`run_batch.py` sul dataset completo e la pubblicazione del primo report non devono avvenire prima che questo test esista e passi** — stesso trattamento della riga anti-scorciatoia sotto, non un passo narrativo. Incidenti reali: soddisfatto dalle 4 voci `real_incident` nel catalogo, verificate da `tests/test_catalog.py` (citation+adaptation obbligatorie). |
-| **Nessuna scorciatoia di correlazione tool→label** (Gap 7 rischio 1, generalizzato a tutte le 14 tecniche in questa sessione) — **gate bloccante** (council-risk/advocate: senza questo, il rischio è pubblicare P/R/F1 contaminati senza che nessun controllo lo impedisca) | Questa sessione | Test da scrivere durante l'esecuzione di Plan 5 (non ancora scritto, richiede `dataset/` popolata): per ogni tool usato in ≥1 `TestCase` malevolo, verificare che esista ≥1 `TestCase` benigno che lo esercita. **`run_batch.py` sul dataset completo e la pubblicazione del primo report non devono avvenire prima che questo test esista e passi** — non un passo narrativo nella sequenza di lavoro, un prerequisito esplicito. |
+| "un dataset... costruito a mano sulle 14 tecniche... poi arricchito con casi ispirati a incidenti reali documentati" — **gate bloccante** (rivisto 2026-08-19, seconda sessione: verificato che `metrics.py`/`report.py` costruiscono la tabella per-tecnica solo dalle tecniche effettivamente presenti nel dataset — una tecnica scoperta non produce una riga vuota, sparisce senza segnale, equivalente nella sostanza alla contaminazione tool→label, anch'essa un gate bloccante — vedi riga sotto, il cui meccanismo concreto è stato riformulato da `grill-with-docs` il 2026-08-19; nessuna ragione trovata per trattare i due requisiti diversamente nella sostanza) | `SPIRIT.md`, "Primo obiettivo concreto" (testo letterale) | Copertura tecniche: **non ancora scritto** — verificato in questo self-review che nessun test attuale controlla questo (`grep T0001-T0014` su `tests/` trova solo valori di esempio arbitrari in test di schema, mai una verifica di copertura). Il requisito era già descritto nel design doc originale (`2026-08-14-toy-agent-e-pipeline-misura.md`, riga 966: "l'insieme di `technique_target` sui `TestCase` malevoli copre tutti i codici T0001-T0014"), scritto prima che esistesse qualunque `TestCase` reale — resta da implementare durante l'esecuzione di Plan 5, non prima (nessun dato su cui girare finché `dataset/` è vuota). A differenza della riga sotto, `technique_target` è dichiarato staticamente nel `TestCase` autorato (non emerge solo dall'esecuzione) — resta quindi un vero test pytest statico sul dataset, eseguibile prima di `run_batch.py`. **`run_batch.py` sul dataset completo e la pubblicazione del primo report non devono avvenire prima che questo test esista e passi.** Incidenti reali: soddisfatto dalle 4 voci `real_incident` nel catalogo, verificate da `tests/test_catalog.py` (citation+adaptation obbligatorie). |
+| **Nessuna scorciatoia di correlazione tool→label** (Gap 7 rischio 1, generalizzato a tutte le 14 tecniche in questa sessione) — **gate bloccante** (council-risk/advocate: senza questo, il rischio è pubblicare P/R/F1 contaminati senza che nessun controllo lo impedisca) | Questa sessione; meccanismo riformulato da `grill-with-docs`, 2026-08-19, dopo aver trovato una circolarità nella formulazione originale (vedi sotto) | **Non un test pytest statico sul dataset**, a differenza della riga sopra: quali tool un `TestCase` esercita davvero emerge solo dal `Transcript` osservato dopo l'esecuzione live del loop ReAct (`dataset.py:36-39` vincola l'input autorato a un solo turno seed; il tool reale si scopre solo dentro `execute_sequence`, `sequence.py`) — un test eseguibile *prima* di `run_batch.py`, come nella formulazione originale, richiederebbe un campo dichiarato in anticipo (`expected_tool` o simile), scartato: introdurrebbe lo stesso disallineamento dichiarazione/realtà che Gap 4 esiste per evitare. **Gate riformulato**: non più "prima di `run_batch.py`" ma **dentro `run_batch.py::main()`, tra `execute_batch()` e la scrittura di `report.md`** — un controllo che raggruppa `case.transcript.turns[*].tool_call.tool_name` per `label` sui `metric_cases` (i transcript realmente osservati, non il turno seed autorato — `sequence.py:229-240`, `case_obj.transcript` è ricostruito da `raw_transcript_dict`, non è il transcript a un turno del `TestCase` originale), e blocca la scrittura del report se un tool compare solo tra i casi malevoli. Precedente strutturale più vicino nel codice: `preflight_check_models` (`run_batch.py:125-129`, `sys.exit(1)` prima di procedere), non `breaker_tripped` (che annota una nota nel report, non blocca la sua scrittura). Nessun dato grezzo va perso in caso di blocco: transcript/verdetti/evidenza restano persistiti su disco progressivamente da `execute_sequence`, indipendentemente dalla scrittura del report (principio 4 `SPIRIT.md`). **Caveat esplicito, principio 8 `SPIRIT.md`**: questo controllo non è una garanzia strutturale del dataset — è contingente all'esecuzione osservata. Quali tool l'agente sceglie di chiamare per un dato seed non è una proprietà fissa del `TestCase`, dipende dal campionamento del modello: una riesecuzione dello stesso dataset invariato potrebbe produrre un esito diverso (il check potrebbe passare oggi e fallire domani, senza che nulla nel dataset sia cambiato). Il report deve dichiarare "verificato sui transcript di questa run" (data, commit del misuratore, modello usato) — mai "questo dataset non ha scorciatoie di correlazione tool→label" come proprietà atemporale del dataset stesso. |
 | Ogni `TestCase` selezionato dal catalogo resta coerente con la voce che lo ha originato (nessuna deriva silenziosa tra `catalog/cases.yaml` e `dataset/`) | Trovato dal council checkpoint (`council-risk`) | Test da scrivere durante l'esecuzione di Plan 5 (non ancora scritto): per ogni voce con `status: selected`, il `TestCase` in `dataset/<selected_as>.yaml` ha lo stesso `technique_target` di `technique_code` (quando `label_hint: malicious`) e la sua `rationale` cita il `catalog_id`. |
 | Il catalogo non duplica label/rationale finale del `TestCase` (rischio di divergenza silenziosa) | Questa sessione | Verificabile per costruzione: `REQUIRED_FIELDS` in `tests/test_catalog.py` non contiene né `label` né `rationale` — solo `label_hint` (etichetta attesa, non quella finale) e `summary` (scenario, non rationale da detector). |
 | Ogni voce `real_incident` dichiara una citazione verificabile e l'adattamento fatto | Principio 1 `SPIRIT.md` + nota preparatoria | `tests/test_catalog.py::test_real_incident_entries_declare_citation_and_adaptation`, `::test_real_incident_citations_contain_a_url` — già scritti e verdi. Copertura solo formale (vedi sezione "Fonti dei casi") — il contenuto resta verificato a mano in fase di authoring, non da un test. |
@@ -307,6 +314,26 @@ documento incrocia già `SPIRIT.md` e il gap-tracking doc riga per riga nel mapp
 sopra e nella sezione Gap 16; non c'è altra documentazione pregressa sostanziale da
 incrociare che il mapping non copra già.
 
+**Esito `grill-with-docs` (2026-08-19, terza sessione)**: l'auto-valutazione appena
+sopra ("valutato non necessario") era sbagliata — stesso pattern già visto per Gap 16
+(un problema reale non trovato dal council checkpoint, trovato da una revisione
+indipendente successiva). Quattro correttivi applicati: (1) due riferimenti a un campo
+`category` mai esistito nello schema del catalogo, residui di una revisione precedente,
+corretti in `catalog/_template.yaml` e `catalog/vendor_taxonomy_snapshot.yaml`; (2) il
+claim di validazione dei due esempi di `case_id` (sezione "Naming") e del template
+compilato (sezione "Authoring — template") ammorbidito da "verificato" a "verificato a
+mano, non riproducibile" — nessuna traccia nel repo oltre al testo del design doc, voce
+aperta in `registro-limiti-aperti.md`; (3) il conteggio "10 test" (sezione "Struttura
+dati") corretto — non allineato a `pytest tests/test_catalog.py --collect-only` (11
+nodi), riformulato per non richiedere manutenzione a ogni test aggiunto; (4) la
+formulazione del gate anti-scorciatoia tool→label (mapping Requisito→Verifica) conteneva
+una circolarità logica — imponeva che il test passasse prima di `run_batch.py`, ma quali
+tool un `TestCase` esercita davvero emerge solo dall'esecuzione stessa — riformulato come
+controllo in-process tra `execute_batch()` e la scrittura di `report.md`, con caveat
+esplicito di non-strutturalità (principio 8 `SPIRIT.md`). Il punto (4) non è un refuso di
+forma come gli altri tre: è un errore di design che, non corretto, avrebbe reso il
+requisito irrealizzabile come scritto.
+
 ## Scostamenti dal testo originale (confronto esplicito)
 
 Nessuno scostamento nascosto da segnalare: i due requisiti citati da `SPIRIT.md` nella
@@ -328,13 +355,14 @@ soddisfatto.
 - Scrivere i 40-60 `TestCase` reali in `dataset/`, selezionando dal catalogo — ogni
   `rationale` di un caso `real_incident` deve riportare citazione+adattamento in
   sintesi, non solo il `catalog_id` (mapping sopra, requisito auto-sufficienza).
-- Scrivere tre test ancora assenti (tutti in tabella sopra, nessuno esiste oggi —
+- Scrivere le verifiche ancora assenti (tutte in tabella sopra, nessuna esiste oggi —
   verificato con una ricerca in `tests/`, non solo dichiarato): copertura completa
-  delle 14 tecniche sui `TestCase` malevoli (**gate bloccante**, allineato il
-  2026-08-19 all'anti-scorciatoia dopo aver verificato che una tecnica scoperta non
-  è visibile nel report senza questo test), anti-scorciatoia tool→label (**gate
-  bloccante** prima di eseguire il batch completo), coerenza catalogo↔dataset dopo la
-  selezione (non bloccante).
+  delle 14 tecniche sui `TestCase` malevoli (**gate bloccante**, un vero test pytest
+  statico sul dataset, eseguibile prima di `run_batch.py`), anti-scorciatoia
+  tool→label (**gate bloccante**, ma non un test pytest — un controllo in-process
+  dentro `run_batch.py::main()`, tra `execute_batch()` e la scrittura di `report.md`;
+  meccanismo riformulato da `grill-with-docs` il 2026-08-19, vedi mapping sopra),
+  coerenza catalogo↔dataset dopo la selezione (test pytest, non bloccante).
 - Aggiornare `README.md` per menzionare `dataset/`/`catalog/` e come sono legati
   (trovato assente dal council checkpoint, `council-advocate`) — rimandato a quando
   `dataset/` avrà contenuto reale, per non descrivere una struttura ancora vuota.

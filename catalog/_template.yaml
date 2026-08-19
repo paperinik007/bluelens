@@ -10,8 +10,9 @@
 #
 # WORKFLOW END-TO-END (prima di compilare questo file):
 #   1. Leggi catalog/cases.yaml — cerca una voce con status: candidate per la
-#      tecnica che ti serve (o category: benign se stai scrivendo un caso
-#      benigno generico).
+#      tecnica che ti serve (technique_code == "T00NN"), o con
+#      technique_code: null e label_hint: benign se stai scrivendo un caso
+#      benigno generico non legato a nessuna tecnica.
 #   2. Se non c'è ancora una voce adatta, scrivine una nuova in
 #      catalog/cases.yaml prima di scrivere il TestCase (non il contrario) —
 #      il catalogo è dove si registra la fonte/il ragionamento, il TestCase è
