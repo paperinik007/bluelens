@@ -1003,8 +1003,13 @@ insieme a Gap 12, con l'onestà statistica richiesta da `SPIRIT.md` principio 3.
 
 ## Gap 14 — Segnali che rivelano al detector di essere sotto test (unifica Gap 12 + Gap 13)
 
-**Stato**: in discussione — A1/A2 (tabella A) **risolti nel codice (2026-08-18)**, il resto
-dell'enumerazione (A3-A5, B1-B8, C1-C2) resta con trattamento non ancora deciso.
+**Stato**: **risolto nel design (2026-08-19)**, salvo B3 e la parte non ancora implementata
+(vedi sotto). A1/A2 (tabella A) risolti nel codice (2026-08-18). A3/B1/C1 verificati e
+scartati (2026-08-18). A4/A5/B2/B3/B4-B8/C2 risolti nel design il 2026-08-19 — vedi
+`2026-08-19-container-lifecycle-e-sequenze-design.md`, che unifica il trattamento con Gap
+15 sotto un unico schema (sequenza dichiarativa di passi `open`/`command`/`close`, ciclo
+di vita del container come parametro esplicito `--container-lifecycle={reused|per-case}`).
+Il codice che implementa quel design non è ancora scritto (prossimo piano).
 
 **Risoluzione applicata (2026-08-18) — A1/A2**: entrambe le parti generalizzano per
 costruzione (principio 8, `SPIRIT.md`) — non dipendono da alcun comportamento osservato
@@ -1286,33 +1291,72 @@ concreta di quali voci B4-B8 sono presenti davvero in questo ambiente, invece di
 solo teoricamente possibili — utile prima di decidere quanto investire nel trattamento
 strutturale di B2.
 
-**Prossimo passo**: trattamento di ogni voce non ancora deciso — da riprendere in una
-sessione di design dedicata (probabile secondo checkpoint con confronto di approcci e
-trade-off, come già fatto per Gap 9, non una singola correzione isolata). Punto di
-partenza proposto per quella sessione, aggiornato dopo le considerazioni sopra:
-- ~~fix economici e strutturali per A1/A2 subito~~ — **fatto (2026-08-18)**, vedi
-  "Risoluzione applicata (2026-08-18) — A1/A2" sopra;
-- il ciclo di vita del container (riusato vs ricreato per caso) diventa un parametro
-  esplicito dell'orchestratore, non una scelta cablata (vedi "Conseguenza architetturale"
-  sopra) — disegnare come questo parametro si espone (`run_batch.py`? config?) e come
-  l'orchestratore acquisisce il controllo reale di avvio/arresto (`docker compose run
-  --rm` per la modalità "ricrea per caso");
-- per l'audit corrente su questo vendor, il valore di default pende verso **container
-  riusato con repulisti mirato per B4-B7** (economico, e più fedele alla condizione di
-  misura dichiarata dal vendor — `Pipeline()` unica, riusata per le 300 sessioni), con B8
-  (età del container) come limite dichiarato esplicito residuo — da confermare con la
-  verifica empirica ancora mancante (vedi sopra);
-- valutare se vale il costo di un confronto P/R tra le due modalità (beneficio aggiuntivo
-  sopra), come esperimento metodologico proprio di questo progetto;
-- limite dichiarato esplicito anche per il ritmo/tempistica (B2, versione "ritmo umano")
-  con la motivazione onesta richiesta da `SPIRIT.md` principio 3.
+## Sessione di design dedicata (2026-08-19) — B4-B8/C2 risolti per costruzione, A4/A5/B2/B3 chiusi, unificato con Gap 15
+
+Sessione dedicata (brainstorming), vedi
+`2026-08-19-container-lifecycle-e-sequenze-design.md` per il design completo. Correzione
+di metodo decisiva, dall'utente: la verifica empirica B4-B8 proposta come primo passo di
+questa sessione (ps aux, core dump, socket dopo un `pkill` indotto) **non serve** — il
+framework non si basa su un repulisti verificato, si basa su una primitiva Docker
+(`docker compose rm -f -s <service>`) che garantisce la rimozione del container per
+contratto. "Cancellare log o uccidere processi nel container osservato non serve a nulla"
+(cit.): o un container è davvero chiuso (nessuna storia precedente esiste in quella vita,
+nulla da correlare) o è riusato e allora una pulizia parziale non cambia il fatto
+strutturale che più chiamate sono avvenute nello stesso ambiente — nessuna terza via
+"ripulita a metà" vale qualcosa.
+
+**Risoluzione**: il ciclo di vita del container diventa un parametro esplicito
+(`--container-lifecycle={reused|per-case}`) espresso tramite una **sequenza**
+dichiarativa di passi `open`/`command`/`close` — lo stesso costrutto usato per Gap 15
+(sceneggiature composte), unificati sotto un unico schema come già deciso in principio.
+Con `per-case`, B4-B8 si chiudono per costruzione (nessuna storia in ogni vita del
+container). Con `reused` (default per l'audit corrente, fedele alla condizione di misura
+dichiarata dal vendor — `Pipeline()` unica per le 300 sessioni Gauntlet), B4-B7 restano
+un limite dichiarato, B8 pure — nessun repulisti tentato per nessuno dei due.
+
+**A4 (timestamp)** e **B2 (ritmo/tempistica)**: stessa risoluzione del parametro sopra,
+nessun meccanismo nuovo — chiusi per costruzione con `per-case`, limite dichiarato con
+`reused`. Confermato: nessun tentativo di imitare un "ritmo umano", sconsigliato a
+livello di principio (nessun riferimento credibile a cui ancorare l'imitazione).
+
+**A5 (forma dei `messages`)**: split in due. "Un solo turno seed" non è un segnale (già
+verificato in Gap 15). `call_id` sempre `call_{seq}` (`detector_adapter/adapter.py:38`) è
+un pattern reale, economico da correggere (identificativo opaco, es. `uuid.uuid4().hex`)
+— stessa fix wave di A1/A2, ancora da implementare.
+
+**B3 (traffico dal proxy sostitutivo)**: verificato e scartato, stessa categoria di
+A3/B1/C1 — l'interfaccia dichiarata (`AgentEvent`/`ToolUsage`) non porta alcun campo
+rete/latenza, e `detector` ha `cap_drop: ALL` — nessun canale porta questo dato al
+modello.
+
+**C2 (log del thin-proxy non cancellato subito dopo la copia)**: risolto per costruzione
+— idea dell'utente, il troncamento (esistente solo per attribuzione per-caso, mai stato
+un meccanismo di sicurezza) è sostituito da un marcatore di confine appeso al log
+(`>>` invece di `>`, stesso comando shell già emesso da `orchestrator.py`). Nulla viene
+mai cancellato, quindi nessuna finestra residua da preoccuparsi.
+
+**Discussione collaterale sul log del thin-proxy**: è la prova più ricca che raccogliamo
+(intercettazione reale del traffico verso l'LLM, non un log passivo) — legittimo come
+evidenza/diagnostica (SPIRIT.md principio 2/3), mai come base per giustificare un segnale
+"sicuro" osservando il comportamento di questo vendor pinnato (stesso principio di
+[[feedback_blackbox_measured_system]]). Da questa discussione è emersa un'idea candidata
+per Plan 5+ (non in scope qui, coerente con la decisione di rimandare presa il
+2026-08-17): usare i Q&A del log come spazio vettoriale con ancore "sicure" per un
+confronto più sensibile del P/R aggregato tra le modalità `reused`/`per-case` — vedi il
+design doc, sezione "Idea candidata per Plan 5+".
+
+**Prossimo passo**: implementare il design (nuovo modulo sequenza, generatore del caso
+comune in `run_batch.py`, marcatore nel log, fix `call_id`) — sessione fresca per piano,
+non eseguito in questa sessione di design.
 
 ## Gap 15 — Granularità/espressività di un "test": primitiva atomica vs sceneggiature composte (emerge da Gap 14)
 
-**Stato**: aperto ma non bloccante per Plan 5 — principio architetturale condiviso, non
-ancora una decisione di design. Il dubbio specifico "il nostro `TestCase` a un seed turn è
-comparabile alle 'sessioni' dichiarate dal vendor?" è stato verificato e chiuso (vedi
-sotto, "Verifica fatta"): nessun disallineamento, non serve risolverlo prima di Plan 5.
+**Stato**: **risolto nel design (2026-08-19)**, unificato con Gap 14 sotto un unico
+schema — vedi `2026-08-19-container-lifecycle-e-sequenze-design.md`. Il dubbio specifico
+"il nostro `TestCase` a un seed turn è comparabile alle 'sessioni' dichiarate dal
+vendor?" è stato verificato e chiuso separatamente (vedi sotto, "Verifica fatta"): nessun
+disallineamento. Il codice che implementa il design non è ancora scritto (prossimo
+piano).
 
 **Trovato da**: continuazione diretta della discussione che ha prodotto Gap 14
 (2026-08-18). Una volta stabilito che la creazione/distruzione del container `detector` è
@@ -1420,11 +1464,12 @@ previsto dal design doc (`docs/design/2026-08-14-toy-agent-e-pipeline-misura.md:
 resta valido su questo asse specifico. Gap 15 non va promosso a prerequisito urgente di
 Plan 5 per questo motivo.
 
-**Prossimo passo**: non più urgente sull'asse verificato sopra (granularità seed-turn vs
-sessione multi-step, già allineata al vendor). Resta aperta, ma non bloccante, la domanda
-distinta della modalità 2 sopra — più sessioni/ticket separati nello stesso ambiente
-persistente nel tempo — da riprendere in una sessione di design dedicata quando utile,
-senza vincolo di sequenza rispetto a Plan 5.
+**Prossimo passo**: risolto nel design il 2026-08-19 — la grammatica a sequenza
+(`open`/`command`/`close`, booleano `counts_toward_metric` per singolo `command`) copre
+sia la modalità 1 (container per invocazione) sia la modalità 2 (sceneggiatura
+deliberata nello stesso ambiente persistente) come casi della stessa struttura, non due
+feature separate. Vedi `2026-08-19-container-lifecycle-e-sequenze-design.md`. Resta da
+implementare (prossimo piano, sessione fresca).
 
 ## Come si chiude un gap
 
