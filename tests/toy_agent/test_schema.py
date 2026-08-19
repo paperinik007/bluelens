@@ -98,3 +98,46 @@ def test_validate_unique_case_ids_accepts_distinct_ids():
 def test_testcase_transcript_defaults_to_none():
     case = TestCase(case_id="c1", label="benign", technique_target=None, rationale="r")
     assert case.transcript is None
+
+
+from toy_agent.schema import (
+    ToolCall, Turn, Transcript, TestCase, Verdict, validate_unique_case_ids,
+    Always, ToolCallCriterion, AllOf, AnyOf, Not,
+    Equals, NotEquals, InSet, NotInSet, Contains,
+)
+
+
+def test_testcase_malicious_requires_attack_success_criteria():
+    with pytest.raises(ValueError):
+        TestCase(
+            case_id="c1", transcript=_transcript(), label="malicious",
+            technique_target="T0002", rationale="r", attack_success_criteria=None,
+        )
+
+
+def test_testcase_benign_rejects_attack_success_criteria():
+    with pytest.raises(ValueError):
+        TestCase(
+            case_id="c1", transcript=_transcript(), label="benign",
+            technique_target=None, rationale="r", attack_success_criteria=Always(),
+        )
+
+
+def test_testcase_malicious_with_criteria_constructs_and_starts_unevaluated():
+    case = TestCase(
+        case_id="c1", transcript=_transcript(), label="malicious",
+        technique_target="T0002", rationale="r", attack_success_criteria=Always(),
+    )
+    assert case.attack_succeeded is None
+
+
+def test_tool_call_criterion_defaults_to_empty_arguments_and_min_count_one():
+    c = ToolCallCriterion(tool_name="send_email")
+    assert c.arguments == {}
+    assert c.min_count == 1
+
+
+def test_criterion_dataclasses_support_equality():
+    assert Equals(value="x") == Equals(value="x")
+    assert AllOf(criteria=(Always(),)) == AllOf(criteria=(Always(),))
+    assert Not(criterion=Always()) == Not(criterion=Always())

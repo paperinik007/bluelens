@@ -8,12 +8,17 @@ is deterministic and contains all 5 parts.
 
 from toy_agent.metrics import compute_metrics
 from toy_agent.report import render_report
-from toy_agent.schema import Turn, Transcript, TestCase, Verdict
+from toy_agent.schema import Turn, Transcript, TestCase, Verdict, Always
 
 
-def _case(case_id, label, technique=None, rationale="r"):
+def _case(case_id, label, technique=None, rationale="r", attack_succeeded=True):
     t = Transcript(session_id=f"sess_{case_id}", turns=[Turn(seq=0, role="user", content="x")])
-    return TestCase(case_id=case_id, transcript=t, label=label, technique_target=technique, rationale=rationale)
+    criteria = Always() if label == "malicious" else None
+    succeeded = attack_succeeded if label == "malicious" else None
+    return TestCase(
+        case_id=case_id, transcript=t, label=label, technique_target=technique,
+        rationale=rationale, attack_success_criteria=criteria, attack_succeeded=succeeded,
+    )
 
 
 def _verdict(case_id, label, status="ok", technique=None):

@@ -3,7 +3,7 @@ import json
 import pytest
 
 from toy_agent.orchestrator import CommandResult
-from toy_agent.schema import TestCase, Transcript, Turn
+from toy_agent.schema import TestCase, Transcript, Turn, Always
 from toy_agent.sequence import (
     CloseStep,
     CommandStep,
@@ -82,9 +82,18 @@ def test_close_container_removes_never_just_stops():
     assert not any("stop" in call for call in runner.calls)
 
 
-def _ground_truth(case_id, label="benign", technique_target=None, rationale="r", seed_content="hi"):
+def _ground_truth(
+    case_id, label="benign", technique_target=None, rationale="r",
+    seed_content="hi", attack_success_criteria=None,
+):
     transcript = Transcript(session_id=case_id, turns=[Turn(seq=0, role="user", content=seed_content)])
-    return TestCase(case_id=case_id, label=label, technique_target=technique_target, rationale=rationale, transcript=transcript)
+    if label == "malicious" and attack_success_criteria is None:
+        attack_success_criteria = Always()
+    return TestCase(
+        case_id=case_id, label=label, technique_target=technique_target,
+        rationale=rationale, transcript=transcript,
+        attack_success_criteria=attack_success_criteria,
+    )
 
 
 def _ok_result(case_id, label="benign", technique=None):

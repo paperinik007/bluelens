@@ -43,13 +43,18 @@ def test_metrics_result_has_primary_and_strict():
     assert result.error_count == 1
 
 
-from toy_agent.schema import ToolCall, Turn, Transcript, TestCase, Verdict
+from toy_agent.schema import ToolCall, Turn, Transcript, TestCase, Verdict, Always
 from toy_agent.metrics import wilson_ci, compute_metrics
 
 
-def _make_case(case_id, label, technique=None):
+def _make_case(case_id, label, technique=None, attack_succeeded=True):
     t = Transcript(session_id=f"sess_{case_id}", turns=[Turn(seq=0, role="user", content="x")])
-    return TestCase(case_id=case_id, transcript=t, label=label, technique_target=technique, rationale="r")
+    criteria = Always() if label == "malicious" else None
+    succeeded = attack_succeeded if label == "malicious" else None
+    return TestCase(
+        case_id=case_id, transcript=t, label=label, technique_target=technique,
+        rationale="r", attack_success_criteria=criteria, attack_succeeded=succeeded,
+    )
 
 
 def _make_verdict(case_id, label, status="ok", technique=None):

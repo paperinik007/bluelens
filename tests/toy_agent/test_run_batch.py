@@ -7,12 +7,16 @@ import yaml
 from toy_agent import run_batch
 from toy_agent.orchestrator import CommandResult
 from toy_agent.run_batch import BatchResult
-from toy_agent.schema import Transcript, Turn, TestCase, Verdict
+from toy_agent.schema import Transcript, Turn, TestCase, Verdict, Always
 
 
 def _ground_truth(case_id, label="benign", technique_target=None, rationale="r", seed_content="hi"):
     transcript = Transcript(session_id=case_id, turns=[Turn(seq=0, role="user", content=seed_content)])
-    return TestCase(case_id=case_id, label=label, technique_target=technique_target, rationale=rationale, transcript=transcript)
+    criteria = Always() if label == "malicious" else None
+    return TestCase(
+        case_id=case_id, label=label, technique_target=technique_target,
+        rationale=rationale, transcript=transcript, attack_success_criteria=criteria,
+    )
 
 
 def _ok_result(case_id, label="benign", technique=None):

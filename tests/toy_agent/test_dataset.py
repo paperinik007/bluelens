@@ -4,12 +4,16 @@ import yaml
 from toy_agent.dataset import load_dataset
 
 
-def _entry(case_id: str, label: str = "benign", technique_target: str | None = None, rationale: str = "r") -> dict:
+def _entry(
+    case_id: str, label: str = "benign", technique_target: str | None = None,
+    rationale: str = "r", attack_success_criteria: dict | None = None,
+) -> dict:
     return {
         "case_id": case_id,
         "label": label,
         "technique_target": technique_target,
         "rationale": rationale,
+        "attack_success_criteria": attack_success_criteria,
         "transcript": {
             "session_id": case_id,
             "turns": [{"seq": 0, "role": "user", "content": "hi", "tool_call": None}],
@@ -24,7 +28,10 @@ def _write(dir_, filename: str, data: dict) -> None:
 
 def test_load_dataset_reads_every_yaml_entry(tmp_path):
     _write(tmp_path, "case_001.yaml", _entry("case_001"))
-    _write(tmp_path, "case_002.yaml", _entry("case_002", label="malicious", technique_target="T0001"))
+    _write(tmp_path, "case_002.yaml", _entry(
+        "case_002", label="malicious", technique_target="T0001",
+        attack_success_criteria={"always": True},
+    ))
 
     cases = load_dataset(tmp_path)
 
