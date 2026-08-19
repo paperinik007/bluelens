@@ -199,10 +199,12 @@ def test_counts_toward_metric_false_is_excluded_from_the_metric_lists_but_kept_i
         CloseStep(containers=("agent", "detector")),
     ]
     runner = ScriptedRunTestCase([_ok_result("c1"), _ok_result("c2")])
+    evidence_collector = RecordingEvidenceCollector()
+    proxy_log_collector = RecordingProxyLogCollector()
 
     result = execute_sequence(steps, dataset, tmp_path, run_test_case_fn=runner,
-                               collect_case_evidence_fn=RecordingEvidenceCollector(),
-                               collect_thin_proxy_log_fn=RecordingProxyLogCollector(),
+                               collect_case_evidence_fn=evidence_collector,
+                               collect_thin_proxy_log_fn=proxy_log_collector,
                                run_command=NoOpCommandRunner())
 
     assert [c.case_id for c in result.cases] == ["c1", "c2"]
@@ -212,6 +214,11 @@ def test_counts_toward_metric_false_is_excluded_from_the_metric_lists_but_kept_i
     # c1's raw verdict is still persisted to disk even though excluded from metrics
     lines = (tmp_path / "verdicts.jsonl").read_text(encoding="utf-8").strip().splitlines()
     assert json.loads(lines[0])["case_id"] == "c1"
+    # c1's raw transcript is still written to disk even though excluded from metrics
+    assert (tmp_path / "raw" / "c1.transcript.json").exists()
+    # both commands trigger evidence collection, regardless of counts_toward_metric
+    assert evidence_collector.calls == ["c1", "c2"]
+    assert proxy_log_collector.calls == ["c1", "c2"]
 
 
 def test_circuit_breaker_trips_after_three_consecutive_infra_failures(tmp_path):

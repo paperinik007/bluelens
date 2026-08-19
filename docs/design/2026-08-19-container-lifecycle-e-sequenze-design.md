@@ -223,6 +223,38 @@ Check principio 8: la grammatica regge per costruzione — nessun elemento è
 specifico al vendor pinnato; `containers: [agent, detector]` sono nomi
 nostri, non imposti dal vendor.
 
+## Limite dichiarato: sequenze composte con `case_id` ripetuto
+
+Gli artefatti per-comando — il transcript grezzo e le directory di
+evidenza/log del thin-proxy — sono chiavettati per `case_id` da solo, non
+per `case_id` + `command_index`. In `src/toy_agent/sequence.py`:
+`raw_dir / f"{case_id}.transcript.json"` (riga 205), e le chiamate a
+`collect_case_evidence_fn(case_id, ...)` / `collect_thin_proxy_log_fn(case_id,
+...)` (righe 210-211), che a loro volta usano `evidence_dir / case_id`
+dentro `src/toy_agent/evidence.py`. `command_index` esiste già (è
+l'argomento passato al marcatore nel log del thin proxy, vedi sopra) ma non
+viene usato per differenziare questi due canali.
+
+**Conseguenza**: una sceneggiatura composta scritta a mano (Gap 15 modalità
+2) che esegue lo stesso `case_id` più di una volta nella stessa sequenza
+sovrascrive silenziosamente sul disco tutto tranne l'ultima esecuzione — sia
+il transcript grezzo sia l'evidenza raccolta. `verdicts.jsonl` è l'unico
+canale append-only che sopravvive intatto a una ripetizione.
+
+**Non raggiungibile da nessun percorso di codice di questo piano**:
+`load_dataset` impone `case_id` univoci su tutto il dataset
+(`validate_unique_case_ids`), e le sequenze generate automaticamente (il
+"caso comune", `reused`/`per-case`) emettono esattamente un `CommandStep` per
+`case_id` — nessuna ripetizione possibile finché nessuno scrive a mano una
+sceneggiatura composta con lo stesso `case_id` due volte.
+
+**Stato**: accettato come limite dichiarato per ora, non un bug e non
+silenziosamente risolto — coerente con il principio 8 di `SPIRIT.md` (mai
+lasciare un limite reale non dichiarato). Da affrontare quando/se si
+costruiranno davvero sceneggiature composte con `case_id` ripetuto (Gap 15
+modalità 2): a quel punto l'opzione naturale è estendere la chiave su disco
+a `case_id` + `command_index`, ma quella decisione resta fuori scope qui.
+
 ## Validazione statica (prima di eseguire qualunque comando reale)
 
 Un passaggio a scorrimento sulla sequenza, tenendo un insieme di container
@@ -261,6 +293,18 @@ sempre acceso, infrastruttura condivisa, mai gestito dalla sequenza.
   correzione di metodo sopra). La verifica che scriveremo controlla che il
   nostro codice emetta *quel* comando (`rm -f -s -v`, non `stop`), non che
   il filesystem sia vuoto.
+
+**Limite dichiarato: nessuna attesa esplicita di readiness prima della prima
+invocazione del detector.** `_open_container()` ritorna appena Docker
+riporta il container **avviato** (`docker compose up -d` completato), non
+appena l'entrypoint del detector (`docker/detector/entrypoint.sh`) ha finito
+di attendere che il suo processo interno `vendor_proxy` abbia effettivamente
+aperto le proprie porte. Oggi questa finestra è chiusa nella pratica dal
+tempo del round-trip LLM lato agente, che avviene sempre prima che il
+detector venga invocato in una sequenza — ma è incidentale, non garantito
+per costruzione: un verdetto classificato come infra-failure per detector
+non ancora pronto resta una possibilità teorica non coperta da alcun poll di
+readiness esplicito.
 
 **Correzione dopo council (council-risk): crash dell'orchestratore a metà
 sequenza.** Finding reale: l'insieme "aperti" vive solo in memoria del

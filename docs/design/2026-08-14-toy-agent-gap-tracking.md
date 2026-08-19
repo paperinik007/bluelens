@@ -962,15 +962,15 @@ l'intera durata del batch — nessun `docker compose down`/`up` o restart tra un
 il successivo, solo `docker compose exec` ripetuti nello stesso filesystem persistente
 (`orchestrator.py::run_test_case`). Quando `evaluate_case` o `aidr/providers` vengono
 uccisi via `pkill` dopo un timeout o un `TimeoutError` interno
-(`orchestrator.py:127-136`, `152-162`), `pkill` termina il processo ma non pulisce
+(`orchestrator.py:134-143`, `160-169`), `pkill` termina il processo ma non pulisce
 nulla di quanto quel processo abbia scritto su disco prima di morire (file temporanei,
 socket, cache, stato parziale del codice vendor `aidr/providers`, non ispezionabile da
 questo repo). Quello stato residuo resta nel filesystem scrivibile del container
-detector per il resto del batch, a disposizione del caso successivo. L'unico canale con
-un pattern di pulizia è il log del thin proxy (`/var/log/vendor_proxy.jsonl`), troncato
-**prima** di ogni invocazione (`orchestrator.py:88-104`) ma non cancellato subito dopo
-la copia in evidence (`evidence.py::collect_thin_proxy_log`) — finestra residua fino al
-prossimo troncamento. I quattro canali di prova esterna generici (`docker compose
+detector per il resto del batch, a disposizione del caso successivo. Il log del thin
+proxy (`/var/log/vendor_proxy.jsonl`) è invece append-only per costruzione
+(`orchestrator.py:91-111`): ogni invocazione appende un marcatore JSON (`>>`, mai `>`)
+invece di troncare, quindi non esiste alcuna finestra residua — nulla viene mai
+cancellato. I quattro canali di prova esterna generici (`docker compose
 logs`/`diff`/`stats`, `evidence.py:21-57`) sono puramente read-only e non toccano lo
 stato del container.
 
@@ -1097,7 +1097,7 @@ detector richiede comunque di costruire, `detector_adapter/adapter.py`,
 | A2 | `source` | **Risolto (2026-08-18)** — era costante `"toy_agent"`; ora `"agent"` in `adapter.py` | Era **Sì — dichiarava letteralmente il nome del progetto di misura** |
 | A3 | `declared_servers` | costante `["toy_support"]` | **No** — verificato e scartato, vedi sotto |
 | A4 | `timestamp` | orario reale della chiamata (`datetime.now(timezone.utc)`) | Aperto — sembra organico isolatamente, ma tutte le chiamate di uno stesso lotto sono ravvicinate nel tempo (vedi B2) |
-| A5 | Forma dei `messages` (`call_id` sempre `call_{seq}`, sempre esattamente un turno seed utente) | scritta da noi | Aperto — pattern strutturale non ancora valutato a fondo, distinto dal contenuto della conversazione |
+| A5 | Forma dei `messages` (`call_id` sempre `call_{seq}`, sempre esattamente un turno seed utente) | scritta da noi | **Risolto (2026-08-19)** — `call_id` ora opaco (`uuid.uuid4().hex`, `detector_adapter/adapter.py:39`), verificato dal vivo dentro il container `detector`; "un solo turno seed" verificato separatamente come non-segnale (Gap 15) |
 
 *B — cosa può osservare un processo che gira dentro il container `detector`, oltre al
 payload dichiarato (assumendo, per prudenza da scatola nera, che un detector — oggi o
@@ -1108,7 +1108,7 @@ registriamo noi):*
 |---|---|---|
 | B1 | Nome della variabile d'ambiente `OPENROUTER_API_KEY` nel container | **No** — verificato: generico dentro il container, il prefisso `DETECTOR_`/`AGENT_` esiste solo lato host (`.env`), mai visibile da dentro |
 | B2 | Ritmo/tempistica tra una chiamata e l'altra (container long-lived, chiamate ravvicinate per tutto il lotto) | **Sì, potenziale** |
-| B3 | Traffico verso il modello instradato dal nostro proxy sostitutivo invece che dall'endpoint reale (differenze di rete/latenza osservabili) | Aperto — non ancora valutato |
+| B3 | Traffico verso il modello instradato dal nostro proxy sostitutivo invece che dall'endpoint reale (differenze di rete/latenza osservabili) | Valutato — riclassificato dopo council (`council-skeptic`) da "verificato e scartato" ad **accettato come limite dichiarato** (non risolto, non aperto); vedi design doc `2026-08-19-container-lifecycle-e-sequenze-design.md`, sezione "Chiusura di A4, A5, B2, B3" |
 | B4 | Processi zombie/orfani in `ps`, residuo di un `pkill` che non ha ucciso in tempo tutti i figli | **Sì, potenziale** |
 | B5 | Core dump su disco da un processo terminato con segnale | **Sì, potenziale** — non valutato quanto sia realistico in questo ambiente, ma se esistesse sarebbe il canale più rivelatore di tutti (potenzialmente contenuto di conversazione di un caso precedente) |
 | B6 | File `.pyc`/`__pycache__`, scritti dall'interprete Python a ogni `import`, non dal codice applicativo | **Sì, potenziale ma debole** — contenuto generico (bytecode, non dati di caso), ma la loro esistenza/data rivela un ambiente riusato ripetutamente |
@@ -1120,7 +1120,7 @@ registriamo noi):*
 | # | Canale | Esito |
 |---|---|---|
 | C1 | Log Docker del container (`docker logs detector`) | **Non applicabile** — `docker compose exec` (come invochiamo il detector per ogni caso) non scrive mai in quel flusso, e comunque non sarebbe leggibile dal processo interno (nessun accesso al demone Docker, `cap_drop: ALL`, rete interna) |
-| C2 | Log del thin-proxy (`/var/log/vendor_proxy.jsonl`) | Già tracciato (Gap 13 originale) — troncato prima di ogni invocazione da `orchestrator.py`, ma non cancellato subito dopo la copia in evidence: finestra residua fino al prossimo troncamento |
+| C2 | Log del thin-proxy (`/var/log/vendor_proxy.jsonl`) | **Risolto (2026-08-19)** — il troncamento è sostituito da un marcatore JSON append-only (`>>`, mai `>`: `{"marker": true, "case_id", "command_index", "timestamp"}`, `orchestrator.py:91-111`). Nulla viene mai cancellato, quindi la finestra residua che questa riga descriveva originariamente è chiusa per costruzione — non esiste più un "prossimo troncamento" a cui essere esposti |
 
 **Punti verificati e scartati** (non richiedono ulteriore trattamento, per la ragione
 indicata, non perché "il codice vendor non li legge"):
@@ -1327,9 +1327,11 @@ nessun meccanismo nuovo — chiusi per costruzione con `per-case`, limite dichia
 livello di principio (nessun riferimento credibile a cui ancorare l'imitazione).
 
 **A5 (forma dei `messages`)**: split in due. "Un solo turno seed" non è un segnale (già
-verificato in Gap 15). `call_id` sempre `call_{seq}` (`detector_adapter/adapter.py:38`) è
-un pattern reale, economico da correggere (identificativo opaco, es. `uuid.uuid4().hex`)
-— stessa fix wave di A1/A2, ancora da implementare.
+verificato in Gap 15). `call_id` sempre `call_{seq}` era un pattern reale; risolto nel
+codice — `src/detector_adapter/adapter.py:39` genera ora `call_id=uuid.uuid4().hex`,
+identificativo opaco per chiamata invece della sequenza prevedibile. Verificato dal vivo
+dentro il container `detector` contro `aidr` reale (non solo con un test unitario a mock),
+stessa disciplina applicata alla verifica di A1/A2.
 
 **B3 (traffico dal proxy sostitutivo)**: **riclassificato dopo council (council-skeptic)
 da "verificato e scartato" a "accettato come limite dichiarato"** — la chiusura originale

@@ -85,7 +85,10 @@ immagini): il ciclo di vita che `run_batch.py` ora gestisce è solo avvio/rimozi
 container, non il build. Se `agent`/`detector` risultano già in esecuzione da un run
 precedente o da un avvio manuale, non serve fermarli a mano: il primo `open` della
 sequenza li rimuove e ricrea comunque, in modo sicuro (auto-risanante per costruzione,
-vedi design doc).
+vedi design doc). Questo assume un solo operatore che esegue una sola sequenza alla
+volta: un secondo `run_batch.py` avviato in parallelo, o un comando `docker compose`
+lanciato a mano in un altro terminale mentre un batch è in corso, entra in competizione
+con i container di quel batch e può distruggerli a metà run.
 
 `run_batch.py` legge `DETECTOR_OPENROUTER_API_KEY` direttamente dall'ambiente del processo
 Python host (la stessa variabile impostata in `.env`, ma letta qui dall'host, non passata
