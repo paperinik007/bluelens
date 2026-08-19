@@ -171,82 +171,99 @@ def execute_sequence(
     verdict_conversion_failure_count = 0
     total_count = sum(1 for step in steps if isinstance(step, CommandStep))
 
-    for step_index, step in enumerate(steps):
-        if isinstance(step, OpenStep):
-            for service in step.containers:
-                _open_container(service, run_command)
-                open_containers.add(service)
-            continue
+    try:
+        for step_index, step in enumerate(steps):
+            if isinstance(step, OpenStep):
+                for service in step.containers:
+                    _open_container(service, run_command)
+                    open_containers.add(service)
+                continue
 
-        if isinstance(step, CloseStep):
-            for service in step.containers:
-                _close_container(service, run_command)
-                open_containers.discard(service)
-            continue
+            if isinstance(step, CloseStep):
+                for service in step.containers:
+                    _close_container(service, run_command)
+                    open_containers.discard(service)
+                continue
 
-        ground_truth = dataset_by_case_id[step.case_id]
-        case_id = ground_truth.case_id
-        result = run_test_case_fn(
-            _agent_input(ground_truth),
-            command_index=step_index,
-            agent_timeout_s=agent_timeout_s,
-            detector_timeout_s=detector_timeout_s,
-        )
-        raw_transcript_dict = result["transcript"]
-        raw_verdict_dict = result["verdict"]
+            ground_truth = dataset_by_case_id[step.case_id]
+            case_id = ground_truth.case_id
+            result = run_test_case_fn(
+                _agent_input(ground_truth),
+                command_index=step_index,
+                agent_timeout_s=agent_timeout_s,
+                detector_timeout_s=detector_timeout_s,
+            )
+            raw_transcript_dict = result["transcript"]
+            raw_verdict_dict = result["verdict"]
 
-        # Persist raw data immediately, before any conversion attempt — a
-        # malformed dict stays inspectable on disk even if verdict_from_dict()
-        # below raises on it (Plan 4 decision 6, unchanged).
-        _append_jsonl(verdicts_path, raw_verdict_dict)
-        if raw_transcript_dict is not None:
-            (raw_dir / f"{case_id}.transcript.json").write_text(json.dumps(raw_transcript_dict), encoding="utf-8")
+            # Persist raw data immediately, before any conversion attempt —
+            # a malformed dict stays inspectable on disk even if
+            # verdict_from_dict() below raises on it (Plan 4 decision 6,
+            # unchanged).
+            _append_jsonl(verdicts_path, raw_verdict_dict)
+            if raw_transcript_dict is not None:
+                (raw_dir / f"{case_id}.transcript.json").write_text(json.dumps(raw_transcript_dict), encoding="utf-8")
 
-        # External evidence unconditionally, before moving to the next step
-        # (Plan 4 decision 5) — evidence.py never raises on an unreachable
-        # container.
-        collect_case_evidence_fn(case_id, KNOWN_CONTAINERS, run_output_dir)
-        collect_thin_proxy_log_fn(case_id, run_output_dir, api_key)
+            # External evidence unconditionally, before moving to the next
+            # step (Plan 4 decision 5) — evidence.py never raises on an
+            # unreachable container.
+            collect_case_evidence_fn(case_id, KNOWN_CONTAINERS, run_output_dir)
+            collect_thin_proxy_log_fn(case_id, run_output_dir, api_key)
 
-        conversion_failed = False
-        try:
-            verdict_obj = verdict_from_dict(raw_verdict_dict)
-        except Exception as exc:
-            conversion_failed = True
-            verdict_conversion_failure_count += 1
-            verdict_obj = _fallback_verdict(case_id, exc)
-
-        transcript_obj = None
-        if raw_transcript_dict is not None:
+            conversion_failed = False
             try:
-                transcript_obj = transcript_from_dict(raw_transcript_dict)
-            except Exception:
-                transcript_obj = None
-                transcript_conversion_failure_count += 1
+                verdict_obj = verdict_from_dict(raw_verdict_dict)
+            except Exception as exc:
+                conversion_failed = True
+                verdict_conversion_failure_count += 1
+                verdict_obj = _fallback_verdict(case_id, exc)
 
-        case_obj = TestCase(
-            case_id=case_id,
-            label=ground_truth.label,
-            technique_target=ground_truth.technique_target,
-            rationale=ground_truth.rationale,
-            transcript=transcript_obj,
-        )
-        cases.append(case_obj)
-        verdicts.append(verdict_obj)
-        if step.counts_toward_metric:
-            metric_cases.append(case_obj)
-            metric_verdicts.append(verdict_obj)
+            transcript_obj = None
+            if raw_transcript_dict is not None:
+                try:
+                    transcript_obj = transcript_from_dict(raw_transcript_dict)
+                except Exception:
+                    transcript_obj = None
+                    transcript_conversion_failure_count += 1
 
-        breaker_kind = "conversion" if conversion_failed else raw_verdict_dict.get("error_kind")
-        if breaker_kind == "infra":
-            consecutive_infra += 1
-            last_infra_rationale = raw_verdict_dict.get("rationale")
-        else:
-            consecutive_infra = 0
+            case_obj = TestCase(
+                case_id=case_id,
+                label=ground_truth.label,
+                technique_target=ground_truth.technique_target,
+                rationale=ground_truth.rationale,
+                transcript=transcript_obj,
+            )
+            cases.append(case_obj)
+            verdicts.append(verdict_obj)
+            if step.counts_toward_metric:
+                metric_cases.append(case_obj)
+                metric_verdicts.append(verdict_obj)
 
-        if consecutive_infra >= breaker_threshold:
-            breaker_tripped = True
-            break
+            breaker_kind = "conversion" if conversion_failed else raw_verdict_dict.get("error_kind")
+            if breaker_kind == "infra":
+                consecutive_infra += 1
+                last_infra_rationale = raw_verdict_dict.get("rationale")
+            else:
+                consecutive_infra = 0
+
+            if consecutive_infra >= breaker_threshold:
+                breaker_tripped = True
+                break
+    finally:
+        # Whatever ends the loop early — a circuit-breaker trip or an
+        # uncaught exception from run_test_case_fn/evidence collection —
+        # close every container still open (design doc, 'Interruzione a
+        # metà (circuit breaker)'; extended per council-risk finding on this
+        # plan to cover the exception path too, not only a controlled
+        # trip). On normal completion open_containers is already empty
+        # (validate_sequence guarantees a valid sequence ends closed), so
+        # this is a no-op on the happy path. run_command is documented not
+        # to raise (default_command_runner catches subprocess errors); a
+        # custom run_command that does raise here would suppress an
+        # in-flight exception — accepted, same best-effort discipline
+        # orchestrator.py already applies to its own cleanup calls.
+        for service in sorted(open_containers):
+            _close_container(service, run_command)
 
     return BatchResult(
         cases=cases,

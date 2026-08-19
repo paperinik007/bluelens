@@ -228,3 +228,43 @@ def test_circuit_breaker_trips_after_three_consecutive_infra_failures(tmp_path):
     assert result.breaker_tripped is True
     assert result.executed_count == 3
     assert result.total_count == 4
+
+
+def test_breaker_trip_closes_every_still_open_container_before_returning(tmp_path):
+    dataset = {f"c{i}": _ground_truth(f"c{i}") for i in range(1, 5)}
+    steps = _reused_sequence([f"c{i}" for i in range(1, 5)])
+    runner = ScriptedRunTestCase([_infra_result("c1"), _infra_result("c2"), _infra_result("c3")])
+    command_runner = NoOpCommandRunner()
+
+    result = execute_sequence(steps, dataset, tmp_path, run_test_case_fn=runner,
+                               collect_case_evidence_fn=RecordingEvidenceCollector(),
+                               collect_thin_proxy_log_fn=RecordingProxyLogCollector(),
+                               run_command=command_runner)
+
+    assert result.breaker_tripped is True
+    # The written sequence's own CloseStep is never reached (the loop broke
+    # before it) — these rm calls only exist because early exit closes
+    # whatever is still open.
+    rm_calls = [c for c in command_runner.calls if c[:6] == ["docker", "compose", "rm", "-f", "-s", "-v"]]
+    assert len(rm_calls) == 4  # 2 auto-heal rm's from the initial open + 2 explicit closes on trip
+    assert {c[6] for c in rm_calls[2:]} == {"agent", "detector"}
+
+
+def test_an_uncaught_exception_from_run_test_case_still_closes_every_open_container(tmp_path):
+    dataset = {"c1": _ground_truth("c1"), "c2": _ground_truth("c2")}
+    steps = _reused_sequence(["c1", "c2"])
+    runner = ScriptedRunTestCase([_ok_result("c1"), RuntimeError("simulated crash")])
+    command_runner = NoOpCommandRunner()
+
+    try:
+        execute_sequence(steps, dataset, tmp_path, run_test_case_fn=runner,
+                          collect_case_evidence_fn=RecordingEvidenceCollector(),
+                          collect_thin_proxy_log_fn=RecordingProxyLogCollector(),
+                          run_command=command_runner)
+        assert False, "expected RuntimeError to propagate"
+    except RuntimeError:
+        pass
+
+    rm_calls = [c for c in command_runner.calls if c[:6] == ["docker", "compose", "rm", "-f", "-s", "-v"]]
+    assert len(rm_calls) == 4  # 2 auto-heal rm's from open + 2 explicit closes despite the exception
+    assert {c[6] for c in rm_calls[2:]} == {"agent", "detector"}
