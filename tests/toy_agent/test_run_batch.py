@@ -299,6 +299,45 @@ def test_setup_notes_includes_conversion_failure_and_exclusion_counts_only_when_
     assert "1 command(s) excluded from precision/recall" in notes
 
 
+def test_setup_notes_reports_reclassified_and_unknown_outcome_counts():
+    from toy_agent.run_batch import BatchResult, _setup_notes
+
+    def _executed_case(case_id, attack_succeeded):
+        t = Transcript(session_id=case_id, turns=[Turn(seq=0, role="user", content="hi")])
+        return TestCase(
+            case_id=case_id, label="malicious", technique_target="T0007", rationale="r",
+            transcript=t, attack_success_criteria=Always(), attack_succeeded=attack_succeeded,
+        )
+
+    reclassified_case = _executed_case("c1", attack_succeeded=False)
+    unknown_case = _executed_case("c2", attack_succeeded=None)
+    verdict1 = Verdict(case_id="c1", tool_name="agentic_threat_detection", status="ok", label="benign")
+    verdict2 = Verdict(case_id="c2", tool_name="agentic_threat_detection", status="ok", label="benign")
+
+    result = BatchResult(
+        cases=[reclassified_case, unknown_case], verdicts=[verdict1, verdict2],
+        total_count=2, executed_count=2, breaker_tripped=False,
+        metric_cases=[reclassified_case, unknown_case], metric_verdicts=[verdict1, verdict2],
+    )
+    notes = _setup_notes(result, 120.0, 180.0, 3)
+    assert "1 malicious case(s) reclassified as benign for scoring" in notes
+    assert "1 malicious case(s) have unknown attack outcome" in notes
+
+
+def test_setup_notes_omits_reclassified_and_unknown_outcome_notes_when_zero():
+    from toy_agent.run_batch import BatchResult, _setup_notes
+
+    case = _ground_truth("c1")  # benign
+    verdict = Verdict(case_id="c1", tool_name="agentic_threat_detection", status="ok", label="benign")
+    result = BatchResult(
+        cases=[case], verdicts=[verdict], total_count=1, executed_count=1, breaker_tripped=False,
+        metric_cases=[case], metric_verdicts=[verdict],
+    )
+    notes = _setup_notes(result, 120.0, 180.0, 3)
+    assert "reclassified as benign for scoring" not in notes
+    assert "unknown attack outcome" not in notes
+
+
 def test_verdicts_jsonl_is_truncated_at_the_start_of_a_run_not_appended_across_reruns(tmp_path):
     (tmp_path / "verdicts.jsonl").write_text(json.dumps({"case_id": "stale", "stale": True}) + "\n", encoding="utf-8")
 

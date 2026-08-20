@@ -8,7 +8,7 @@ from typing import Callable
 
 from . import evidence
 from .dataset import load_dataset
-from .metrics import compute_metrics
+from .metrics import compute_metrics, is_reclassified, is_ground_truth_unknown
 from .orchestrator import CommandRunner, default_command_runner, run_test_case
 from .preflight import preflight_check_models
 from .report import render_report
@@ -84,6 +84,18 @@ def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s
         notes.append(
             f"{excluded} command(s) excluded from precision/recall via counts_toward_metric=false "
             f"(raw verdict still persisted to disk, reviewable by hand)"
+        )
+    reclassified = sum(1 for c in result.metric_cases if is_reclassified(c))
+    if reclassified > 0:
+        notes.append(
+            f"{reclassified} malicious case(s) reclassified as benign for scoring: "
+            f"attack authored but not observed as succeeded in the transcript (Gap 18)"
+        )
+    unknown_outcome = sum(1 for c in result.metric_cases if is_ground_truth_unknown(c))
+    if unknown_outcome > 0:
+        notes.append(
+            f"{unknown_outcome} malicious case(s) have unknown attack outcome "
+            f"(transcript unavailable/unconvertible) - excluded from scoring"
         )
     if result.transcript_conversion_failure_count > 0:
         notes.append(f"transcript_conversion_failures={result.transcript_conversion_failure_count}")
