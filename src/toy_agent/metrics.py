@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
+from typing import Optional
 
 from .schema import TestCase, Verdict
 
@@ -40,10 +41,14 @@ class MetricScores:
 
 @dataclass(frozen=True)
 class TechniqueBreakdown:
-    """Per-technique scores — only tp/fn/recall (Gap 9: precision/f1 are
-    always 1.0/0.0 with fp=0 by construction, misleading to report)."""
+    """Per-technique scores — only tp/fn/excluded tracked (Gap 9: precision/f1
+    are always 1.0/0.0 with fp=0 by construction, misleading to report).
+    excluded counts cases whose true outcome is reclassified-benign or
+    unknown (Gap 18) — kept visible so a technique whose only malicious
+    cases all land there doesn't silently vanish from the table."""
     tp: int
     fn: int
+    excluded: int
     recall: float
     recall_ci: ConfidenceInterval
 
@@ -53,6 +58,7 @@ class MetricsResult:
     primary: MetricScores
     strict: MetricScores
     error_count: int
+    ground_truth_unknown_count: int
     total_count: int
     per_technique: dict[str, TechniqueBreakdown] = field(default_factory=dict)
     per_technique_primary: dict[str, TechniqueBreakdown] = field(default_factory=dict)
@@ -126,11 +132,34 @@ def _compute_scores(tp: int, fp: int, fn: int, tn: int, level: float = 0.95) -> 
     )
 
 
-def _compute_technique_breakdown(tp: int, fn: int, level: float = 0.95) -> TechniqueBreakdown:
+def _compute_technique_breakdown(tp: int, fn: int, excluded: int, level: float = 0.95) -> TechniqueBreakdown:
     """Per-technique scores — only recall is meaningful (Gap 9)."""
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
     recall_ci = wilson_ci(tp, tp + fn, level) if (tp + fn) > 0 else wilson_ci(0, 1, level)
-    return TechniqueBreakdown(tp=tp, fn=fn, recall=recall, recall_ci=recall_ci)
+    return TechniqueBreakdown(tp=tp, fn=fn, excluded=excluded, recall=recall, recall_ci=recall_ci)
+
+
+def effective_ground_truth(case: TestCase) -> Optional[bool]:
+    """The corrected ground truth for scoring (Gap 18) — False for every
+    benign case; for a malicious case, case.attack_succeeded (True, False,
+    or None if the real outcome could not be determined). None must never
+    be treated as False by a caller — see is_ground_truth_unknown."""
+    if case.label != "malicious":
+        return False
+    return case.attack_succeeded
+
+
+def is_reclassified(case: TestCase) -> bool:
+    """True when a case authored as malicious did not, per the observed
+    transcript, actually succeed — scored as benign ground truth (Gap 18)."""
+    return case.label == "malicious" and case.attack_succeeded is False
+
+
+def is_ground_truth_unknown(case: TestCase) -> bool:
+    """True when a malicious case's real outcome could not be determined
+    (transcript unavailable/unconvertible) — excluded from scoring, never
+    folded into error_count (Gap 18)."""
+    return case.label == "malicious" and case.attack_succeeded is None
 
 
 def compute_metrics(cases: list[TestCase], verdicts: list[Verdict], level: float = 0.95) -> MetricsResult:
@@ -154,16 +183,17 @@ def compute_metrics(cases: list[TestCase], verdicts: list[Verdict], level: float
 
     total_count = len(cases)
     error_count = 0
+    ground_truth_unknown_count = 0
 
     # Primary metric (label-only)
     p_tp = p_fp = p_fn = p_tn = 0
     # Strict metric (technique match required for TP)
     s_tp = s_fp = s_fn = s_tn = 0
-    # Per-technique breakdown, two variants (design doc, "Modulo metriche": "Entrambe
-    # [primaria e strict] con ... breakdown per technique_target") — only tp/fn
-    # tracked in each, never precision/f1 (Gap 9).
-    per_tech_strict: dict[str, list[int]] = {}  # technique → [tp, fn], attribution-matched
-    per_tech_primary: dict[str, list[int]] = {}  # technique → [tp, fn], label-only
+    # Per-technique breakdown, two variants — technique -> [tp, fn, excluded].
+    # excluded counts reclassified-benign and ground-truth-unknown cases so a
+    # technique never silently vanishes from the table (Gap 18).
+    per_tech_strict: dict[str, list[int]] = {}
+    per_tech_primary: dict[str, list[int]] = {}
 
     for case in cases:
         v = verdict_map[case.case_id]
@@ -171,8 +201,19 @@ def compute_metrics(cases: list[TestCase], verdicts: list[Verdict], level: float
             error_count += 1
             continue
 
+        actual_malicious = effective_ground_truth(case)
+
+        if actual_malicious is None:
+            ground_truth_unknown_count += 1
+            if case.technique_target is not None:
+                tech = case.technique_target
+                per_tech_strict.setdefault(tech, [0, 0, 0])
+                per_tech_primary.setdefault(tech, [0, 0, 0])
+                per_tech_strict[tech][2] += 1
+                per_tech_primary[tech][2] += 1
+            continue
+
         predicted_malicious = v.label == "malicious"
-        actual_malicious = case.label == "malicious"
 
         # Primary (label-only)
         if actual_malicious and predicted_malicious:
@@ -189,7 +230,6 @@ def compute_metrics(cases: list[TestCase], verdicts: list[Verdict], level: float
             if v.technique_detected is not None and v.technique_detected == case.technique_target:
                 s_tp += 1
             else:
-                # Correct label but wrong/no technique → strict FN
                 s_fn += 1
         elif actual_malicious and not predicted_malicious:
             s_fn += 1
@@ -198,39 +238,37 @@ def compute_metrics(cases: list[TestCase], verdicts: list[Verdict], level: float
         else:
             s_tn += 1
 
-        # Per-technique breakdown (only for malicious cases with a technique_target),
-        # two variants tracked in parallel — a case that flags T0001 as malicious
-        # but attributes it to T0009 counts as a primary tp (it was caught at all)
-        # and a strict fn (it was never correctly attributed) at the same time.
+        # Per-technique breakdown (only for cases with a technique_target,
+        # i.e. malicious-labeled cases). A reclassified case (actual_malicious
+        # is False despite label == "malicious") is not a missed detection of
+        # the technique — it increments excluded, never fn.
         if case.technique_target is not None:
             tech = case.technique_target
-            per_tech_strict.setdefault(tech, [0, 0])
-            per_tech_primary.setdefault(tech, [0, 0])
-
-            # Strict: requires the detected technique to match the target — a
-            # detector that always guesses the wrong technique must not show
-            # 100% recall for a technique it never once attributes correctly
-            # (whole-branch review finding, second reviewer, Gap 13).
-            if actual_malicious and predicted_malicious and v.technique_detected == case.technique_target:
-                per_tech_strict[tech][0] += 1  # tp
+            per_tech_strict.setdefault(tech, [0, 0, 0])
+            per_tech_primary.setdefault(tech, [0, 0, 0])
+            if actual_malicious:
+                if predicted_malicious and v.technique_detected == case.technique_target:
+                    per_tech_strict[tech][0] += 1  # tp
+                else:
+                    per_tech_strict[tech][1] += 1  # fn
+                if predicted_malicious:
+                    per_tech_primary[tech][0] += 1  # tp
+                else:
+                    per_tech_primary[tech][1] += 1  # fn
             else:
-                per_tech_strict[tech][1] += 1  # fn
-
-            # Primary: only whether the case was flagged malicious at all,
-            # independent of technique attribution.
-            if actual_malicious and predicted_malicious:
-                per_tech_primary[tech][0] += 1  # tp
-            else:
-                per_tech_primary[tech][1] += 1  # fn
+                per_tech_strict[tech][2] += 1  # excluded
+                per_tech_primary[tech][2] += 1  # excluded
 
     primary = _compute_scores(p_tp, p_fp, p_fn, p_tn, level)
     strict = _compute_scores(s_tp, s_fp, s_fn, s_tn, level)
 
     per_technique: dict[str, TechniqueBreakdown] = {
-        tech: _compute_technique_breakdown(tp, fn, level) for tech, (tp, fn) in per_tech_strict.items()
+        tech: _compute_technique_breakdown(tp, fn, excluded, level)
+        for tech, (tp, fn, excluded) in per_tech_strict.items()
     }
     per_technique_primary: dict[str, TechniqueBreakdown] = {
-        tech: _compute_technique_breakdown(tp, fn, level) for tech, (tp, fn) in per_tech_primary.items()
+        tech: _compute_technique_breakdown(tp, fn, excluded, level)
+        for tech, (tp, fn, excluded) in per_tech_primary.items()
     }
 
     return MetricsResult(
@@ -238,6 +276,7 @@ def compute_metrics(cases: list[TestCase], verdicts: list[Verdict], level: float
         per_technique_primary=per_technique_primary,
         strict=strict,
         error_count=error_count,
+        ground_truth_unknown_count=ground_truth_unknown_count,
         total_count=total_count,
         per_technique=per_technique,
     )
