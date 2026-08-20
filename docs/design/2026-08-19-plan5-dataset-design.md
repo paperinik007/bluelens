@@ -401,15 +401,14 @@ momento della scrittura di questo design doc — i piani sono la fonte aggiornat
   valido senza rischio di contaminazione — limite dichiarato, Gap 17, non incluse nei
   piani. Implementazione delle restanti 7 + le seconde varianti prioritarie: Plan 5a
   Task 2-5.
-- **Cross-check di copertura contro le tassonomie esterne** (non ancora fatto —
-  raccomandazione di `docs/research/2026-08-19-prior-art-agent-security-harnesses.md`,
-  sezione "Recommendation"): una volta che il catalogo copre tutte le 14 tecniche,
-  incrociarlo contro i 10 risk type di R-Judge, le 2 categorie di InjecAgent, i 27 attack
-  type di ASB, le 11 categorie di AgentHarm — solo per trovare pattern malevoli con
-  analogo in una tassonomia esterna ma nessuno dei 14 T-code del vendor, mai per
-  importare dati o etichette da quei dataset (principio 1 `SPIRIT.md`, già stabilito).
-  Da fare prima di considerare il catalogo/dataset di Plan 5 completo, non solo come
-  nota a margine nel report di ricerca. Implementazione: Plan 5a Task 6.
+- **Cross-check di copertura contro le tassonomie esterne** — fatto, vedi
+  `docs/research/2026-08-19-taxonomy-cross-check-findings.md` (Plan 5a Task 6). Nessun
+  gap trovato al livello di tecnica/vettore d'attacco (i 10 risk type di R-Judge, le 2
+  categorie di InjecAgent, i 16 attack type di ASB hanno tutti un analogo tra i 14
+  T-code); osservazione registrata come future work, non gap tecnico: R-Judge (3/10) e
+  AgentHarm (9/11) classificano prevalentemente per dominio di contenuto/esito dannoso
+  invece che per tecnica, un asse che i 14 T-code non tentano di coprire per
+  costruzione.
 - Scrivere i `TestCase` reali in `dataset/`, selezionando dal catalogo — ogni
   `rationale` di un caso `real_incident` deve riportare citazione+adattamento in
   sintesi, non solo il `catalog_id` (mapping sopra, requisito auto-sufficienza).
