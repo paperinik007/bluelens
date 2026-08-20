@@ -108,6 +108,12 @@ def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s
             f"circuit breaker tripped after {result.executed_count}/{result.total_count} cases executed; "
             f"last infra failure: {result.last_infra_rationale}",
         )
+    shortcut_tools = find_malicious_only_tools(result.metric_cases)
+    if not shortcut_tools:
+        notes.append(
+            "tool->label shortcut check: passed on this run's observed transcripts "
+            "(contingent on this run's model sampling, not a permanent property of the dataset)"
+        )
     return " | ".join(notes)
 
 
@@ -166,12 +172,18 @@ def main(argv: list[str] | None = None) -> None:
 
     shortcut_tools = find_malicious_only_tools(result.metric_cases)
     if shortcut_tools:
-        print(
+        message = (
             f"tool->label shortcut check failed: tool(s) {sorted(shortcut_tools)} appear only in "
-            f"malicious metric_cases this run — refusing to write report.md (design doc, mapping "
-            f"Requisito -> Verifica, anti-shortcut gate)",
-            file=sys.stderr,
+            f"malicious metric_cases this run — refusing to write report.md (anti-shortcut gate)"
         )
+        if result.breaker_tripped:
+            message += (
+                f" | NOTE: circuit breaker tripped after {result.executed_count}/{result.total_count} "
+                f"cases executed (last infra failure: {result.last_infra_rationale}) — this run was "
+                f"truncated, so the finding above may be an artifact of an incomplete case sample, "
+                f"not a real dataset imbalance"
+            )
+        print(message, file=sys.stderr)
         sys.exit(1)
 
     metrics = compute_metrics(result.metric_cases, result.metric_verdicts)

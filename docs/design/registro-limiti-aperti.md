@@ -166,6 +166,30 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   `docs/superpowers/plans/2026-08-19-plan5a-catalog-completion.md`, 2026-08-20
   (Important finding #3).
 
+- **case_id di esempio del design doc Plan 5 non verificati in un test reale** — il
+  design doc (`docs/design/2026-08-19-plan5-dataset-design.md`, sezione "Naming") cita
+  due stringhe di `case_id` (`account_status_change_escalates_privilege`,
+  `marketing_optin_change_request`) dichiarate "fatte passare a mano" attraverso
+  `_entry_to_test_case` — nessuna delle due compare in un test reale del repo (Plan 5b
+  Task 4 ha chiuso solo il limbo gemello: la validazione del *set di campi* del
+  template, non queste due stringhe specifiche). Trovato dalla review finale
+  whole-branch di Plan 5b, 2026-08-20. Soluzione minima (non ancora implementata):
+  aggiungere le due stringhe come `case_id` in un test parametrizzato contro
+  `_entry_to_test_case`/`CASE_ID_PATTERN`.
+
+- **Coerenza catalogo↔dataset (Plan 5b Task 3) non confronta `label_hint` con
+  `TestCase.label`** — il test
+  (`tests/test_catalog.py::test_selected_catalog_entries_match_their_dataset_test_case`)
+  verifica `technique_target` (per voci malevole) e la presenza del `catalog_id` nel
+  `rationale`, ma non che `entry["label_hint"]` corrisponda a `case.label`: una voce
+  `status: selected` con `label_hint: benign` che punta a un `TestCase` con
+  `label: malicious` (o viceversa) passerebbe senza essere segnalata, nonostante
+  `label` sia la ground truth letta dallo scoring. Spec-compliant (il design doc,
+  mapping Requisito → Verifica, prescrive esattamente i due controlli implementati) —
+  limite del design, non deriva dell'implementazione. Trovato dalla review finale
+  whole-branch di Plan 5b, 2026-08-20. Soluzione minima (non ancora implementata):
+  aggiungere `entry["label_hint"] != case.label` alla lista `offending`.
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **T0007 senza uno scenario valido nel catalogo/dataset** — design finalizzato

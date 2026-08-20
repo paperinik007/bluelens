@@ -547,6 +547,47 @@ def test_find_malicious_only_tools_skips_cases_with_no_transcript():
     assert run_batch.find_malicious_only_tools(dataset) == set()
 
 
+def test_setup_notes_declares_the_shortcut_check_passed_when_no_shortcut_tools_found():
+    from toy_agent.run_batch import BatchResult, _setup_notes
+
+    case = _ground_truth("c1")  # benign, no tool_call turns -> find_malicious_only_tools returns empty
+    verdict = Verdict(case_id="c1", tool_name="agentic_threat_detection", status="ok", label="benign")
+    result = BatchResult(
+        cases=[case], verdicts=[verdict], total_count=1, executed_count=1, breaker_tripped=False,
+        metric_cases=[case], metric_verdicts=[verdict],
+    )
+    notes = _setup_notes(result, 120.0, 180.0, 3)
+    assert "tool->label shortcut check: passed" in notes
+
+
+def test_main_stderr_notes_a_truncated_run_when_the_breaker_tripped_and_a_shortcut_is_found(tmp_path, monkeypatch, capsys):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+        malicious_case = _case_with_tool_call("c1", "malicious", "bulk_export", technique_target="T0012")
+        verdict = Verdict(case_id="c1", tool_name="agentic_threat_detection", status="ok", label="malicious", technique_detected="T0012")
+        return BatchResult(
+            cases=[malicious_case], verdicts=[verdict],
+            total_count=3, executed_count=1, breaker_tripped=True,
+            last_infra_rationale="docker compose exec failed to start",
+            metric_cases=[malicious_case], metric_verdicts=[verdict],
+        )
+
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+
+    try:
+        run_batch.main([str(dataset_dir), str(run_output_dir)])
+        assert False, "expected SystemExit"
+    except SystemExit as exc:
+        assert exc.code == 1
+    captured = capsys.readouterr()
+    assert "circuit breaker tripped" in captured.err
+    assert "truncated" in captured.err
+    assert not (run_output_dir / "report.md").exists()
+
+
 def test_main_refuses_to_write_the_report_when_a_tool_appears_only_in_malicious_cases(tmp_path, monkeypatch):
     # _write_dataset/_dataset_yaml_entry già esistono in questo file (usati da
     # test_main_never_modifies_the_dataset_dir e simili) — non ridefinirli qui,
