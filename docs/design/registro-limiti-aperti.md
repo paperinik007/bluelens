@@ -190,6 +190,44 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   whole-branch di Plan 5b, 2026-08-20. Soluzione minima (non ancora implementata):
   aggiungere `entry["label_hint"] != case.label` alla lista `offending`.
 
+- **Docstring di `_filled_template_example` punta ancora a una voce di questo registro
+  già cancellata** — `tests/test_catalog.py:171-173`, la `rationale` del fixture è già
+  stata ricorretta verso il design doc (fix wave della review finale, commit `d929dc1`),
+  ma il docstring della funzione dice ancora "Closes the open item in
+  registro-limiti-aperti.md" — la voce che chiudeva (validazione del set di campi del
+  template) è stata rimossa da questo file dal commit `0390db5` stesso. Puramente
+  cosmetico (nessun test dipende dal testo del docstring), trovato dalla scoped
+  re-review del fix wave finale di Plan 5b, 2026-08-20 — non corretto in questo ciclo
+  (nessun secondo fix wave consentito dal processo SDD per la review finale). Soluzione
+  minima: aggiornare il docstring per citare il design doc invece del registro.
+
+- **Riferimento incrociato "vedi Fix 7 sotto" nel design doc non risolvibile dal
+  lettore** — `docs/design/2026-08-19-plan5-dataset-design.md`, riga della tabella
+  Mapping Requisito → Verifica per il gate anti-scorciatoia (aggiunta dal fix wave
+  finale, commit `9bb1d16`): la frase finale cita "vedi Fix 7 sotto", ma "Fix 7" è
+  un'etichetta che esiste solo nel report del fix wave
+  (`.superpowers/sdd/2026-08-19-plan5b-verification-gates/final-review-fixwave-report.md`,
+  gitignored), non nel design doc stesso — un lettore del design doc non trova nulla
+  "sotto". Trovato dalla scoped re-review del fix wave finale di Plan 5b, 2026-08-20 —
+  non corretto in questo ciclo. Soluzione minima: sostituire con un riferimento
+  autosufficiente (es. citare direttamente `run_batch.py::_setup_notes()` senza
+  rimandare a "Fix 7").
+
+- **Caveat di troncamento asimmetrico tra il ramo "passed" e il ramo "failed" del gate
+  anti-scorciatoia** — il fix wave finale di Plan 5b (commit `9bb1d16`) ha aggiunto un
+  caveat di troncamento (breaker_tripped, executed_count/total_count,
+  last_infra_rationale) solo al messaggio stderr quando il check FALLISCE
+  (`run_batch.py::main()`), non alla nota che `_setup_notes()` scrive nel report quando
+  il check PASSA. Se il breaker scatta ma il campione troncato risultante non contiene
+  comunque nessun tool "solo malevolo", il report dichiarerà "passed on this run's
+  observed transcripts" senza segnalare che il campione era incompleto — stesso rischio
+  di diagnosi fuorviante che il caveat sul ramo failed esiste per evitare, ma non
+  richiesto testualmente dal finding originale (Important #4), quindi non un difetto
+  del fix rispetto a quanto chiesto, solo un'estensione naturale non ancora fatta.
+  Trovato dalla scoped re-review del fix wave finale di Plan 5b, 2026-08-20 — non
+  corretto in questo ciclo. Soluzione minima: stesso pattern del ramo failed, applicato
+  al ramo passed in `_setup_notes()`.
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **T0007 senza uno scenario valido nel catalogo/dataset** — design finalizzato
