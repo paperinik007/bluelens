@@ -78,6 +78,9 @@ def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s
         f"agent_timeout_s={agent_timeout_s}",
         f"detector_timeout_s={detector_timeout_s}",
         f"circuit_breaker_threshold={breaker_threshold}",
+        "dataset technique coverage: 12/14 vendor techniques have a malicious test case; "
+        "T0009 and T0011 are declared out of scope (Gap 17, "
+        "docs/design/2026-08-14-toy-agent-gap-tracking.md)",
     ]
     excluded = len(result.cases) - len(result.metric_cases)
     if excluded > 0:

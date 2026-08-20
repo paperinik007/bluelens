@@ -299,6 +299,19 @@ def test_setup_notes_includes_conversion_failure_and_exclusion_counts_only_when_
     assert "1 command(s) excluded from precision/recall" in notes
 
 
+def test_setup_notes_always_declares_gap17_technique_coverage():
+    from toy_agent.run_batch import BatchResult, _setup_notes
+
+    zero_result = BatchResult(
+        cases=[], verdicts=[], total_count=0, executed_count=0, breaker_tripped=False,
+        metric_cases=[], metric_verdicts=[],
+    )
+    notes = _setup_notes(zero_result, 120.0, 180.0, 3)
+    assert "T0009" in notes
+    assert "T0011" in notes
+    assert "12/14" in notes
+
+
 def test_setup_notes_reports_reclassified_and_unknown_outcome_counts():
     from toy_agent.run_batch import BatchResult, _setup_notes
 
