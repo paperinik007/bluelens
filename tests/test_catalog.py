@@ -12,10 +12,13 @@ from pathlib import Path
 import pytest
 import yaml
 
+from toy_agent.dataset import _entry_to_test_case, load_dataset
+
 CATALOG_PATH = Path(__file__).resolve().parent.parent / "catalog" / "cases.yaml"
 TAXONOMY_SNAPSHOT_PATH = (
     Path(__file__).resolve().parent.parent / "catalog" / "vendor_taxonomy_snapshot.yaml"
 )
+DATASET_PATH = Path(__file__).resolve().parent.parent / "dataset"
 
 REQUIRED_FIELDS = {
     "catalog_id", "technique_code", "technique_name", "label_hint",
@@ -138,11 +141,6 @@ def test_label_hint_is_a_known_value():
     assert not offending, f"entries with an invalid label_hint: {offending}"
 
 
-from toy_agent.dataset import load_dataset
-
-DATASET_PATH = Path(__file__).resolve().parent.parent / "dataset"
-
-
 def test_selected_catalog_entries_match_their_dataset_test_case():
     """Non-blocking (design doc, mapping Requisito -> Verifica): every catalog
     entry with status: selected must still agree with the real TestCase it
@@ -167,9 +165,6 @@ def test_selected_catalog_entries_match_their_dataset_test_case():
     assert not offending, f"catalog/dataset drift: {offending}"
 
 
-from toy_agent.dataset import _entry_to_test_case
-
-
 def _filled_template_example(label: str, technique_target: str | None) -> dict:
     """A realistic filled-in copy of catalog/_template.yaml's field set —
     not a parse of the template file itself (its placeholder values, e.g.
@@ -182,12 +177,17 @@ def _filled_template_example(label: str, technique_target: str | None) -> dict:
         "case_id": case_id,
         "label": label,
         "technique_target": technique_target,
-        "rationale": "Template validation example, not part of the real dataset — see registro-limiti-aperti.md.",
+        "rationale": (
+            "Template validation example, not part of the real dataset — see "
+            "docs/design/2026-08-19-plan5-dataset-design.md, sections Naming / "
+            "Authoring — template."
+        ),
         "transcript": {
             "session_id": case_id,
             "turns": [{"seq": 0, "role": "user", "content": "example seed content", "tool_call": None}],
             "stop_reason": None,
         },
+        "attack_success_criteria": None,
     }
     if label == "malicious":
         # Gap 18: template's own attack_success_criteria field, filled with
@@ -221,11 +221,8 @@ def test_template_validation_actually_catches_a_real_error():
     rejects (schema.py) — confirm _entry_to_test_case surfaces it, not just
     that valid input passes."""
     data = _filled_template_example("benign", "T0001")
-    try:
+    with pytest.raises(ValueError, match="benign TestCase must not declare a technique_target"):
         _entry_to_test_case(data, Path("bad_example.yaml"))
-        assert False, "expected ValueError for a benign entry declaring technique_target"
-    except ValueError:
-        pass
 
 
 def test_template_validation_catches_a_malicious_example_missing_attack_success_criteria():
@@ -235,8 +232,5 @@ def test_template_validation_catches_a_malicious_example_missing_attack_success_
     template before Gap 18 landed, or skipped the field by mistake)."""
     data = _filled_template_example("malicious", "T0001")
     del data["attack_success_criteria"]
-    try:
+    with pytest.raises(ValueError, match="malicious TestCase must declare attack_success_criteria"):
         _entry_to_test_case(data, Path("bad_example.yaml"))
-        assert False, "expected ValueError for a malicious entry missing attack_success_criteria"
-    except ValueError:
-        pass
