@@ -23,6 +23,16 @@ di importazione).
 `docs/design/registro-limiti-aperti.md` (voce "Validazione template/case_id... non
 riproducibile" — Task 4 la chiude).
 
+**Nota di aggiornamento post-scrittura (Gap 18):** questo piano è stato scritto prima che
+`docs/design/2026-08-19-gap18-attack-succeeded-design.md` fosse progettato e implementato
+(merge `81d7248`, dopo la stesura originale). `TestCase.__post_init__` ora richiede
+`attack_success_criteria` non-`None` per ogni `TestCase` con `label="malicious"` — i Task
+2 e 4 sotto costruiscono `TestCase` malevoli nei loro fixture di test e sono stati corretti
+di conseguenza (vedi le note inline in ciascun task). Verificato in questa sessione: gli
+snippet corretti passano contro il codice reale attuale (`schema.py`/`dataset.py`), suite
+completa 276 passed/2 skipped invariata. Nessun altro task di questo piano tocca
+`TestCase` malevoli.
+
 ## Global Constraints
 
 - Il coverage gate (Task 1) e l'anti-scorciatoia (Task 2) sono **gate bloccanti**: il
@@ -136,10 +146,26 @@ git commit -m "test: add blocking coverage gate for 12/14 techniques (Gap 17 exc
 
 - [ ] **Step 1: Scrivi il test per `find_malicious_only_tools`**
 
+> **Nota (Gap 18, risolto nel codice dopo la stesura originale di questo piano —
+> merge `81d7248`, `docs/design/2026-08-19-gap18-attack-succeeded-design.md`):**
+> `TestCase.__post_init__` ora richiede `attack_success_criteria` non-`None` per
+> ogni `TestCase` con `label="malicious"` (`ValueError` altrimenti). Il file
+> attuale `tests/toy_agent/test_run_batch.py` importa già `Always` in cima al
+> file (`from toy_agent.schema import Transcript, Turn, TestCase, Verdict,
+> Always`) e il suo helper `_ground_truth` già esistente costruisce
+> `attack_success_criteria = Always() if label == "malicious" else None` —
+> `Always()` è un placeholder di fixture generico (nessuna valutazione reale
+> del transcript serve a questi test, che verificano solo il flusso
+> tool→label, non il DSL), non un pattern da riusare per l'autoring di criteri
+> reali (quello è Plan 5c). `_case_with_tool_call` sotto segue lo stesso
+> pattern. `ToolCall` non è ancora importato in cima al file — aggiungilo
+> alla riga di import esistente (`from toy_agent.schema import Transcript,
+> Turn, TestCase, Verdict, Always, ToolCall`) invece di un import separato a
+> metà file.
+
 ```python
 # tests/toy_agent/test_run_batch.py — aggiungi in fondo al file
-
-from toy_agent.schema import ToolCall
+# (ToolCall già aggiunto all'import esistente in cima al file, vedi nota sopra)
 
 
 def _case_with_tool_call(case_id, label, tool_name, technique_target=None):
@@ -153,7 +179,11 @@ def _case_with_tool_call(case_id, label, tool_name, technique_target=None):
             ),
         ],
     )
-    return TestCase(case_id=case_id, label=label, technique_target=technique_target, rationale="r", transcript=transcript)
+    criteria = Always() if label == "malicious" else None
+    return TestCase(
+        case_id=case_id, label=label, technique_target=technique_target, rationale="r",
+        transcript=transcript, attack_success_criteria=criteria,
+    )
 
 
 def test_find_malicious_only_tools_flags_a_tool_seen_only_in_malicious_cases():
@@ -179,6 +209,10 @@ def test_find_malicious_only_tools_skips_cases_with_no_transcript():
 
 
 def test_main_refuses_to_write_the_report_when_a_tool_appears_only_in_malicious_cases(tmp_path, monkeypatch):
+    # _write_dataset/_dataset_yaml_entry già esistono in questo file (usati da
+    # test_main_never_modifies_the_dataset_dir e simili) — non ridefinirli qui,
+    # producono già entry benigne valide, sufficienti perché main() carichi un
+    # dataset non vuoto prima che fake_execute_batch prenda il controllo.
     dataset_dir = tmp_path / "dataset"
     run_output_dir = tmp_path / "out"
     _write_dataset(dataset_dir, ["c1"])
@@ -341,6 +375,16 @@ git commit -m "test: check catalog/dataset consistency for selected entries (non
   direttamente per questo test è la stessa scelta implicita già fatta da
   `test_run_batch.py`, che importa e testa funzioni interne del pacchetto).
 
+> **Nota (Gap 18, risolto nel codice dopo la stesura originale di questo piano
+> — merge `81d7248`):** `catalog/_template.yaml` è stato aggiornato ad
+> aggiungere il campo `attack_success_criteria` (obbligatorio se
+> `label: malicious`, vietato se `label: benign` — stessa regola di
+> `technique_target`). `_filled_template_example` sotto rispecchia il campo
+> aggiornato del template; senza di esso, `_entry_to_test_case` solleverebbe
+> `ValueError` per ogni esempio malevolo (`TestCase.__post_init__`,
+> `schema.py`), facendo fallire i due test "positivi" sotto per un motivo
+> estraneo a ciò che dovrebbero verificare.
+
 - [ ] **Step 1: Scrivi i test**
 
 ```python
@@ -357,7 +401,7 @@ def _filled_template_example(label: str, technique_target: str | None) -> dict:
     the template compiles into a valid TestCase was verified by hand,
     leaving no trace in the repo — this test makes it a re-runnable fact."""
     case_id = "template_validation_" + label + "_example"
-    return {
+    data = {
         "case_id": case_id,
         "label": label,
         "technique_target": technique_target,
@@ -368,6 +412,13 @@ def _filled_template_example(label: str, technique_target: str | None) -> dict:
             "stop_reason": None,
         },
     }
+    if label == "malicious":
+        # Gap 18: template's own attack_success_criteria field, filled with
+        # the trivial always-true form — this test validates that the
+        # template's FIELD SET compiles, not any specific criterion's logic
+        # (that is criteria.py's job, exercised elsewhere).
+        data["attack_success_criteria"] = {"always": True}
+    return data
 
 
 def test_template_compiled_with_a_malicious_example_produces_a_valid_test_case():
@@ -375,6 +426,7 @@ def test_template_compiled_with_a_malicious_example_produces_a_valid_test_case()
     case = _entry_to_test_case(data, Path("template_validation_malicious_example.yaml"))
     assert case.label == "malicious"
     assert case.technique_target == "T0001"
+    assert case.attack_success_criteria is not None
 
 
 def test_template_compiled_with_a_benign_example_produces_a_valid_test_case():
@@ -382,6 +434,7 @@ def test_template_compiled_with_a_benign_example_produces_a_valid_test_case():
     case = _entry_to_test_case(data, Path("template_validation_benign_example.yaml"))
     assert case.label == "benign"
     assert case.technique_target is None
+    assert case.attack_success_criteria is None
 
 
 def test_template_validation_actually_catches_a_real_error():
@@ -396,14 +449,29 @@ def test_template_validation_actually_catches_a_real_error():
         assert False, "expected ValueError for a benign entry declaring technique_target"
     except ValueError:
         pass
+
+
+def test_template_validation_catches_a_malicious_example_missing_attack_success_criteria():
+    """Second negative check, specific to Gap 18: the mistake TestCase.__post_init__
+    added on top of the pre-existing technique_target rule — a malicious entry
+    with no attack_success_criteria at all (e.g. an author who filled in the
+    template before Gap 18 landed, or skipped the field by mistake)."""
+    data = _filled_template_example("malicious", "T0001")
+    del data["attack_success_criteria"]
+    try:
+        _entry_to_test_case(data, Path("bad_example.yaml"))
+        assert False, "expected ValueError for a malicious entry missing attack_success_criteria"
+    except ValueError:
+        pass
 ```
 
 - [ ] **Step 2: Esegui i test, verifica che passino**
 
 Run: `python -m pytest tests/test_catalog.py -k template_validation -v`
-Expected: PASS su tutti e 3 — se falliscono, `_entry_to_test_case`/`TestCase` hanno un
-comportamento diverso da quanto documentato nel design doc, da investigare prima di
-continuare (non un placeholder da aggiustare qui).
+Expected: PASS su tutti e 4 (i 2 positivi, il negativo pre-esistente su `technique_target`,
+e il nuovo negativo Gap 18 su `attack_success_criteria` mancante) — se falliscono,
+`_entry_to_test_case`/`TestCase` hanno un comportamento diverso da quanto documentato nel
+design doc, da investigare prima di continuare (non un placeholder da aggiustare qui).
 
 - [ ] **Step 3: Rimuovi l'item da `registro-limiti-aperti.md`**
 
