@@ -165,3 +165,78 @@ def test_selected_catalog_entries_match_their_dataset_test_case():
         if entry["catalog_id"] not in case.rationale:
             offending.append(f"{entry['catalog_id']}: dataset case {case.case_id!r} rationale does not mention the catalog_id")
     assert not offending, f"catalog/dataset drift: {offending}"
+
+
+from toy_agent.dataset import _entry_to_test_case
+
+
+def _filled_template_example(label: str, technique_target: str | None) -> dict:
+    """A realistic filled-in copy of catalog/_template.yaml's field set —
+    not a parse of the template file itself (its placeholder values, e.g.
+    <mechanic_descriptive_slug>, would never pass CASE_ID_PATTERN). Closes
+    the open item in registro-limiti-aperti.md: the design doc's claim that
+    the template compiles into a valid TestCase was verified by hand,
+    leaving no trace in the repo — this test makes it a re-runnable fact."""
+    case_id = "template_validation_" + label + "_example"
+    data = {
+        "case_id": case_id,
+        "label": label,
+        "technique_target": technique_target,
+        "rationale": "Template validation example, not part of the real dataset — see registro-limiti-aperti.md.",
+        "transcript": {
+            "session_id": case_id,
+            "turns": [{"seq": 0, "role": "user", "content": "example seed content", "tool_call": None}],
+            "stop_reason": None,
+        },
+    }
+    if label == "malicious":
+        # Gap 18: template's own attack_success_criteria field, filled with
+        # the trivial always-true form — this test validates that the
+        # template's FIELD SET compiles, not any specific criterion's logic
+        # (that is criteria.py's job, exercised elsewhere).
+        data["attack_success_criteria"] = {"always": True}
+    return data
+
+
+def test_template_compiled_with_a_malicious_example_produces_a_valid_test_case():
+    data = _filled_template_example("malicious", "T0001")
+    case = _entry_to_test_case(data, Path("template_validation_malicious_example.yaml"))
+    assert case.label == "malicious"
+    assert case.technique_target == "T0001"
+    assert case.attack_success_criteria is not None
+
+
+def test_template_compiled_with_a_benign_example_produces_a_valid_test_case():
+    data = _filled_template_example("benign", None)
+    case = _entry_to_test_case(data, Path("template_validation_benign_example.yaml"))
+    assert case.label == "benign"
+    assert case.technique_target is None
+    assert case.attack_success_criteria is None
+
+
+def test_template_validation_actually_catches_a_real_error():
+    """Negative check (design doc self-review discipline): a validation test
+    that never fails on bad input is vacuous. A benign entry declaring a
+    technique_target is exactly the mistake TestCase.__post_init__ already
+    rejects (schema.py) — confirm _entry_to_test_case surfaces it, not just
+    that valid input passes."""
+    data = _filled_template_example("benign", "T0001")
+    try:
+        _entry_to_test_case(data, Path("bad_example.yaml"))
+        assert False, "expected ValueError for a benign entry declaring technique_target"
+    except ValueError:
+        pass
+
+
+def test_template_validation_catches_a_malicious_example_missing_attack_success_criteria():
+    """Second negative check, specific to Gap 18: the mistake TestCase.__post_init__
+    added on top of the pre-existing technique_target rule — a malicious entry
+    with no attack_success_criteria at all (e.g. an author who filled in the
+    template before Gap 18 landed, or skipped the field by mistake)."""
+    data = _filled_template_example("malicious", "T0001")
+    del data["attack_success_criteria"]
+    try:
+        _entry_to_test_case(data, Path("bad_example.yaml"))
+        assert False, "expected ValueError for a malicious entry missing attack_success_criteria"
+    except ValueError:
+        pass
