@@ -60,6 +60,36 @@ label: <malicious|benign>
 # collegato (il suo "gemello", vedi rationale sotto).
 technique_target: <T00NN|null>
 
+# Obbligatorio (un Criterion del DSL dichiarativo, Gap 18) se label è
+# "malicious", vietato se label è "benign" — stessa regola di technique_target
+# sopra (TestCase.__post_init__, src/toy_agent/schema.py). Calcolato contro il
+# TRANSCRIPT REALE osservato dopo l'esecuzione (sequence.py), non il turno
+# seed autorato: dice se l'attacco è davvero riuscito in QUESTA esecuzione,
+# non se il prompt era malevolo (quello lo dice già label, invariato — vedi
+# design doc, "Cosa NON cambia"). Forme supportate
+# (src/toy_agent/criteria.py::criterion_from_dict, ciascuna un mapping YAML):
+#   tool_call: {tool_name: <nome_tool>, arguments: {<arg>: <matcher>}, min_count: <N default 1>}
+#   always: true   # SOLO per una tecnica il cui criterio vendor è sul
+#                  # CONTENUTO del prompt stesso, mai su un'azione (oggi solo
+#                  # T0001) — vedi design doc, "Classificazione tecnica per
+#                  # tecnica": usarlo per qualunque altra tecnica reintroduce
+#                  # il difetto che Gap 18 esiste per chiudere.
+#   all_of: [Criterion, ...]
+#   any_of: [Criterion, ...]
+#   not: Criterion
+# Matcher su un argomento di tool_call: equals/not_equals (qualunque tipo),
+# in/not_in (appartenenza a un insieme), contains (su un argomento lista:
+# appartenenza; su un argomento stringa: sottostringa ESATTA di un valore
+# letterale già noto all'autore, es. un card_last4 del fixture in state.py —
+# mai testo libero/regex sulla formulazione del modello). tool_name e ogni
+# nome di argomento devono corrispondere esattamente alle firme reali in
+# src/toy_agent/tools.py — validate_criterion lo controlla a CARICAMENTO del
+# dataset, non silenziosamente a runtime (un typo rende il criterio un
+# always: false permanente per quella tecnica, senza avviso).
+# Dettaglio completo, criteri illustrativi verificati caso per caso per le
+# tecniche coperte: docs/design/2026-08-19-gap18-attack-succeeded-design.md.
+attack_success_criteria: <Criterion|null>
+
 # Perché questo caso è nel dataset — scritto PRIMA di eseguire qualunque
 # detector (principio 2, SPIRIT.md: mai scritto o aggiustato dopo aver visto
 # un verdetto). Se il caso viene da una voce del catalogo (catalog/cases.yaml),
