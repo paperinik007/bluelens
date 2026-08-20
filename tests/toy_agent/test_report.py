@@ -193,6 +193,14 @@ def test_report_includes_choice_dependent_methodology_bullet():
     assert "Choice-dependent ground truth" in report
 
 
+def test_report_includes_correlated_benign_cases_caveat():
+    cases = [_make_case("c1", "benign")]
+    verdicts = [_make_verdict("c1", "benign")]
+    metrics = compute_metrics(cases, verdicts)
+    report = render_report(cases, verdicts, metrics)
+    assert "Correlated benign cases" in report
+
+
 def test_report_technique_table_includes_excluded_column():
     case = TestCase(
         case_id="c1", label="malicious", technique_target="T0007", rationale="r", transcript=None,

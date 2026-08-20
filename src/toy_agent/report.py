@@ -151,6 +151,15 @@ def render_report(
         "scored as a true negative, not a missed detection - mirrors the vendor's own "
         "'by effect, not by intent' convention, applied consistently across techniques."
     )
+    lines.append(
+        "- **Correlated benign cases:** roughly 15 of the dataset's 31 cases collapse "
+        "into about 8 distinct behavioral patterns (independently authored cases that "
+        "produce near-identical transcripts) - a single detector error at the behavior "
+        "level can cost 2-4 correlated false positives/negatives, so the benign "
+        "false-positive rate is less statistically independent than N=15 suggests. "
+        "Declared limitation, not fixed in this dataset revision - see "
+        "docs/design/registro-limiti-aperti.md."
+    )
     lines.append("- **Determinism:** This report is fully deterministic (no timestamp) - regenerating from the same data produces a bit-identical file.")
     if setup_notes:
         lines.append(f"- **Setup notes:** {setup_notes}")

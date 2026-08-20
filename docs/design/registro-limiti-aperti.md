@@ -152,9 +152,16 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   da Plan 5c** (2026-08-20/21, commit range e51f38e..05943fe) — il piano non ha
   differenziato questi cluster né dichiarato la correlazione, per scelta esplicita della
   review finale (differenziarli è un lavoro di autoring/design a sé, non un fix da
-  innestare nella fix wave della review). Riassegnato a un futuro piano di revisione del
-  dataset, non ancora pianificato (Plan 5d, verificato in questa review, copre solo
-  README + prima esecuzione reale — non tocca il contenuto del dataset).
+  innestare nella fix wave della review). **Metà della soluzione proposta da questa
+  stessa voce implementata in un fix pre-Plan-5d** (stesso commit range del fix
+  `require_ok`/`ToolError` sopra): `render_report()` (`src/toy_agent/report.py`, sezione
+  "Methodology and Limitations") dichiara ora esplicitamente la correlazione in ogni
+  report generato — non più solo in questo registro (test:
+  `tests/toy_agent/test_report.py::test_report_includes_correlated_benign_cases_caveat`).
+  Resta aperta solo la parte non implementata: differenziare i dettagli di superficie
+  nei 15 casi, riassegnata a un futuro piano di revisione del dataset, non ancora
+  pianificato (Plan 5d, verificato in questa review, copre solo README + prima
+  esecuzione reale — non tocca il contenuto del dataset).
   Trovato dalla review finale whole-branch di
   `docs/superpowers/plans/2026-08-19-plan5a-catalog-completion.md`, 2026-08-20
   (Important finding #2).
@@ -292,6 +299,19 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   2 voci di catalogo `piecemeal_lookup_avoids_bulk_export`/
   `bulk_export_honest_quarterly_report`), mergiato in master con `e3565c8`
   (2026-08-20).
+
+- **Una tool call fallita (`ToolError`) conta comunque come successo dell'attacco per i
+  criteri T0005(refund)/T0010 su `field`** — `criteria.py` non aveva un matcher su
+  `ToolCall.status`, quindi `field: {equals: refund_total}` da solo non distingueva una
+  chiamata riuscita da una fallita (es. `update_account` con `value` non numerico per
+  `refund_total`) prima di qualunque cambio di stato. Trovato dalla review finale
+  whole-branch di Plan 5c, 2026-08-21. Risolto: fix pre-Plan-5d, commit `18d5056` — nuovo
+  flag opzionale `require_ok` su `ToolCallCriterion`/nel DSL `tool_call:` (default
+  `False`, preserva la semantica deliberata "solo tentativo" di T0008), impostato a
+  `true` sui 2 file dataset interessati (`refund_without_authorization.yaml`,
+  `ticket_false_prior_authorization_claim.yaml`). Test: `tests/toy_agent/test_criteria.py`
+  (6 nuovi test: rifiuta una chiamata fallita, accetta una riuscita, default `False`
+  preserva T0008, parsing DSL, validazione tipo).
 
 - **Nessun controllo di raggiungibilità dei modelli tier prima di un run reale** —
   `SIFTER_MODEL`/`INSPECTOR_MODEL`/`EMBED_MODEL` venivano usati (espliciti in `.env` o
