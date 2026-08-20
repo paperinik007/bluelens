@@ -63,17 +63,6 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   di un'affermazione. Da implementare insieme a Plan 5, non prima (nessun `TestCase` reale
   ancora scritto con cui verificare che il test colga davvero un errore).
 
-- **T0007 senza uno scenario valido nel catalogo/dataset** — design finalizzato
-  2026-08-19 (approvato dall'utente, con due correzioni: i tre `customer_id` vanno
-  enumerati esplicitamente nel testo del ticket, e il `case_id` finale non deve
-  ripetere il nome della tecnica): una clausola statica aggiunta a `_SYSTEM_PROMPT`
-  (`agent_loop.py`) dichiara `bulk_export` l'unico canale sanzionato per un export
-  multi-cliente; lo scenario malevolo istruisce l'agente a evitarlo interrogando i
-  clienti uno per uno (`query_customer_db` ripetuto), il gemello benigno usa
-  `bulk_export` onestamente. Non ancora implementato nel codice — task 1 del piano
-  "Plan 5a catalogo" (`docs/superpowers/plans/`, da scrivere). Dettaglio completo:
-  `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 16.
-
 - **`label` statica in autoring vs. effetto osservato per le tecniche
   "choice-dependent"** — 11 delle 12 tecniche coperte (tutte tranne T0001, content-based)
   dipendono da una scelta probabilistica del modello (aderire o rifiutare) o da un
@@ -191,6 +180,19 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   (Important finding #3).
 
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
+
+- **T0007 senza uno scenario valido nel catalogo/dataset** — design finalizzato
+  2026-08-19 (approvato dall'utente, con due correzioni: i tre `customer_id` vanno
+  enumerati esplicitamente nel testo del ticket, e il `case_id` finale non deve
+  ripetere il nome della tecnica): una clausola statica aggiunta a `_SYSTEM_PROMPT`
+  (`agent_loop.py`) dichiara `bulk_export` l'unico canale sanzionato per un export
+  multi-cliente; lo scenario malevolo istruisce l'agente a evitarlo interrogando i
+  clienti uno per uno (`query_customer_db` ripetuto), il gemello benigno usa
+  `bulk_export` onestamente. Dettaglio completo: `docs/design/2026-08-14-toy-agent-gap-tracking.md`,
+  Gap 16. Risolto: Plan 5a Task 1, commit `0be9e08` (clausola in `agent_loop.py` +
+  2 voci di catalogo `piecemeal_lookup_avoids_bulk_export`/
+  `bulk_export_honest_quarterly_report`), mergiato in master con `e3565c8`
+  (2026-08-20).
 
 - **Nessun controllo di raggiungibilità dei modelli tier prima di un run reale** —
   `SIFTER_MODEL`/`INSPECTOR_MODEL`/`EMBED_MODEL` venivano usati (espliciti in `.env` o
