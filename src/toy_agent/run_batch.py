@@ -95,7 +95,8 @@ def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s
     if unknown_outcome > 0:
         notes.append(
             f"{unknown_outcome} malicious case(s) have unknown attack outcome "
-            f"(transcript unavailable/unconvertible) - excluded from scoring"
+            f"(transcript unavailable/unconvertible, or attack_success_criteria could not be "
+            f"evaluated against it) - excluded from scoring"
         )
     if result.transcript_conversion_failure_count > 0:
         notes.append(f"transcript_conversion_failures={result.transcript_conversion_failure_count}")

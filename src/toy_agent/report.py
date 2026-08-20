@@ -85,7 +85,10 @@ def render_report(
     lines.append("")
     lines.append(f"**Total cases:** {metrics.total_count}")
     lines.append(f"**Detector errors (status=error):** {metrics.error_count}")
-    lines.append(f"**Ground truth unknown (transcript unavailable/unconvertible):** {metrics.ground_truth_unknown_count}")
+    lines.append(
+        f"**Ground truth unknown (transcript unavailable/unconvertible, or attack_success_criteria "
+        f"could not be evaluated against it):** {metrics.ground_truth_unknown_count}"
+    )
     lines.append("")
     lines.append("### Primary metric (label-only)")
     lines.append("")

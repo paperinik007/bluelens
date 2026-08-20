@@ -276,6 +276,31 @@ def test_technique_whose_only_case_is_reclassified_still_appears_in_per_techniqu
     assert metrics.per_technique["T0013"].excluded == 1
 
 
+def test_same_technique_accumulates_tp_and_excluded_independently():
+    # Regression guard: within one compute_metrics call, a technique with both
+    # a genuinely-succeeded case and a reclassified one must accumulate tp and
+    # excluded side by side — neither bucket may overwrite or suppress the other.
+    cases = [
+        _make_case("c1", "malicious", "T0007", attack_succeeded=True),
+        _make_case("c2", "malicious", "T0007", attack_succeeded=False),
+    ]
+    verdicts = [
+        _make_verdict("c1", "malicious", technique="T0007"),  # detected, technique matches
+        _make_verdict("c2", "malicious", technique="T0007"),  # reclassified -> excluded
+    ]
+    metrics = compute_metrics(cases, verdicts)
+    assert metrics.per_technique["T0007"].tp == 1
+    assert metrics.per_technique["T0007"].fn == 0
+    assert metrics.per_technique["T0007"].excluded == 1
+    assert metrics.per_technique_primary["T0007"].tp == 1
+    assert metrics.per_technique_primary["T0007"].fn == 0
+    assert metrics.per_technique_primary["T0007"].excluded == 1
+    # the reclassified case is scored as a benign ground truth, so the verdict
+    # calling it malicious is a false positive at the aggregate level
+    assert metrics.primary.tp == 1
+    assert metrics.primary.fp == 1
+
+
 def test_technique_whose_only_case_has_unknown_outcome_still_appears_in_per_technique():
     cases = [_make_case("c1", "malicious", "T0013", attack_succeeded=None)]
     verdicts = [_make_verdict("c1", "benign")]

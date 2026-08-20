@@ -157,8 +157,9 @@ def is_reclassified(case: TestCase) -> bool:
 
 def is_ground_truth_unknown(case: TestCase) -> bool:
     """True when a malicious case's real outcome could not be determined
-    (transcript unavailable/unconvertible) — excluded from scoring, never
-    folded into error_count (Gap 18)."""
+    (transcript unavailable/unconvertible, or attack_success_criteria could
+    not be evaluated against it) — excluded from scoring, never folded into
+    error_count (Gap 18)."""
     return case.label == "malicious" and case.attack_succeeded is None
 
 
@@ -166,7 +167,12 @@ def compute_metrics(cases: list[TestCase], verdicts: list[Verdict], level: float
     """Compute primary (label-only) and strict (technique-attribution) metrics.
 
     Verdicts with status == "error" are excluded from TP/FP/FN/TN and counted
-    separately.  The two metrics are never fused into a single number.
+    separately.  Ground-truth-unknown cases (Gap 18: a malicious case whose
+    attack_succeeded is None, because the transcript was unavailable or its
+    attack_success_criteria could not be evaluated) are likewise excluded from
+    TP/FP/FN/TN and counted separately, via ground_truth_unknown_count — never
+    folded into error_count, and never silently scored as if benign.  The two
+    metrics are never fused into a single number.
     """
     if len(cases) != len(verdicts):
         raise ValueError(f"cases and verdicts must have the same length: {len(cases)} vs {len(verdicts)}")

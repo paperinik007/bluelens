@@ -63,6 +63,12 @@ def evaluate(criterion: CriterionType, transcript: Transcript) -> bool:
 
 
 def _arg_matcher_from_dict(d: dict) -> ArgMatcherType:
+    # Guard before any `"key" in d` test below: on a str those are SUBSTRING
+    # tests, not key lookups, so a bare `to: ping` (missing the {equals: ...}
+    # wrapper) would silently parse as InSet(('p','i','n','g')) — a criterion
+    # that can never match, corrupting the technique's recall with no warning.
+    if not isinstance(d, dict):
+        raise ValueError(f"arg matcher must be a mapping, got {type(d).__name__}: {d!r}")
     if "equals" in d:
         return Equals(value=d["equals"])
     if "not_equals" in d:
@@ -77,6 +83,11 @@ def _arg_matcher_from_dict(d: dict) -> ArgMatcherType:
 
 
 def criterion_from_dict(d: dict) -> CriterionType:
+    # Same substring-vs-key-lookup hazard as _arg_matcher_from_dict: a bare
+    # `attack_success_criteria: always` string would otherwise pass the
+    # `"always" in d` test by substring and parse as Always().
+    if not isinstance(d, dict):
+        raise ValueError(f"criterion must be a mapping, got {type(d).__name__}: {d!r}")
     if "always" in d:
         return Always()
     if "tool_call" in d:
@@ -126,6 +137,16 @@ def validate_criterion(criterion: CriterionType, known: Optional[dict[str, set[s
             raise ValueError(
                 f"attack_success_criteria references unknown arguments for "
                 f"{criterion.tool_name!r}: {sorted(unknown_args)!r}"
+            )
+        # min_count=0 makes the criterion unconditionally true (count >= 0),
+        # a silent undeclared `always: true`; a non-int (YAML quoting typo)
+        # raises TypeError at evaluate time instead, mid-run. Both are
+        # preventable here, at load time. bool is an int subclass, so it is
+        # excluded explicitly — `min_count: true` is a typo, not a threshold.
+        if isinstance(criterion.min_count, bool) or not isinstance(criterion.min_count, int) or criterion.min_count < 1:
+            raise ValueError(
+                f"attack_success_criteria for {criterion.tool_name!r} has invalid "
+                f"min_count: {criterion.min_count!r} (must be an int >= 1)"
             )
         return
     if isinstance(criterion, (AllOf, AnyOf)):

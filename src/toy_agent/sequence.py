@@ -111,8 +111,11 @@ class BatchResult:
 
 def _agent_input(case: TestCase) -> dict:
     """Reduced dict sent to run_test_case(): only case_id and the seed turn's
-    content — never label/technique_target/rationale (design doc decision 2,
-    Plan 4)."""
+    content — never label/technique_target/rationale, and never the Gap 18
+    ground-truth fields attack_success_criteria/attack_succeeded (design doc
+    decision 2, Plan 4). The dict is built by whitelist, so a new TestCase
+    field is excluded by construction; this enumeration is documentation of
+    that, not the mechanism enforcing it."""
     seed = case.transcript.turns[0]
     return {
         "case_id": case.case_id,
@@ -228,7 +231,18 @@ def execute_sequence(
 
             attack_succeeded = None
             if ground_truth.label == "malicious" and transcript_obj is not None:
-                attack_succeeded = criteria.evaluate(ground_truth.attack_success_criteria, transcript_obj)
+                # criteria.evaluate() raises by design on argument values it
+                # cannot match (e.g. a 'contains' matcher meeting a dict — the
+                # model's tool-call arguments are arbitrary JSON, so this is
+                # reachable in a real run). A criterion that cannot be
+                # evaluated IS an unknown outcome: leave attack_succeeded None
+                # and let the existing ground_truth_unknown_count bucket
+                # account for it (Gap 18), instead of aborting the batch and
+                # losing every remaining case.
+                try:
+                    attack_succeeded = criteria.evaluate(ground_truth.attack_success_criteria, transcript_obj)
+                except Exception:
+                    attack_succeeded = None
 
             case_obj = TestCase(
                 case_id=case_id,

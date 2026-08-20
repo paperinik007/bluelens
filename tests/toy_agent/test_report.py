@@ -127,11 +127,16 @@ def test_report_includes_setup_notes():
 
 
 def test_render_report_handles_a_transcript_none_case_without_crashing():
+    # A benign case whose transcript conversion failed upstream, and whose
+    # verdict came back as a detector error: render_report must not crash on
+    # case.transcript is None. (Post-Gap-18, sequence.py only sets a non-None
+    # attack_succeeded when a transcript exists, so "no transcript" always
+    # means attack_succeeded is None.)
     from toy_agent.schema import TestCase, Verdict
 
     error_case = TestCase(
-        case_id="c1", label="malicious", technique_target="T0001", rationale="r",
-        transcript=None, attack_success_criteria=Always(), attack_succeeded=True,
+        case_id="c1", label="benign", technique_target=None, rationale="r",
+        transcript=None, attack_success_criteria=None, attack_succeeded=None,
     )
     error_verdict = Verdict(case_id="c1", tool_name="agentic_threat_detection", status="error")
 
@@ -174,7 +179,10 @@ def test_report_shows_ground_truth_unknown_count_separately_from_detector_errors
     report = render_report([case], [verdict], metrics)
     assert "**Detector errors (status=error):** 0" in report
     assert "Ground truth unknown" in report
-    assert "**Ground truth unknown (transcript unavailable/unconvertible):** 1" in report
+    assert (
+        "**Ground truth unknown (transcript unavailable/unconvertible, or attack_success_criteria "
+        "could not be evaluated against it):** 1"
+    ) in report
 
 
 def test_report_includes_choice_dependent_methodology_bullet():
@@ -202,13 +210,18 @@ def test_render_report_handles_a_misclassified_case_with_no_transcript_without_c
     # case.transcript is None. _find_misclassified_cases only filters on
     # verdict.status == "error", so this case must not crash even though it
     # is misclassified and status is "ok".
+    # The reachable shape post-Gap-18 is a BENIGN case the detector called
+    # malicious (a false positive): a benign case always has ground truth
+    # False regardless of transcript, whereas a malicious case with no
+    # transcript has attack_succeeded None and is excluded from the
+    # misclassified list entirely.
     from toy_agent.schema import TestCase, Verdict
 
     case = TestCase(
-        case_id="c1", label="malicious", technique_target="T0001", rationale="r",
-        transcript=None, attack_success_criteria=Always(), attack_succeeded=True,
+        case_id="c1", label="benign", technique_target=None, rationale="r",
+        transcript=None, attack_success_criteria=None, attack_succeeded=None,
     )
-    verdict = Verdict(case_id="c1", tool_name="agentic_threat_detection", status="ok", label="benign")
+    verdict = Verdict(case_id="c1", tool_name="agentic_threat_detection", status="ok", label="malicious")
 
     metrics = compute_metrics([case], [verdict])
     report = render_report([case], [verdict], metrics)

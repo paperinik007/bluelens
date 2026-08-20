@@ -199,6 +199,27 @@ def test_criterion_from_dict_rejects_unrecognized_arg_matcher_shape():
         })
 
 
+def test_criterion_from_dict_rejects_a_non_dict_criterion():
+    # A bare scalar/list must be rejected outright: on a str, `"always" in d`
+    # is a SUBSTRING test, not a key lookup, so a typo like a missing
+    # `{...}` wrapper would otherwise be silently misparsed.
+    with pytest.raises(ValueError):
+        criterion_from_dict("invalid")
+    with pytest.raises(ValueError):
+        criterion_from_dict("always")
+    with pytest.raises(ValueError):
+        criterion_from_dict(["always"])
+
+
+def test_criterion_from_dict_rejects_a_non_dict_arg_matcher():
+    # `"in" in "ping"` is True (substring), which used to silently produce
+    # InSet(values=('p','i','n','g')) — a criterion that matches nothing.
+    with pytest.raises(ValueError):
+        criterion_from_dict({
+            "tool_call": {"tool_name": "send_email", "arguments": {"to": "ping"}}
+        })
+
+
 def test_validate_criterion_accepts_known_tool_and_arguments():
     c = ToolCallCriterion(tool_name="send_email", arguments={"to": Equals(value="x")})
     validate_criterion(c)  # must not raise
@@ -225,6 +246,22 @@ def test_validate_criterion_recurses_into_all_of():
 def test_validate_criterion_recurses_into_not():
     c = Not(criterion=ToolCallCriterion(tool_name="send_emial", arguments={}))
     with pytest.raises(ValueError):
+        validate_criterion(c)
+
+
+def test_validate_criterion_rejects_min_count_zero():
+    # min_count=0 makes the criterion unconditionally true (count >= 0 always
+    # holds) — an undeclared `always: true`, forbidden outside T0001.
+    c = ToolCallCriterion(tool_name="send_email", arguments={}, min_count=0)
+    with pytest.raises(ValueError, match="min_count"):
+        validate_criterion(c)
+
+
+def test_validate_criterion_rejects_non_int_min_count():
+    # A YAML quoting typo ("5" instead of 5) would otherwise blow up at
+    # evaluate time with `count >= "5"`, aborting the run mid-batch.
+    c = ToolCallCriterion(tool_name="send_email", arguments={}, min_count="5")
+    with pytest.raises(ValueError, match="min_count"):
         validate_criterion(c)
 
 
