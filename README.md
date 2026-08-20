@@ -19,16 +19,26 @@ tool testato, schema dati, adapter, modulo metriche — passato per council chec
 grill-with-docs. Vedi [`docs/design/2026-08-14-toy-agent-e-pipeline-misura.md`](docs/design/2026-08-14-toy-agent-e-pipeline-misura.md).
 Implementazione in corso: Plan 1 (toy agent), Plan 2 (modulo metriche/report), Plan 3
 (container di controllo con egress di rete ristretto a `openrouter.ai`), Gap 9 (split
-del container di controllo in `agent`/`detector` isolati, vedi "Struttura" sotto) e Plan 4
+del container di controllo in `agent`/`detector` isolati, vedi "Struttura" sotto), Plan 4
 (`run_batch.py`, il batch orchestrator che fa girare l'intero dataset attraverso
-`agent`/`detector` e produce il report finale, vedi "Come eseguire" sotto) sono
-completi e testati.
+`agent`/`detector` e produce il report finale, vedi "Come eseguire" sotto) e Plan 5 (il
+dataset di audit — catalogo, 31 `TestCase`, gate di copertura/anti-scorciatoia, vedi
+`catalog/`/`dataset/` sopra) sono completi e testati. Primo report reale pubblicato in
+`docs/reports/`.
 
 ## Struttura
 
 - `SPIRIT.md` — perché esiste questo repo, principi metodologici.
 - `docs/design/` — design doc per audit, con relativo gap-tracking doc companion.
 - `docs/reports/` — report di audit pubblicati (uno per tool testato), quando pronti.
+- `catalog/` — catalogo dinamico di scenari candidati per il dataset di audit (Plan 5):
+  ogni voce dichiara tecnica target, fonte (inventata, incidente reale, o ispirata a un
+  benchmark accademico) e — quando applicabile — citazione verificabile e adattamento.
+  Non è letto dalla pipeline di misura (`load_dataset()` legge solo `dataset/*.yaml`).
+- `dataset/` — i `TestCase` YAML reali eseguiti da `run_batch.py`, selezionati dal
+  catalogo. 31 casi, 12 delle 14 tecniche del vendor coperte da almeno un caso malevolo
+  + un gemello benigno (T0009/T0011 esclusi — limite dichiarato, vedi
+  `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 17).
 - `src/toy_agent/` — pacchetto del toy agent (schema, stato finto, tool, loop ReAct,
   modulo metriche, orchestrazione agent -> detector).
 - `src/detector_adapter/` — pacchetto che gira nel container `detector`: adapter verso
