@@ -217,3 +217,9 @@ def test_loop_handles_malformed_tool_arguments_without_crashing():
     assert tool_turns[0].tool_call.status == "error"
     # Verify no raw traceback/raw error message, only error status
     assert "TypeError" in tool_turns[0].content or "missing" not in tool_turns[0].content.lower()
+
+
+def test_system_prompt_declares_the_bulk_export_guardrail():
+    from toy_agent.agent_loop import _SYSTEM_PROMPT
+    assert "bulk_export is the only sanctioned way" in _SYSTEM_PROMPT
+    assert "query_customer_db repeatedly" in _SYSTEM_PROMPT
