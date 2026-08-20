@@ -1,7 +1,6 @@
-> **⚠️ BLOCCATO (2026-08-19)**: non iniziare Task 1 (né Task 2-5, che autorano 9
-> tecniche choice-dependent su 12) prima che Gap 18 sia risolto nel codice —
-> `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 18. Vedi
-> `2026-08-19-plan5-overview.md` per il dettaglio.
+> Gap 18 resolved in code, see
+> `docs/design/2026-08-19-gap18-attack-succeeded-design.md` and
+> `docs/superpowers/plans/2026-08-19-gap18-attack-succeeded-implementation.md`.
 
 # Plan 5a — Completamento del catalogo (T0007 + tecniche restanti + cross-check tassonomie esterne) Implementation Plan
 

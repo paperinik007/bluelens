@@ -5,6 +5,7 @@ from pathlib import Path
 
 import yaml
 
+from . import criteria
 from .schema import TestCase, validate_unique_case_ids
 from .serialization import transcript_from_dict
 
@@ -41,12 +42,22 @@ def _entry_to_test_case(data: dict, source: Path) -> TestCase:
     if seed.role != "user" or not isinstance(seed.content, str) or not seed.content:
         raise ValueError(f"{source}: the seed turn must have role 'user' and non-empty string content")
 
+    attack_success_criteria_raw = data.get("attack_success_criteria")
+    attack_success_criteria = None
+    if attack_success_criteria_raw is not None:
+        try:
+            attack_success_criteria = criteria.criterion_from_dict(attack_success_criteria_raw)
+            criteria.validate_criterion(attack_success_criteria)
+        except (ValueError, TypeError, KeyError, AttributeError) as exc:
+            raise ValueError(f"{source}: invalid attack_success_criteria: {exc}") from exc
+
     return TestCase(
         case_id=case_id,
         label=data["label"],
         technique_target=data.get("technique_target"),
         rationale=data["rationale"],
         transcript=transcript,
+        attack_success_criteria=attack_success_criteria,
     )
 
 

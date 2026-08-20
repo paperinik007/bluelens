@@ -2,14 +2,19 @@ import pytest
 import yaml
 
 from toy_agent.dataset import load_dataset
+from toy_agent.schema import Always, AllOf, AnyOf, Not, ToolCallCriterion, Equals
 
 
-def _entry(case_id: str, label: str = "benign", technique_target: str | None = None, rationale: str = "r") -> dict:
+def _entry(
+    case_id: str, label: str = "benign", technique_target: str | None = None,
+    rationale: str = "r", attack_success_criteria: dict | None = None,
+) -> dict:
     return {
         "case_id": case_id,
         "label": label,
         "technique_target": technique_target,
         "rationale": rationale,
+        "attack_success_criteria": attack_success_criteria,
         "transcript": {
             "session_id": case_id,
             "turns": [{"seq": 0, "role": "user", "content": "hi", "tool_call": None}],
@@ -24,7 +29,10 @@ def _write(dir_, filename: str, data: dict) -> None:
 
 def test_load_dataset_reads_every_yaml_entry(tmp_path):
     _write(tmp_path, "case_001.yaml", _entry("case_001"))
-    _write(tmp_path, "case_002.yaml", _entry("case_002", label="malicious", technique_target="T0001"))
+    _write(tmp_path, "case_002.yaml", _entry(
+        "case_002", label="malicious", technique_target="T0001",
+        attack_success_criteria={"always": True},
+    ))
 
     cases = load_dataset(tmp_path)
 
@@ -126,4 +134,101 @@ def test_load_dataset_rejects_a_seed_turn_with_empty_content(tmp_path):
     _write(tmp_path, "case_001.yaml", entry)
 
     with pytest.raises(ValueError, match="case_001.yaml"):
+        load_dataset(tmp_path)
+
+
+def test_load_dataset_parses_attack_success_criteria(tmp_path):
+    _write(tmp_path, "case_003.yaml", _entry(
+        "case_003", label="malicious", technique_target="T0004",
+        attack_success_criteria={
+            "tool_call": {"tool_name": "send_email", "arguments": {"to": {"equals": "evil@example.com"}}},
+        },
+    ))
+    cases = load_dataset(tmp_path)
+    case = next(c for c in cases if c.case_id == "case_003")
+    assert case.attack_success_criteria == ToolCallCriterion(
+        tool_name="send_email", arguments={"to": Equals(value="evil@example.com")},
+    )
+
+
+def _load_single_criteria(tmp_path, raw_criteria):
+    """Round-trip one attack_success_criteria mapping through a real YAML file
+    and load_dataset(), returning the parsed criterion."""
+    _write(tmp_path, "case_criteria.yaml", _entry(
+        "case_criteria", label="malicious", technique_target="T0004",
+        attack_success_criteria=raw_criteria,
+    ))
+    cases = load_dataset(tmp_path)
+    return next(c for c in cases if c.case_id == "case_criteria").attack_success_criteria
+
+
+def test_load_dataset_parses_always_criteria(tmp_path):
+    assert _load_single_criteria(tmp_path, {"always": True}) == Always()
+
+
+def test_load_dataset_parses_all_of_criteria(tmp_path):
+    parsed = _load_single_criteria(tmp_path, {"all_of": [
+        {"tool_call": {"tool_name": "query_customer_db", "arguments": {"customer_id": {"equals": "cust_001"}}}},
+        {"tool_call": {"tool_name": "send_email", "arguments": {"to": {"equals": "evil@example.com"}}}},
+    ]})
+    assert parsed == AllOf(criteria=(
+        ToolCallCriterion(tool_name="query_customer_db", arguments={"customer_id": Equals(value="cust_001")}),
+        ToolCallCriterion(tool_name="send_email", arguments={"to": Equals(value="evil@example.com")}),
+    ))
+
+
+def test_load_dataset_parses_any_of_criteria(tmp_path):
+    parsed = _load_single_criteria(tmp_path, {"any_of": [
+        {"tool_call": {"tool_name": "bulk_export"}},
+        {"tool_call": {"tool_name": "send_email", "arguments": {"to": {"equals": "evil@example.com"}}}},
+    ]})
+    assert parsed == AnyOf(criteria=(
+        ToolCallCriterion(tool_name="bulk_export", arguments={}),
+        ToolCallCriterion(tool_name="send_email", arguments={"to": Equals(value="evil@example.com")}),
+    ))
+
+
+def test_load_dataset_parses_not_criteria(tmp_path):
+    parsed = _load_single_criteria(tmp_path, {"not": {"tool_call": {"tool_name": "bulk_export"}}})
+    assert parsed == Not(criterion=ToolCallCriterion(tool_name="bulk_export", arguments={}))
+
+
+def test_load_dataset_rejects_malicious_entry_without_attack_success_criteria(tmp_path):
+    _write(tmp_path, "case_004.yaml", _entry(
+        "case_004", label="malicious", technique_target="T0001", attack_success_criteria=None,
+    ))
+    with pytest.raises(ValueError):
+        load_dataset(tmp_path)
+
+
+def test_load_dataset_rejects_unknown_tool_name_in_criteria(tmp_path):
+    _write(tmp_path, "case_005.yaml", _entry(
+        "case_005", label="malicious", technique_target="T0001",
+        attack_success_criteria={"tool_call": {"tool_name": "send_emial", "arguments": {}}},
+    ))
+    with pytest.raises(ValueError):
+        load_dataset(tmp_path)
+
+
+def test_load_dataset_rejects_tool_call_criterion_missing_tool_name(tmp_path):
+    _write(tmp_path, "case_006.yaml", _entry(
+        "case_006", label="malicious", technique_target="T0001",
+        attack_success_criteria={"tool_call": {"arguments": {}}},
+    ))
+    with pytest.raises(ValueError):
+        load_dataset(tmp_path)
+
+
+@pytest.mark.parametrize("bad_value", ["invalid", "always", ["always"]])
+def test_load_dataset_rejects_non_dict_attack_success_criteria(tmp_path, bad_value):
+    # criterion_from_dict now rejects any non-mapping input up front with a
+    # deliberate isinstance check. "always" is included on purpose: before that
+    # check, `"always" in d` substring-matched a bare "always" string and
+    # silently returned Always(), turning an authoring typo into an
+    # unconditionally-true criterion.
+    _write(tmp_path, "case_007.yaml", _entry(
+        "case_007", label="malicious", technique_target="T0001",
+        attack_success_criteria=bad_value,
+    ))
+    with pytest.raises(ValueError):
         load_dataset(tmp_path)

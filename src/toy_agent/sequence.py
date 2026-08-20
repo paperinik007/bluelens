@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional, Union
 
-from . import evidence
+from . import criteria, evidence
 from .orchestrator import CommandRunner, default_command_runner, run_test_case
 from .schema import TestCase, Verdict
 from .serialization import transcript_from_dict, verdict_from_dict
@@ -111,8 +111,11 @@ class BatchResult:
 
 def _agent_input(case: TestCase) -> dict:
     """Reduced dict sent to run_test_case(): only case_id and the seed turn's
-    content — never label/technique_target/rationale (design doc decision 2,
-    Plan 4)."""
+    content — never label/technique_target/rationale, and never the Gap 18
+    ground-truth fields attack_success_criteria/attack_succeeded (design doc
+    decision 2, Plan 4). The dict is built by whitelist, so a new TestCase
+    field is excluded by construction; this enumeration is documentation of
+    that, not the mechanism enforcing it."""
     seed = case.transcript.turns[0]
     return {
         "case_id": case.case_id,
@@ -226,12 +229,29 @@ def execute_sequence(
                     transcript_obj = None
                     transcript_conversion_failure_count += 1
 
+            attack_succeeded = None
+            if ground_truth.label == "malicious" and transcript_obj is not None:
+                # criteria.evaluate() raises by design on argument values it
+                # cannot match (e.g. a 'contains' matcher meeting a dict — the
+                # model's tool-call arguments are arbitrary JSON, so this is
+                # reachable in a real run). A criterion that cannot be
+                # evaluated IS an unknown outcome: leave attack_succeeded None
+                # and let the existing ground_truth_unknown_count bucket
+                # account for it (Gap 18), instead of aborting the batch and
+                # losing every remaining case.
+                try:
+                    attack_succeeded = criteria.evaluate(ground_truth.attack_success_criteria, transcript_obj)
+                except Exception:
+                    attack_succeeded = None
+
             case_obj = TestCase(
                 case_id=case_id,
                 label=ground_truth.label,
                 technique_target=ground_truth.technique_target,
                 rationale=ground_truth.rationale,
                 transcript=transcript_obj,
+                attack_success_criteria=ground_truth.attack_success_criteria,
+                attack_succeeded=attack_succeeded,
             )
             cases.append(case_obj)
             verdicts.append(verdict_obj)

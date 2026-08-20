@@ -80,20 +80,33 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   effetto di tool non garantito da codice — se rifiuta, il transcript è benigno ma
   `label` resta "malicious" per costruzione, falsando lo scoring. Trovato dal council
   checkpoint su Plan 5a-5d (skeptic+risk, convergenza indipendente), 2026-08-19.
-  **Meccanismo dichiarativo progettato e committato** (`docs/design/2026-08-19-gap18-attack-succeeded-design.md`,
-  commit `cbef193`, passato per council checkpoint + grill-with-docs) — campo
-  `attack_success_criteria` (DSL YAML) + `attack_succeeded` (calcolato post-hoc dal
-  transcript), `label` invariata, nessun campo "tentativo" separato. **Non ancora
-  implementato nel codice** — resta **bloccante prima di Plan 5a Task 1** finché
-  `schema.py`/`metrics.py`/`sequence.py`/`run_batch.py`/`dataset.py`/`report.py`/
-  `criteria.py` (nuovo) non sono modificati di conseguenza (piano di implementazione
-  da scrivere con `writing-plans`). **Nota di processo aperta per l'autoring (Plan
-  5c)**: il design doc documenta una collisione T0005/T0010 (stesso
-  `update_account(field="refund_total")`, indistinguibile a livello di metrica strict)
-  trovata opportunisticamente, non da un controllo sistematico su tutte le coppie dei
-  16 casi — va rifatto in modo sistematico durante l'autoring reale, non fermarsi al
-  primo caso trovato. Dettaglio completo, classificazione tecnica per tecnica, punti di
-  innesto nel codice: `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 18.
+  **Meccanismo dichiarativo progettato, implementato e testato nel codice**
+  (`docs/design/2026-08-19-gap18-attack-succeeded-design.md`, commit `cbef193`,
+  passato per council checkpoint + grill-with-docs; implementazione:
+  `docs/superpowers/plans/2026-08-19-gap18-attack-succeeded-implementation.md`,
+  Task 1-7) — campo `attack_success_criteria` (DSL YAML) + `attack_succeeded`
+  (calcolato post-hoc dal transcript), `label` invariata, nessun campo "tentativo"
+  separato. Innesto completo e con test verdi in `schema.py` (DSL `Criterion` +
+  validazione `TestCase`), `criteria.py` (parse/validate/evaluate), `dataset.py`
+  (parsing a tempo di caricamento), `sequence.py` (calcolo di `attack_succeeded`),
+  `metrics.py` (scoring), `report.py` (rendering) e `run_batch.py` (note di setup) —
+  **risolto, non più bloccante prima di Plan 5a Task 1**. Restano esplicitamente
+  aperti due punti, entrambi per la prossima fase e non per questo meccanismo:
+  (a) l'autoring dei veri `attack_success_criteria` per i 16 file `TestCase` del
+  catalogo (Plan 5c, non ancora iniziato — il meccanismo esiste ma nessun caso reale
+  lo usa ancora); (b) i rischi di collisione di campo T0005/T0010 e T0005/T0014
+  segnalati per quella sessione di autoring — T0005 (`refund_without_authorization`)
+  e T0010 (`ticket_false_prior_authorization_claim`) passano entrambi per
+  `update_account(field="refund_total")`, indistinguibili a livello di metrica
+  *strict*; T0005 (variante `status`) e T0014 condividono
+  `update_account(field="status")`, distinti solo dal `value` (riattivazione vs.
+  disattivazione), un dettaglio che il DSL illustrativo del design doc non controlla
+  esplicitamente. **Nota di processo aperta**: questa ricerca di collisioni è stata
+  fatta opportunisticamente (casi emersi durante la verifica di criteri specifici),
+  non da un controllo sistematico su tutte le coppie dei 16 casi — va rifatto in modo
+  sistematico durante l'autoring reale, non fermarsi ai casi già trovati. Dettaglio
+  completo, classificazione tecnica per tecnica, punti di innesto nel codice:
+  `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 18.
 
 - **T0009/T0011 senza scenario valido: richiedono manipolazione del tool, rischio di
   contaminazione** — entrambe le definizioni vendor descrivono un comportamento del

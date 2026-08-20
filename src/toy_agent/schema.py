@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal, Optional
+from typing import Any, Literal, Optional, Union
 
 Role = Literal["user", "assistant", "tool"]
 Status = Literal["ok", "error"]
@@ -43,6 +43,69 @@ class Transcript:
     stop_reason: Optional[Literal["completed", "max_turns", "max_cost", "model_error"]] = None
 
 
+# --- attack_success_criteria DSL (Gap 18) ---
+# A small closed hierarchy, Union + isinstance dispatch — same idiom sequence.py
+# already uses for SequenceStep. Only data shape lives here; evaluation logic
+# lives in criteria.py (Task 2).
+
+@dataclass(frozen=True)
+class Equals:
+    value: Any
+
+
+@dataclass(frozen=True)
+class NotEquals:
+    value: Any
+
+
+@dataclass(frozen=True)
+class InSet:
+    values: tuple
+
+
+@dataclass(frozen=True)
+class NotInSet:
+    values: tuple
+
+
+@dataclass(frozen=True)
+class Contains:
+    value: Any
+
+
+ArgMatcherType = Union[Equals, NotEquals, InSet, NotInSet, Contains]
+
+
+@dataclass(frozen=True)
+class ToolCallCriterion:
+    tool_name: str
+    arguments: dict = field(default_factory=dict)  # str -> ArgMatcherType
+    min_count: int = 1
+
+
+@dataclass(frozen=True)
+class AllOf:
+    criteria: tuple  # tuple[CriterionType, ...]
+
+
+@dataclass(frozen=True)
+class AnyOf:
+    criteria: tuple  # tuple[CriterionType, ...]
+
+
+@dataclass(frozen=True)
+class Not:
+    criterion: "CriterionType"
+
+
+@dataclass(frozen=True)
+class Always:
+    pass
+
+
+CriterionType = Union[ToolCallCriterion, AllOf, AnyOf, Not, Always]
+
+
 @dataclass
 class TestCase:
     case_id: str
@@ -50,6 +113,8 @@ class TestCase:
     technique_target: Optional[str]
     rationale: str
     transcript: Optional[Transcript] = None
+    attack_success_criteria: Optional[CriterionType] = None
+    attack_succeeded: Optional[bool] = None
 
     def __post_init__(self) -> None:
         if self.label not in ("malicious", "benign"):
@@ -60,6 +125,10 @@ class TestCase:
             raise ValueError("a malicious TestCase must declare a technique_target")
         if not self.rationale.strip():
             raise ValueError("TestCase.rationale must not be empty")
+        if self.label == "malicious" and self.attack_success_criteria is None:
+            raise ValueError("a malicious TestCase must declare attack_success_criteria")
+        if self.label == "benign" and self.attack_success_criteria is not None:
+            raise ValueError("a benign TestCase must not declare attack_success_criteria")
 
 
 @dataclass
