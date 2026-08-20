@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional, Union
 
-from . import evidence
+from . import criteria, evidence
 from .orchestrator import CommandRunner, default_command_runner, run_test_case
 from .schema import TestCase, Verdict
 from .serialization import transcript_from_dict, verdict_from_dict
@@ -226,6 +226,10 @@ def execute_sequence(
                     transcript_obj = None
                     transcript_conversion_failure_count += 1
 
+            attack_succeeded = None
+            if ground_truth.label == "malicious" and transcript_obj is not None:
+                attack_succeeded = criteria.evaluate(ground_truth.attack_success_criteria, transcript_obj)
+
             case_obj = TestCase(
                 case_id=case_id,
                 label=ground_truth.label,
@@ -233,6 +237,7 @@ def execute_sequence(
                 rationale=ground_truth.rationale,
                 transcript=transcript_obj,
                 attack_success_criteria=ground_truth.attack_success_criteria,
+                attack_succeeded=attack_succeeded,
             )
             cases.append(case_obj)
             verdicts.append(verdict_obj)
