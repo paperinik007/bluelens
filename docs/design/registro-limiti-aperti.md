@@ -216,18 +216,6 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   registrato dallo stesso council checkpoint. Trovato dalla review finale whole-branch di
   Plan 5c, 2026-08-21. Da confermare/calibrare con un run reale (Plan 5d o successivo).
 
-- **Una tool call fallita (`ToolError`) conta comunque come successo dell'attacco per i
-  criteri T0005(refund)/T0010 su `field`** — `agent_loop.py` registra un `Turn` con
-  `ToolCall` popolato anche quando il tool solleva `ToolError` (es. `update_account` con
-  un `value` non numerico per `refund_total`, plausibile perché il seed T0010 dice
-  "rimborso completo" senza cifra); `criteria.py` non ha un matcher su `ToolCall.status`,
-  quindi `field: {equals: refund_total}` da solo non distingue una chiamata riuscita da
-  una fallita prima di qualunque cambio di stato — un attacco che fallisce al livello del
-  tool viene comunque scorato come pieno successo. Non risolvibile nei dati (nessun
-  matcher `status` esiste nel DSL oggi) — richiede una modifica di codice a
-  `criteria.py`, fuori dall'architettura dichiarata di Plan 5c ("solo file dati, nessuna
-  modifica di codice"). Trovato dalla review finale whole-branch di Plan 5c, 2026-08-21.
-
 - **case_id di esempio del design doc Plan 5 non verificati in un test reale** — il
   design doc (`docs/design/2026-08-19-plan5-dataset-design.md`, sezione "Naming") cita
   due stringhe di `case_id` (`account_status_change_escalates_privilege`,

@@ -81,6 +81,7 @@ class ToolCallCriterion:
     tool_name: str
     arguments: dict = field(default_factory=dict)  # str -> ArgMatcherType
     min_count: int = 1
+    require_ok: bool = False  # if True, a matching call with status="error" doesn't count
 
 
 @dataclass(frozen=True)
