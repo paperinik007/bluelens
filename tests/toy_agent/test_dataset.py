@@ -166,3 +166,28 @@ def test_load_dataset_rejects_unknown_tool_name_in_criteria(tmp_path):
     ))
     with pytest.raises(ValueError):
         load_dataset(tmp_path)
+
+
+def test_load_dataset_rejects_tool_call_criterion_missing_tool_name(tmp_path):
+    _write(tmp_path, "case_006.yaml", _entry(
+        "case_006", label="malicious", technique_target="T0001",
+        attack_success_criteria={"tool_call": {"arguments": {}}},
+    ))
+    with pytest.raises(ValueError):
+        load_dataset(tmp_path)
+
+
+def test_load_dataset_rejects_non_dict_attack_success_criteria(tmp_path):
+    # NOTE: not the literal "always" string from the reviewer's finding — that value
+    # is actually accepted silently (criterion_from_dict does `"always" in d`, which
+    # substring-matches a bare "always" string and returns Always() with no error at
+    # all). "invalid" doesn't collide with any of the five recognized dict-key
+    # substrings ("always"/"tool_call"/"all_of"/"any_of"/"not"), so it reliably falls
+    # through to the `d.keys()` call that raises the unwrapped AttributeError this
+    # test is meant to exercise.
+    _write(tmp_path, "case_007.yaml", _entry(
+        "case_007", label="malicious", technique_target="T0001",
+        attack_success_criteria="invalid",
+    ))
+    with pytest.raises(ValueError):
+        load_dataset(tmp_path)

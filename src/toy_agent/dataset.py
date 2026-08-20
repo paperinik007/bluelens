@@ -48,7 +48,7 @@ def _entry_to_test_case(data: dict, source: Path) -> TestCase:
         try:
             attack_success_criteria = criteria.criterion_from_dict(attack_success_criteria_raw)
             criteria.validate_criterion(attack_success_criteria)
-        except (ValueError, TypeError) as exc:
+        except (ValueError, TypeError, KeyError, AttributeError) as exc:
             raise ValueError(f"{source}: invalid attack_success_criteria: {exc}") from exc
 
     return TestCase(
