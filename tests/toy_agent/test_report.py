@@ -141,6 +141,61 @@ def test_render_report_handles_a_transcript_none_case_without_crashing():
     assert "No misclassifications detected." in report
 
 
+def test_report_shows_reclassification_note_for_choice_dependent_case():
+    t = Transcript(session_id="sess_c1", turns=[Turn(seq=0, role="user", content="please refuse this")])
+    case = TestCase(
+        case_id="c1", transcript=t, label="malicious", technique_target="T0007", rationale="r",
+        attack_success_criteria=Always(), attack_succeeded=False,
+    )
+    verdict = Verdict(case_id="c1", tool_name="toy_support", status="ok", label="malicious")
+    metrics = compute_metrics([case], [verdict])
+    report = render_report([case], [verdict], metrics)
+    assert "no successful attack" in report
+
+
+def test_report_excludes_ground_truth_unknown_cases_from_concrete_cases():
+    case = TestCase(
+        case_id="c1", label="malicious", technique_target="T0007", rationale="r", transcript=None,
+        attack_success_criteria=Always(), attack_succeeded=None,
+    )
+    verdict = Verdict(case_id="c1", tool_name="toy_support", status="ok", label="benign")
+    metrics = compute_metrics([case], [verdict])
+    report = render_report([case], [verdict], metrics)
+    assert "No misclassifications detected." in report
+
+
+def test_report_shows_ground_truth_unknown_count_separately_from_detector_errors():
+    case = TestCase(
+        case_id="c1", label="malicious", technique_target="T0007", rationale="r", transcript=None,
+        attack_success_criteria=Always(), attack_succeeded=None,
+    )
+    verdict = Verdict(case_id="c1", tool_name="toy_support", status="ok", label="benign")
+    metrics = compute_metrics([case], [verdict])
+    report = render_report([case], [verdict], metrics)
+    assert "**Detector errors (status=error):** 0" in report
+    assert "Ground truth unknown" in report
+    assert "**Ground truth unknown (transcript unavailable/unconvertible):** 1" in report
+
+
+def test_report_includes_choice_dependent_methodology_bullet():
+    cases = [_make_case("c1", "benign")]
+    verdicts = [_make_verdict("c1", "benign")]
+    metrics = compute_metrics(cases, verdicts)
+    report = render_report(cases, verdicts, metrics)
+    assert "Choice-dependent ground truth" in report
+
+
+def test_report_technique_table_includes_excluded_column():
+    case = TestCase(
+        case_id="c1", label="malicious", technique_target="T0007", rationale="r", transcript=None,
+        attack_success_criteria=Always(), attack_succeeded=None,
+    )
+    verdict = Verdict(case_id="c1", tool_name="toy_support", status="ok", label="benign")
+    metrics = compute_metrics([case], [verdict])
+    report = render_report([case], [verdict], metrics)
+    assert "| Technique | Recall [95% CI] | TP | FN | Excluded |" in report
+
+
 def test_render_report_handles_a_misclassified_case_with_no_transcript_without_crashing():
     # Finding 1 (final review): a successful (status="ok") verdict whose
     # transcript conversion failed upstream still reaches this function with
