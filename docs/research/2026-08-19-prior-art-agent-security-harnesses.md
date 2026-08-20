@@ -231,13 +231,19 @@ raccomandazione sotto — `catalog/cases.yaml` ha un `source_type: benchmark_ins
 dedicato, distinto da `real_incident`/`invented`, per tenere tracciabile quando un caso
 nasce da un cross-check con questi progetti invece che da ideazione propria o da un
 incidente reale. Quattro voci `real_incident` sono già scritte e verificate (ForcedLeak,
-postmark-mcp, PocketOS/Railway). **L'esercizio di copertura vero e proprio — incrociare
-i 10 risk type di R-Judge, le 2 categorie di InjecAgent, i 27 attack type di ASB, le 11
-categorie di AgentHarm contro i 14 T-code del vendor — resta da fare**, non ancora
-eseguito: il catalogo oggi ha solo le 4 voci `real_incident`, non è ancora abbastanza
-popolato perché l'esercizio dia segnale (nessun T-code ha ancora una copertura completa
-da confrontare). Prossimo punto naturale quando il catalogo si sarà riempito delle
-tecniche non prioritarie, prima di considerare il dataset di Plan 5 completo.
+postmark-mcp, PocketOS/Railway). **L'esercizio di copertura vero e proprio è stato
+eseguito** (Plan 5a Task 6, 2026-08-20): incrociati i 10 risk type di R-Judge, le 2
+categorie di InjecAgent, i 16 attack type di ASB (più 11 difese, 27 in totale
+conteggiando entrambi) e le 11 categorie di AgentHarm contro i 14 T-code del vendor —
+il catalogo, ormai a 31 voci, era abbastanza popolato per dare segnale. Risultato
+completo in `docs/research/2026-08-19-taxonomy-cross-check-findings.md`: **nessun gap
+trovato a livello di tecnica/vettore d'attacco** — ogni categoria delle 4 tassonomie
+esterne che descrive *come* un agente viene attaccato o indotto a un comportamento
+dannoso ha un analogo ragionevole tra i 14 T-code. Un'unica osservazione registrata
+come future work, non come gap tecnico: le categorie di R-Judge (3/10) e soprattutto
+AgentHarm (9/11) senza analogo classificano per dominio del contenuto/esito dannoso
+(es. odio, autolesionismo, terrorismo) — un asse ortogonale alla classificazione per
+tecnica dei 14 T-code, non colmabile estendendo quei T-code.
 
 ---
 
@@ -251,8 +257,9 @@ dataset's ground truth is coupled to *its own* tool surface and *its own* taxono
 coupling survives a transplant into a different agent running different tools under a different
 vendor's technique codes. Use the external projects exactly as the existing prep note already
 proposed, now with firmer grounding: **as a coverage checklist**, not a data source. Concretely: walk
-R-Judge's 10 risk types, InjecAgent's 2 harm categories, ASB's 27 attack types, and AgentHarm's 11
-harm categories against the catalog's 14 T-codes once Plan 5's catalog is more complete, looking
+R-Judge's 10 risk types, InjecAgent's 2 harm categories, ASB's 16 attack types (plus 11
+corresponding defenses), and AgentHarm's 11 harm categories against the catalog's 14 T-codes once
+Plan 5's catalog is more complete, looking
 specifically for a malicious pattern that shows up in one of theirs but has no analog anywhere in the
 14 — that is a real gap-finding exercise their taxonomies are good for, distinct from importing their
 data. TraceSafe's *mutation methodology* (structured perturbation of a benign baseline trace into a
