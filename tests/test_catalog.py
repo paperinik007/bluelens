@@ -136,3 +136,32 @@ def test_label_hint_is_a_known_value():
         if e["label_hint"] not in ("malicious", "benign")
     ]
     assert not offending, f"entries with an invalid label_hint: {offending}"
+
+
+from toy_agent.dataset import load_dataset
+
+DATASET_PATH = Path(__file__).resolve().parent.parent / "dataset"
+
+
+def test_selected_catalog_entries_match_their_dataset_test_case():
+    """Non-blocking (design doc, mapping Requisito -> Verifica): every catalog
+    entry with status: selected must still agree with the real TestCase it
+    produced — no silent drift between catalog/cases.yaml and dataset/."""
+    selected = [e for e in _load_entries() if e["status"] == "selected"]
+    if not selected:
+        return  # nothing selected yet — vacuously fine, not a false pass on real drift
+    cases_by_id = {c.case_id: c for c in load_dataset(DATASET_PATH)}
+    offending = []
+    for entry in selected:
+        case = cases_by_id.get(entry["selected_as"])
+        if case is None:
+            offending.append(f"{entry['catalog_id']}: selected_as {entry['selected_as']!r} not found in dataset/")
+            continue
+        if entry["label_hint"] == "malicious" and case.technique_target != entry["technique_code"]:
+            offending.append(
+                f"{entry['catalog_id']}: dataset technique_target {case.technique_target!r} "
+                f"!= catalog technique_code {entry['technique_code']!r}"
+            )
+        if entry["catalog_id"] not in case.rationale:
+            offending.append(f"{entry['catalog_id']}: dataset case {case.case_id!r} rationale does not mention the catalog_id")
+    assert not offending, f"catalog/dataset drift: {offending}"
