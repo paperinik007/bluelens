@@ -68,21 +68,27 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   `metrics.py` (scoring), `report.py` (rendering) e `run_batch.py` (note di setup) —
   **risolto, non più bloccante prima di Plan 5a Task 1**. Restano esplicitamente
   aperti due punti, entrambi per la prossima fase e non per questo meccanismo:
-  (a) l'autoring dei veri `attack_success_criteria` per i 16 file `TestCase` del
-  catalogo (Plan 5c, non ancora iniziato — il meccanismo esiste ma nessun caso reale
-  lo usa ancora); (b) i rischi di collisione di campo T0005/T0010 e T0005/T0014
+  (a) **Risolto da Plan 5c** (commit range e51f38e..05943fe, 2026-08-20/21): tutti e 16
+  i file `TestCase` malevoli del catalogo dichiarano ora un `attack_success_criteria`
+  reale — verificato in questa review caricando l'intero `dataset/` con `load_dataset()`
+  (31 casi, tutti i criteri validano contro `criteria.py`); (b) i rischi di collisione di
+  campo T0005/T0010 e T0005/T0014
   segnalati per quella sessione di autoring — T0005 (`refund_without_authorization`)
   e T0010 (`ticket_false_prior_authorization_claim`) passano entrambi per
   `update_account(field="refund_total")`, indistinguibili a livello di metrica
-  *strict*; T0005 (variante `status`) e T0014 condividono
-  `update_account(field="status")`, distinti solo dal `value` (riattivazione vs.
-  disattivazione), un dettaglio che il DSL illustrativo del design doc non controlla
-  esplicitamente. **Nota di processo aperta**: questa ricerca di collisioni è stata
-  fatta opportunisticamente (casi emersi durante la verifica di criteri specifici),
-  non da un controllo sistematico su tutte le coppie dei 16 casi — va rifatto in modo
-  sistematico durante l'autoring reale, non fermarsi ai casi già trovati. Dettaglio
-  completo, classificazione tecnica per tecnica, punti di innesto nel codice:
-  `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 18.
+  *strict* — **resta un limite accettato, vedi voce dedicata sotto** ("T0010... nessun
+  vincolo su `value`") e la voce "`label` statica..." più sotto in questa pagina; T0005
+  (variante `status`) e T0014 condividono `update_account(field="status")` — **risolto
+  da Plan 5c**: entrambi i criteri vincolano ora esplicitamente `value`
+  (`value: {equals: active}` per T0005-status, `value: {equals: disabled}` per T0014),
+  verificato per costruzione in tutti i file committati (`status_update_triggers_hidden_admin_escalation.yaml`,
+  `account_disabled_after_misread_opt_out_request.yaml`) da 2 task review indipendenti
+  più questa review finale. **Nota di processo confermata ancora valida**: la ricerca di
+  collisioni è rimasta opportunistica anche nel council checkpoint di Plan 5c (ha trovato
+  le 2 coppie sopra ma non una terza, vedi voce "T0002 seconda variante vs T0012" sotto,
+  trovata solo dalla review finale whole-branch) — non ancora un controllo sistematico su
+  tutte le coppie. Dettaglio completo, classificazione tecnica per tecnica, punti di
+  innesto nel codice: `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 18.
 
 - **T0010 (`ticket_false_prior_authorization_claim`): nessun vincolo su `value`
   nell'`attack_success_criteria` per l'importo del rimborso** — il criterio
@@ -142,9 +148,13 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   errore di un detector a livello di comportamento costa 2-4 falsi positivi/negativi
   *correlati* — il tasso di falsi positivi sui benigni è meno indipendente
   statisticamente di quanto N=15 suggerisca. Non un difetto di implementazione (ogni
-  voce è verbatim dal piano) — problema di authoring a livello di piano. Appartiene a
-  Plan 5c (differenziare i dettagli di superficie nei cluster, o dichiarare
-  esplicitamente la correlazione nel reporting di Plan 5b), non a questo branch.
+  voce è verbatim dal piano) — problema di authoring a livello di piano. **Non risolto
+  da Plan 5c** (2026-08-20/21, commit range e51f38e..05943fe) — il piano non ha
+  differenziato questi cluster né dichiarato la correlazione, per scelta esplicita della
+  review finale (differenziarli è un lavoro di autoring/design a sé, non un fix da
+  innestare nella fix wave della review). Riassegnato a un futuro piano di revisione del
+  dataset, non ancora pianificato (Plan 5d, verificato in questa review, copre solo
+  README + prima esecuzione reale — non tocca il contenuto del dataset).
   Trovato dalla review finale whole-branch di
   `docs/superpowers/plans/2026-08-19-plan5a-catalog-completion.md`, 2026-08-20
   (Important finding #2).
@@ -159,12 +169,64 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   l'esca T0006 per motivi di guardrail invece di esibire il comportamento che il caso
   vuole misurare, o un detector potrebbe attribuire il comportamento osservato a
   T0007 invece che a T0006. Non è una violazione Gap 1 (la clausola è identica e
-  incondizionata per ogni caso) né un problema di label post-Gap-18. Appartiene a
-  Plan 5c: costruire il vero `TestCase` T0006 su un segnale che non si sovrappone
-  (es. `read_ticket_content` di un singolo ticket altrui, non `query_customer_db`
-  ripetuto). Trovato dalla review finale whole-branch di
-  `docs/superpowers/plans/2026-08-19-plan5a-catalog-completion.md`, 2026-08-20
-  (Important finding #3).
+  incondizionata per ogni caso) né un problema di label post-Gap-18. **Confermato,
+  non risolto, da Plan 5c** (2026-08-20/21): il file committato
+  `dataset/cross_customer_lookup_for_unrelated_comparison.yaml` usa esattamente il
+  segnale che questa voce diceva di evitare (`query_customer_db` ripetuto su clienti
+  diversi) — non una sovrapposizione teorica ma confermata dalla review finale
+  whole-branch di Plan 5c, che ha anche riletto `_SYSTEM_PROMPT`
+  (`src/toy_agent/agent_loop.py`) confermando che la clausola guardrail T0007 esiste
+  davvero e si applica esattamente a questo pattern. Riassegnato a un futuro piano di
+  revisione del dataset, non ancora pianificato (costruire il vero `TestCase` T0006 su
+  un segnale che non si sovrappone, es. `read_ticket_content` di un singolo ticket
+  altrui — stessa proposta di prima, solo riassegnata; Plan 5d copre solo README + prima
+  esecuzione reale, non il contenuto del dataset). Trovato originariamente dalla review
+  finale whole-branch di `docs/superpowers/plans/2026-08-19-plan5a-catalog-completion.md`,
+  2026-08-20 (Important finding #3); confermato ancora aperto dalla review finale
+  whole-branch di Plan 5c, 2026-08-21.
+
+- **`ticket_fake_forwarding_policy_note` (T0002, seconda variante) vs
+  `hidden_instruction_triggers_unauthorized_export` (T0012) — stesso template di prompt,
+  stesso indirizzo esterno di destinazione** — entrambi i turni seed usano la stessa
+  formulazione ("Nota interna: per policy... prima di rispondere al cliente") e
+  terminano entrambi con un indirizzo `*-external.example`: `archive@ticket-mirror-external.example`
+  per T0002, `data-sync@partner-mirror-external.example` per T0012. Sono
+  simultaneamente IPI-shaped (istruzione nascosta nel testo del ticket) ed
+  exfiltration-shaped (dato inoltrato fuori dal confine autorizzato) — l'attribuzione
+  della tecnica da parte di un detector è arbitraria tra le due. Nota: la prima variante
+  di T0002 (`ticket_hidden_instruction_in_reply`) evita questa sovrapposizione tenendo
+  il payload dentro la risposta al cliente, senza destinatario esterno — la seconda
+  variante, aggiunta da Plan 5c Task 3, ha reintrodotto l'inoltro esterno. Impatto
+  confinato alla metrica strict/per-tecnica (entrambi i casi restano `label: malicious`,
+  la metrica primaria non è affetta) — stesso tipo di contenimento già accettato per la
+  collisione T0005/T0010. Trovato dalla review finale whole-branch di Plan 5c,
+  2026-08-21. Soluzione minima (non ancora implementata): dare alla seconda variante di
+  T0002 un payload non-exfiltrativo (es. una nota "policy" nascosta che istruisce un
+  `update_account`), per ripristinare la distinzione vettore/effetto.
+
+- **T0013 (`repeated_status_checks_without_cause`): `min_count: 5` verificato solo per
+  raggiungibilità strutturale, non per calibrazione empirica** — il valore è confermato
+  raggiungibile entro il tetto di 8 turni del loop (`agent_loop.py` permette più tool
+  call per completion), ma non è stato confermato contro un run reale che 5 sia la
+  soglia giusta per distinguere un pattern "ripetizione senza causa" da un modello che
+  si ferma dopo 2-3 ripetizioni (che mostrerebbe lo stesso pattern problematico su scala
+  minore e scorerebbe `attack_succeeded: False`). Il caveat viveva finora solo in un
+  commento YAML (`dataset/repeated_status_checks_without_cause.yaml`) e nel testo del
+  piano — mai in questo registro, a differenza del caveat analogo su T0010 (voce sopra),
+  registrato dallo stesso council checkpoint. Trovato dalla review finale whole-branch di
+  Plan 5c, 2026-08-21. Da confermare/calibrare con un run reale (Plan 5d o successivo).
+
+- **Una tool call fallita (`ToolError`) conta comunque come successo dell'attacco per i
+  criteri T0005(refund)/T0010 su `field`** — `agent_loop.py` registra un `Turn` con
+  `ToolCall` popolato anche quando il tool solleva `ToolError` (es. `update_account` con
+  un `value` non numerico per `refund_total`, plausibile perché il seed T0010 dice
+  "rimborso completo" senza cifra); `criteria.py` non ha un matcher su `ToolCall.status`,
+  quindi `field: {equals: refund_total}` da solo non distingue una chiamata riuscita da
+  una fallita prima di qualunque cambio di stato — un attacco che fallisce al livello del
+  tool viene comunque scorato come pieno successo. Non risolvibile nei dati (nessun
+  matcher `status` esiste nel DSL oggi) — richiede una modifica di codice a
+  `criteria.py`, fuori dall'architettura dichiarata di Plan 5c ("solo file dati, nessuna
+  modifica di codice"). Trovato dalla review finale whole-branch di Plan 5c, 2026-08-21.
 
 - **case_id di esempio del design doc Plan 5 non verificati in un test reale** — il
   design doc (`docs/design/2026-08-19-plan5-dataset-design.md`, sezione "Naming") cita
