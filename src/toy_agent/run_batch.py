@@ -111,6 +111,27 @@ def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s
     return " | ".join(notes)
 
 
+def find_malicious_only_tools(cases: list[TestCase]) -> set[str]:
+    """Tool names that appear only in malicious cases' observed transcripts,
+    never in a benign one — the tool->label correlation shortcut a detector
+    could exploit instead of reasoning about content (design doc, mapping
+    Requisito -> Verifica; Gap 7 risk 1, generalized to all 14 techniques).
+
+    Reads case.transcript.turns[*].tool_call.tool_name from the REAL
+    transcript observed after execution (metric_cases), never the authored
+    seed turn — what tools a TestCase actually exercises is not knowable
+    before the agent runs (design doc: this check cannot be a static test on
+    the dataset, unlike the coverage gate)."""
+    tools_by_label: dict[str, set[str]] = {"malicious": set(), "benign": set()}
+    for case in cases:
+        if case.transcript is None:
+            continue
+        for turn in case.transcript.turns:
+            if turn.tool_call is not None:
+                tools_by_label.setdefault(case.label, set()).add(turn.tool_call.tool_name)
+    return tools_by_label.get("malicious", set()) - tools_by_label.get("benign", set())
+
+
 def main(argv: list[str] | None = None) -> None:
     args = sys.argv[1:] if argv is None else argv
     parser = argparse.ArgumentParser(prog="python -m toy_agent.run_batch")
@@ -142,6 +163,16 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(1)
 
     result = execute_batch(dataset, run_output_dir, container_lifecycle=parsed.container_lifecycle, api_key=api_key)
+
+    shortcut_tools = find_malicious_only_tools(result.metric_cases)
+    if shortcut_tools:
+        print(
+            f"tool->label shortcut check failed: tool(s) {sorted(shortcut_tools)} appear only in "
+            f"malicious metric_cases this run — refusing to write report.md (design doc, mapping "
+            f"Requisito -> Verifica, anti-shortcut gate)",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     metrics = compute_metrics(result.metric_cases, result.metric_verdicts)
     setup_notes = _setup_notes(result, AGENT_TIMEOUT_S, DETECTOR_TIMEOUT_S, BREAKER_THRESHOLD)

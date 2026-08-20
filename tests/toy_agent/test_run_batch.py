@@ -7,7 +7,7 @@ import yaml
 from toy_agent import run_batch
 from toy_agent.orchestrator import CommandResult
 from toy_agent.run_batch import BatchResult
-from toy_agent.schema import Transcript, Turn, TestCase, Verdict, Always
+from toy_agent.schema import Transcript, Turn, TestCase, Verdict, Always, ToolCall
 
 
 def _ground_truth(case_id, label="benign", technique_target=None, rationale="r", seed_content="hi"):
@@ -505,3 +505,71 @@ def test_main_accepts_the_container_lifecycle_flag_and_defaults_to_reused(tmp_pa
 
     run_batch.main([str(dataset_dir), str(run_output_dir), "--container-lifecycle", "per-case"])
     assert captured["container_lifecycle"] == "per-case"
+
+
+def _case_with_tool_call(case_id, label, tool_name, technique_target=None):
+    transcript = Transcript(
+        session_id=case_id,
+        turns=[
+            Turn(seq=0, role="user", content="hi"),
+            Turn(
+                seq=1, role="tool", content="ok",
+                tool_call=ToolCall(tool_name=tool_name, arguments={}, result="ok", status="ok"),
+            ),
+        ],
+    )
+    criteria = Always() if label == "malicious" else None
+    return TestCase(
+        case_id=case_id, label=label, technique_target=technique_target, rationale="r",
+        transcript=transcript, attack_success_criteria=criteria,
+    )
+
+
+def test_find_malicious_only_tools_flags_a_tool_seen_only_in_malicious_cases():
+    cases = [
+        _case_with_tool_call("c1", "malicious", "bulk_export", technique_target="T0012"),
+        _case_with_tool_call("c2", "benign", "query_customer_db"),
+    ]
+    assert run_batch.find_malicious_only_tools(cases) == {"bulk_export"}
+
+
+def test_find_malicious_only_tools_ignores_a_tool_also_seen_in_a_benign_case():
+    cases = [
+        _case_with_tool_call("c1", "malicious", "update_account", technique_target="T0005"),
+        _case_with_tool_call("c2", "benign", "update_account"),
+    ]
+    assert run_batch.find_malicious_only_tools(cases) == set()
+
+
+def test_find_malicious_only_tools_skips_cases_with_no_transcript():
+    dataset = [_ground_truth("c1", label="malicious", technique_target="T0001")]
+    dataset[0].transcript = None
+    assert run_batch.find_malicious_only_tools(dataset) == set()
+
+
+def test_main_refuses_to_write_the_report_when_a_tool_appears_only_in_malicious_cases(tmp_path, monkeypatch):
+    # _write_dataset/_dataset_yaml_entry già esistono in questo file (usati da
+    # test_main_never_modifies_the_dataset_dir e simili) — non ridefinirli qui,
+    # producono già entry benigne valide, sufficienti perché main() carichi un
+    # dataset non vuoto prima che fake_execute_batch prenda il controllo.
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+        malicious_case = _case_with_tool_call("c1", "malicious", "bulk_export", technique_target="T0012")
+        verdict = Verdict(case_id="c1", tool_name="agentic_threat_detection", status="ok", label="malicious", technique_detected="T0012")
+        return BatchResult(
+            cases=[malicious_case], verdicts=[verdict],
+            total_count=1, executed_count=1, breaker_tripped=False,
+            metric_cases=[malicious_case], metric_verdicts=[verdict],
+        )
+
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+
+    try:
+        run_batch.main([str(dataset_dir), str(run_output_dir)])
+        assert False, "expected SystemExit"
+    except SystemExit as exc:
+        assert exc.code == 1
+    assert not (run_output_dir / "report.md").exists()
