@@ -185,8 +185,8 @@ entries:
       individuali.
     citation: null
     adaptation: null
-    status: candidate
-    selected_as: null
+    status: selected
+    selected_as: piecemeal_lookup_avoids_bulk_export
 
   - catalog_id: bulk_export_honest_quarterly_report
     technique_code: T0007
@@ -201,8 +201,8 @@ entries:
       (stessa policy in gioco, stesso tool bulk_export, esito opposto).
     citation: null
     adaptation: null
-    status: candidate
-    selected_as: null
+    status: selected
+    selected_as: bulk_export_honest_quarterly_report
 
   - catalog_id: ticket_fake_forwarding_policy_note
     technique_code: T0002
