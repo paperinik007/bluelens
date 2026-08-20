@@ -105,6 +105,23 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   14 tecniche resta 12/14 in questo primo giro. Analisi completa dei 4 meccanismi
   considerati e scartati: `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 17.
 
+- **Tooling di revisione (`council`, estensione locale di `subagent-driven-development`)
+  vive in repo privati, non pubblicati insieme a questo** — quando questo repo verrà
+  reso pubblico, design doc/commit/ledger citeranno checkpoint "council" e ruling SDD
+  la cui logica di esecuzione non sarà ispezionabile da terzi: restano nel repo
+  pubblico solo gli output (verdetti, ruling, motivazioni scritte in doc/commit/ledger),
+  non il meccanismo che li ha prodotti. In tensione con `SPIRIT.md` principio 6
+  (trasparenza dei criteri di giudizio come dati ispezionabili), applicato oggi al toy
+  agent/detector sotto audit ma non simmetricamente al processo di revisione del
+  progetto stesso. Trovato in discussione (non da review di codice), 2026-08-20.
+  **Soluzione decisa (minima, non ancora implementata)**: dichiarare esplicitamente il
+  limite in `SPIRIT.md` — una nota che elenca quali passaggi del processo hanno usato
+  tooling privato, chiarendo che decisioni e motivazioni restano preservate in git ma
+  il meccanismo di revisione stesso non è pubblicato. Opzioni più ampie considerate e
+  scartate per ora (pubblicare `claude-council` ripulito dall'infrastruttura personale
+  non pertinente, o estrarne solo la parte rilevante come artefatto separato): fuori
+  scope finché non emergono ulteriori problemi concreti.
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **Nessun controllo di raggiungibilità dei modelli tier prima di un run reale** —
