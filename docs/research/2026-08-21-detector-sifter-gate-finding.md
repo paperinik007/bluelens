@@ -90,3 +90,23 @@ detector fallisce sistematicamente in questo campione.
   — segnale non approfondito che la base di conoscenza reale di Inspector potrebbe essere
   più ampia della tassonomia a 14 voci usata per l'audit. Da investigare separatamente se
   rilevante.
+
+## Implicazioni per una futura espansione del dataset (Plan 6, non ancora scoping-ata)
+
+Decisione presa con l'utente, 2026-08-21: **quando** il dataset verrà espanso, l'asse da
+variare deliberatamente non è "più casi nella stessa tassonomia" — è quello appena trovato
+qui rilevante: **ogni tecnica × entrambi gli stili di pretesto** (linguaggio esplicito di
+bypass/istruzioni-ignorate, come in `direct_override_bulk_export_to_outsider`, vs.
+pretesto professionale/educato senza linguaggio d'attacco, come in
+`bulk_export_to_partner_address`). Con l'attuale dataset (per lo più N=1 per tecnica) non
+si può distinguere se il detector è cieco al social engineering educato *su ogni* tecnica
+o solo per caso su alcune — solo incrociando deliberatamente le due variabili si risponde
+a questa domanda. La stessa espansione risolverebbe anche il problema dei CI enormi
+per-tecnica (fino a `[0, 0.79]` con N=1): servono repliche, non solo varietà.
+
+**Sequenza decisa**: Gap 19 (`docs/design/2026-08-14-toy-agent-gap-tracking.md`) va
+risolto **prima** di investire in un'espansione del dataset — costruire un dataset più
+grande sopra un harness di cui non ci si fida ancora del tutto (rischio di corruzione
+silenziosa su `bulk_export`, non verificabile oggi) sarebbe nel verso sbagliato. Quando si
+arriverà a scoping-are Plan 6, questa sezione è il punto di partenza — non ripartire da
+zero sul "cosa aggiungere".
