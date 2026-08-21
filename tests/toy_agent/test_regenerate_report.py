@@ -191,3 +191,81 @@ def test_reclassified_technique_row_shows_na_not_a_fabricated_zero(tmp_path):
 
     assert "| T0099 | n/a | 0 | 0 | 1 |" in report
     assert "T0099 | 0.000" not in report
+
+
+def test_transcript_file_present_but_unparseable_is_counted_as_a_conversion_failure(tmp_path):
+    """Distinct from the missing-file case above: the raw transcript file
+    exists on disk but its content doesn't match the shape
+    transcript_from_dict() expects (missing the required session_id key) ->
+    transcript_from_dict() raises -> transcript_obj stays None AND
+    transcript_conversion_failure_count is incremented, mirroring
+    sequence.py::execute_sequence lines ~224-230 exactly (only a raised
+    parse exception counts, not a merely-absent file)."""
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "run_output"
+
+    _write_dataset(dataset_dir, [
+        _dataset_entry("c1_malformed", label="benign"),
+    ])
+    _write_verdicts_jsonl(run_output_dir, [
+        _verdict_dict("c1_malformed", label="benign"),
+    ])
+    raw_dir = run_output_dir / "raw"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    # Missing the required "session_id" key -> transcript_from_dict() raises KeyError.
+    (raw_dir / "c1_malformed.transcript.json").write_text(
+        json.dumps({"turns": [], "stop_reason": "completed"}), encoding="utf-8"
+    )
+
+    report = regenerate_report.regenerate(dataset_dir, run_output_dir)
+
+    assert "transcript_conversion_failures=1" in report
+
+
+def _case_with_tool_call_entry(case_id: str, label: str, tool_name: str, technique_target: str | None = None) -> dict:
+    """Dataset entry whose seed content is irrelevant here — what matters is
+    the OBSERVED transcript persisted separately in raw/, which is what
+    find_malicious_only_tools() inspects (case.transcript.turns[*].tool_call),
+    never the authored seed turn."""
+    return _dataset_entry(case_id, label=label, technique_target=technique_target)
+
+
+def test_anti_shortcut_gate_refuses_to_regenerate_when_a_tool_appears_only_in_malicious_cases(tmp_path):
+    """Mirrors run_batch.py::main()'s hard gate (lines ~176-190): the live
+    pipeline refuses to write report.md at all when a tool appears only in
+    malicious metric_cases' observed transcripts this run -- a detector
+    could otherwise exploit that tool->label correlation instead of
+    reasoning about content. _setup_notes() alone does NOT enforce this (it
+    only adds a passed note when the set is empty), so regenerate() must
+    recompute and enforce the gate itself."""
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "run_output"
+
+    _write_dataset(dataset_dir, [
+        _case_with_tool_call_entry("c1_malicious", "malicious", "bulk_export", technique_target="T0012"),
+        _case_with_tool_call_entry("c2_benign", "benign", "query_customer_db"),
+    ])
+    _write_verdicts_jsonl(run_output_dir, [
+        _verdict_dict("c1_malicious", label="malicious", technique_detected="T0012"),
+        _verdict_dict("c2_benign", label="benign"),
+    ])
+    # bulk_export appears only in the malicious case's observed transcript;
+    # query_customer_db only in the benign one's -- exactly the shortcut
+    # find_malicious_only_tools() is designed to catch.
+    _write_transcript(run_output_dir, "c1_malicious", turns=[
+        {"seq": 0, "role": "user", "content": "hi", "tool_call": None},
+        {
+            "seq": 1, "role": "tool", "content": "ok",
+            "tool_call": {"tool_name": "bulk_export", "arguments": {}, "result": "ok", "status": "ok"},
+        },
+    ])
+    _write_transcript(run_output_dir, "c2_benign", turns=[
+        {"seq": 0, "role": "user", "content": "hi", "tool_call": None},
+        {
+            "seq": 1, "role": "tool", "content": "ok",
+            "tool_call": {"tool_name": "query_customer_db", "arguments": {}, "result": "ok", "status": "ok"},
+        },
+    ])
+
+    with pytest.raises(ValueError, match="shortcut"):
+        regenerate_report.regenerate(dataset_dir, run_output_dir)

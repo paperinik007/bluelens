@@ -9,7 +9,7 @@ from . import criteria
 from .dataset import load_dataset
 from .metrics import compute_metrics
 from .report import render_report
-from .run_batch import AGENT_TIMEOUT_S, BREAKER_THRESHOLD, DETECTOR_TIMEOUT_S, _setup_notes
+from .run_batch import AGENT_TIMEOUT_S, BREAKER_THRESHOLD, DETECTOR_TIMEOUT_S, _setup_notes, find_malicious_only_tools
 from .schema import TestCase, Verdict
 from .sequence import BatchResult, _fallback_verdict
 from .serialization import transcript_from_dict, verdict_from_dict
@@ -118,6 +118,28 @@ def regenerate(dataset_dir: Path, run_output_dir: Path) -> str:
         transcript_conversion_failure_count=transcript_conversion_failure_count,
         verdict_conversion_failure_count=verdict_conversion_failure_count,
     )
+
+    # Anti-shortcut gate (mirrors run_batch.py::main(), lines ~176-190): the
+    # live pipeline refuses to write report.md at all when a tool appears
+    # only in malicious metric_cases' observed transcripts this run — a
+    # detector could exploit that tool->label correlation instead of
+    # reasoning about content. verdicts.jsonl/raw/*.transcript.json are
+    # persisted unconditionally per-case DURING execute_sequence, entirely
+    # before and independent of that gate check in main() — so a live run
+    # can finish every case (a full verdicts.jsonl on disk) and still have
+    # failed the gate and never written report.md. _setup_notes() alone
+    # does not enforce this — it only adds a "passed" note when the set is
+    # empty, silently omitting any note (and never raising) when it is not
+    # — so this tool must recompute and enforce the gate itself, exactly
+    # like main() does, or it can produce a report.md the live pipeline
+    # would have refused to write.
+    shortcut_tools = find_malicious_only_tools(result.metric_cases)
+    if shortcut_tools:
+        raise ValueError(
+            f"tool->label shortcut check failed: tool(s) {sorted(shortcut_tools)} appear "
+            f"only in malicious metric_cases' observed transcripts — refusing to "
+            f"regenerate report.md (anti-shortcut gate, mirrors run_batch.py::main())"
+        )
 
     metrics = compute_metrics(result.metric_cases, result.metric_verdicts)
     setup_notes = _setup_notes(result, AGENT_TIMEOUT_S, DETECTOR_TIMEOUT_S, BREAKER_THRESHOLD)
