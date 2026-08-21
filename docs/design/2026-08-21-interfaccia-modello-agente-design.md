@@ -503,12 +503,24 @@ hanno segnalato indipendentemente:
 - nessun gate di preflight che blocchi ogni run su un 503 momentaneo di un endpoint non
   autenticato.
 
-**Da verificare in implementazione, non assunto qui**: (a) che il campo `cost` sia
-accessibile attraverso la libreria `openai` usata dal client, che tipizza `usage` secondo
-lo schema OpenAI e potrebbe esporre i campi extra solo via `model_extra`; (b) l'unità — la
-documentazione parla di "credits", e la corrispondenza credito/USD va confermata prima di
-scrivere `cost_usd`. Se (a) non regge, il fallback è leggere il campo dalla risposta grezza,
-non reintrodurre una tabella.
+**Verifica (a) — il campo è leggibile dalla libreria: FATTA, regge.** Eseguito localmente,
+senza rete e senza credenziali: `openai.types.completion_usage.CompletionUsage` ha
+`model_config = {'extra': 'allow', ...}`, quindi i campi non previsti dallo schema OpenAI
+sopravvivono alla validazione. Su un `usage` contenente `cost` e `cost_details`, entrambi
+compaiono in `model_extra` e sono anche accessibili come attributi diretti
+(`usage.cost`). Nessun fallback necessario.
+
+**Verifica (b) — l'unità: APERTA, con un test già individuato.** La FAQ OpenRouter dichiara
+che *"the base currency is US dollars. All of the pricing on our site and API is denoted in
+dollars"*, ma non afferma in modo stretto l'equivalenza 1 credito = 1 USD. Il test che
+chiude la questione non richiede altra documentazione: alla prima chiamata reale, confrontare
+`usage.cost` con il valore che `compute_cost_usd` avrebbe calcolato dalla tabella odierna per
+`openai/gpt-4o-mini`. Se coincidono entro l'arrotondamento, l'unità è USD e la rimozione è
+sicura. **La tabella che stiamo rimuovendo fa quindi da oracolo anche qui**: va tenuta viva
+finché quel confronto non è stato eseguito una volta, poi rimossa.
+
+Vincolo pratico: quel confronto richiede una chiamata reale, quindi una chiave API valida —
+va eseguito **dopo** la rotazione delle chiavi in corso, non prima.
 
 ### 6.3 Disponibilità del modello dell'agente: probe live
 
@@ -705,8 +717,10 @@ non è ancora un report, e la decisione su di esso è in §4.
 3. **Soglia di invalidità del run** (§2): quanti casi esclusi su quanti impediscono la
    pubblicazione.
 4. **Cap di lunghezza** per la stringa raw restituita al modello (§5.2).
-5. **Accessibilità del campo `cost`** attraverso la libreria `openai`, e unità
-   credits/USD (§6.2).
+5. **Unità del campo `cost`** (credits/USD, §6.2): unica assunzione empirica ancora aperta.
+   Il test è già definito — confronto con la tabella-oracolo alla prima chiamata reale — ma
+   richiede una chiave valida, quindi va dopo la rotazione in corso. L'accessibilità del
+   campo attraverso la libreria `openai` è invece già verificata (§6.2).
 6. **Motivazione del default `gpt-4o-mini`**: resta aperta. La metrica pubblica "Tool Call
    Error Rate" di OpenRouter è il criterio naturale, ma è materia di una decisione
    sperimentale separata.
