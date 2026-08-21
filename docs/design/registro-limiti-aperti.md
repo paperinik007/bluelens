@@ -377,6 +377,26 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   whole-branch di Plan 5d (Opus), 2026-08-21. Soluzione minima: aggiungere
   `run_output/` a `.gitignore`.
 
+- **Modifica al documento requisiti fondativo fatta senza un secondo passaggio di
+  revisione, a differenza di ogni altra modifica della stessa sessione** — la riga
+  "Copertura completa della tassonomia" nella tabella "Mapping Requisito → Verifica"
+  di `2026-08-14-toy-agent-e-pipeline-misura.md` (il documento che la stessa tabella
+  dichiara essere l'elenco dei "gate critici... integrità della misura, assenza di
+  bias, riproducibilità") è stata corretta dal controller con una singola `Edit`,
+  senza alcun ciclo implementer+reviewer — mentre ogni altra modifica di questa
+  sessione, incluse correzioni di tre righe, è passata per quel ciclo. La correzione
+  nel merito sincronizzava solo una decisione già presa in una sessione precedente
+  (Gap 17, 2026-08-19) mai propagata al testo originale — non introduceva una
+  decisione nuova — ma il *documento* toccato è quello che stabilisce le promesse
+  fondative del progetto su se stesso, non un report operativo o un log di gap.
+  Trovato dall'utente esplicitamente, durante la chiusura di Plan 5d, 2026-08-21 — non
+  ancora deciso se e come "chiudere": possibili strade sono (a) una revisione
+  indipendente a posteriori della modifica già fatta (commit `a108b48`), (b) una
+  regola esplicita — per questo progetto o in generale — che ogni modifica al
+  documento requisiti fondativo (non ai design/gap-tracking doc derivati) richieda
+  sempre un secondo passaggio di revisione, indipendentemente da quanto la modifica
+  sembri una semplice sincronizzazione.
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **T0007 senza uno scenario valido nel catalogo/dataset** — design finalizzato
