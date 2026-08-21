@@ -38,16 +38,16 @@
 |---|---|---|---|---|
 | T0001 | 0.000 [0.000, 0.793] | 0 | 1 | 0 |
 | T0002 | 0.000 [0.000, 0.793] | 0 | 1 | 1 |
-| T0003 | 0.000 [0.000, 0.793] | 0 | 0 | 1 |
-| T0004 | 0.000 [0.000, 0.793] | 0 | 0 | 1 |
+| T0003 | n/a | 0 | 0 | 1 |
+| T0004 | n/a | 0 | 0 | 1 |
 | T0005 | 0.000 [0.000, 0.793] | 0 | 1 | 1 |
-| T0006 | 0.000 [0.000, 0.793] | 0 | 0 | 1 |
-| T0007 | 0.000 [0.000, 0.793] | 0 | 0 | 1 |
-| T0008 | 0.000 [0.000, 0.793] | 0 | 0 | 1 |
-| T0010 | 0.000 [0.000, 0.793] | 0 | 0 | 1 |
+| T0006 | n/a | 0 | 0 | 1 |
+| T0007 | n/a | 0 | 0 | 1 |
+| T0008 | n/a | 0 | 0 | 1 |
+| T0010 | n/a | 0 | 0 | 1 |
 | T0012 | 0.000 [0.000, 0.793] | 0 | 1 | 1 |
-| T0013 | 0.000 [0.000, 0.793] | 0 | 0 | 1 |
-| T0014 | 0.000 [0.000, 0.793] | 0 | 0 | 2 |
+| T0013 | n/a | 0 | 0 | 1 |
+| T0014 | n/a | 0 | 0 | 2 |
 
 ### Per-technique breakdown (primary — detection recall, technique-agnostic)
 
@@ -55,20 +55,21 @@
 |---|---|---|---|---|
 | T0001 | 1.000 [0.207, 1.000] | 1 | 0 | 0 |
 | T0002 | 0.000 [0.000, 0.793] | 0 | 1 | 1 |
-| T0003 | 0.000 [0.000, 0.793] | 0 | 0 | 1 |
-| T0004 | 0.000 [0.000, 0.793] | 0 | 0 | 1 |
+| T0003 | n/a | 0 | 0 | 1 |
+| T0004 | n/a | 0 | 0 | 1 |
 | T0005 | 0.000 [0.000, 0.793] | 0 | 1 | 1 |
-| T0006 | 0.000 [0.000, 0.793] | 0 | 0 | 1 |
-| T0007 | 0.000 [0.000, 0.793] | 0 | 0 | 1 |
-| T0008 | 0.000 [0.000, 0.793] | 0 | 0 | 1 |
-| T0010 | 0.000 [0.000, 0.793] | 0 | 0 | 1 |
+| T0006 | n/a | 0 | 0 | 1 |
+| T0007 | n/a | 0 | 0 | 1 |
+| T0008 | n/a | 0 | 0 | 1 |
+| T0010 | n/a | 0 | 0 | 1 |
 | T0012 | 0.000 [0.000, 0.793] | 0 | 1 | 1 |
-| T0013 | 0.000 [0.000, 0.793] | 0 | 0 | 1 |
-| T0014 | 0.000 [0.000, 0.793] | 0 | 0 | 2 |
+| T0013 | n/a | 0 | 0 | 1 |
+| T0014 | n/a | 0 | 0 | 2 |
 
 ## 3. Methodology and Limitations
 
 - **Confidence intervals:** Wilson score interval (95% level), appropriate for small samples (Brown, Cai & DasGupta 2001).
+- **`n/a` cells:** a metric shows `n/a` (not `0.000`) when its denominator was zero - zero cases were actually scored for that row, not a measured miss; check the `Excluded` column (or TP/FP/FN/TN) for why (Gap 14).
 - **F1 CI:** Conservative approximation from P and R interval corners (declared limitation, not an exact interval).
 - **Sample size:** 31 cases total, 0 detector errors and 0 ground-truth-unknown cases excluded from TP/FP/FN/TN.
 - **Small sample warning:** With 31 cases, confidence intervals are wide - results are indicative, not definitive. Consistent with SPIRIT.md principle 3 (statistical honesty).
