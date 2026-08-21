@@ -23,14 +23,14 @@ del container di controllo in `agent`/`detector` isolati, vedi "Struttura" sotto
 (`run_batch.py`, il batch orchestrator che fa girare l'intero dataset attraverso
 `agent`/`detector` e produce il report finale, vedi "Come eseguire" sotto) e Plan 5 (il
 dataset di audit — catalogo, 31 `TestCase`, gate di copertura/anti-scorciatoia, vedi
-`catalog/`/`dataset/` sopra) sono completi e testati. Primo report reale pubblicato in
+`catalog/`/`dataset/` sotto) sono completi e testati. Primo report reale pubblicato in
 `docs/reports/`.
 
 ## Struttura
 
 - `SPIRIT.md` — perché esiste questo repo, principi metodologici.
 - `docs/design/` — design doc per audit, con relativo gap-tracking doc companion.
-- `docs/reports/` — report di audit pubblicati (uno per tool testato), quando pronti.
+- `docs/reports/` — report di audit pubblicati (uno per tool testato).
 - `catalog/` — catalogo dinamico di scenari candidati per il dataset di audit (Plan 5):
   ogni voce dichiara tecnica target, fonte (inventata, incidente reale, o ispirata a un
   benchmark accademico) e — quando applicabile — citazione verificabile e adattamento.
