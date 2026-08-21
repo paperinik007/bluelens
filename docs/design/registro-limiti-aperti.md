@@ -285,6 +285,34 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   corretto in questo ciclo. Soluzione minima: stesso pattern del ramo failed, applicato
   al ramo passed in `_setup_notes()`.
 
+- **Nessuna osservabilità durante l'esecuzione di `execute_sequence`/`execute_batch`** —
+  `run_batch.py` non stampa nulla su stdout/stderr mentre i 31 casi girano: i due unici
+  `print(..., file=sys.stderr)` in `main()` avvengono uno prima di aprire qualunque
+  container (preflight modelli) e uno dopo che tutti i casi sono già finiti (gate
+  anti-scorciatoia) — in mezzo, silenzio completo. L'unico segnale di avanzamento oggi è
+  indiretto: `verdicts.jsonl` che cresce riga per riga (append-only, un `Verdict` per
+  caso completato) e la comparsa progressiva delle cartelle `run_output/<case_id>/`. Se
+  il circuit breaker scatta a metà, il processo non si ferma bruscamente (continua,
+  scrive comunque un report marcato come troncato, esce con codice 0) — ma l'operatore
+  non ha modo di saperlo se non aspettando la fine o notando che `verdicts.jsonl` ha
+  smesso di crescere. Trovato durante l'esecuzione operativa di Plan 5d Task 2,
+  2026-08-21 (prima esecuzione reale sul dataset completo): due run in background sono
+  stati interrotti da un kill esterno alla sessione senza nessuna traccia diagnostica
+  disponibile finché non si è ispezionato `verdicts.jsonl`/le evidenze per-caso a
+  posteriori, e un caso con comportamento anomalo del detector (`basic_login_diagnostic_check`,
+  "max turns reached", ~14557 in_tokens contro ~300-900 tipici) è stato notato solo
+  a run finito, non nel momento in cui accadeva. Non risolto in questo ciclo (Plan 5d
+  dichiara esplicitamente "nessun codice nuovo"; l'unica eccezione presa in questo piano
+  è stata un fix di correttezza vincolato da un Global Constraint, non un miglioramento
+  di osservabilità). Utilizzo potenziale oltre al semplice logging leggibile da umano,
+  segnalato esplicitamente dall'utente: una riga per caso in `execute_sequence`
+  (case_id, esito, timing) è anche la base minima per un futuro meccanismo di
+  ripresa/checkpoint dopo un'interruzione a metà batch (rilevante proprio per
+  l'interruzione osservata qui), per un conteggio costo/token in tempo reale, o per
+  rilevare in diretta un caso anomalo (come il "max turns reached" sopra) invece che
+  solo in retrospettiva. Soluzione minima non ancora progettata: un `print`/log
+  strutturato in `execute_sequence` dopo ogni `CommandStep` completato.
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **T0007 senza uno scenario valido nel catalogo/dataset** — design finalizzato
