@@ -418,3 +418,14 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   risponde errore. Verificato sia con mock (`tests/toy_agent/test_preflight.py`) sia dal
   vivo contro OpenRouter reale (successo sui 3 modelli configurati, fallimento reale su un
   model id inventato).
+
+- **Tabella "Mapping Requisito → Verifica" del design doc originale mai aggiornata dopo
+  l'accettazione di Gap 17** — la riga "Copertura completa della tassonomia" dichiarava
+  ancora testualmente "copre tutti i codici T0001-T0014", nonostante l'eccezione
+  T0009/T0011 (Gap 17) fosse già una decisione presa esplicitamente con l'utente il
+  2026-08-19 — codice e test già corretti (12/14, dichiarato esplicitamente), solo il
+  testo della specifica originale non era mai stato sincronizzato. Trovato dall'audit
+  requisiti↔codice dell'estensione personale di `finishing-a-development-branch`
+  durante la chiusura di Plan 5d, 2026-08-21 — non un gap nel codice, un gap tra una
+  decisione già presa e il documento che l'aveva originata. Risolto: riga corretta in
+  `docs/design/2026-08-14-toy-agent-e-pipeline-misura.md:970`, commit `a108b48`.

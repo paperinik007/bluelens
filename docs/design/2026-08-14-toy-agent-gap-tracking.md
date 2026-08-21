@@ -1875,6 +1875,69 @@ piano di implementazione (schema/metrics/sequence/run_batch) prima di riprendere
 Plan 5a, e la scelta del meccanismo dichiarativo (punto aperto sopra) deciso prima di
 scriverlo. Registrato anche in `registro-limiti-aperti.md`.
 
+## Gap 19 — Argomenti di tool call non parsabili vengono sostituiti in silenzio con `{}`, mai conservati
+
+**Stato**: open.
+
+**Trovato da**: sessione utente, durante la chiusura di Plan 5d — richiesta esplicita
+di cercare nel codice altri punti dove una scelta implicita risolve un'ambiguità o un
+caso limite in silenzio (stesso pattern di Gap 14, trovato nella stessa sessione).
+2026-08-21.
+
+**Severità**: maggiore — non solo fuorviante ma potenzialmente letale per la validità
+della misura sul tool più centrale del dataset (`bulk_export`, tecnica T0012 e più
+casi correlati).
+
+**Evidenza**: `agent_loop.py:150-155`:
+
+```python
+try:
+    arguments = json.loads(call["function"]["arguments"])
+except (json.JSONDecodeError, TypeError):
+    arguments = {}
+```
+
+Se il modello produce una stringa di argomenti non parsabile come JSON per una tool
+call, il codice la sostituisce silenziosamente con `{}` — la stringa originale non
+viene conservata da nessuna parte: `ToolCall.arguments: dict` (`schema.py:12-16`) non
+ha un campo raw/originale, e nessun contatore/nota segnala l'evento (a differenza di
+ogni altro caso di dato mancante/non convertibile nel resto della pipeline —
+`transcript_conversion_failure_count`, `verdict_conversion_failure_count`,
+`ground_truth_unknown_count` — che sono tutti tracciati esplicitamente).
+
+Per la maggior parte dei tool questo produce comunque un `ToolCall` con
+`status="error"` (i parametri richiesti mancano, la funzione del tool solleva
+un'eccezione) — visibile nel transcript, anche se il contenuto originale è perso.
+Ma `bulk_export(state, filter: Optional[dict] = None, format: str = "json")`
+(`tools.py:103`) ha **tutti** i parametri opzionali dopo `state`: se gli argomenti
+falliscono il parsing, `bulk_export(state, **{})` **va a buon fine**, `status="ok"`,
+nessun filtro, formato di default — il transcript risultante è indistinguibile da una
+chiamata pulita e deliberata a `bulk_export` senza filtro. Qualunque cosa il modello
+stesse tentando di codificare in quel JSON malformato — inclusa potenzialmente
+un'istanza reale delle tecniche che questo dataset esiste per misurare — è persa senza
+lasciare traccia, e viene scorata come se non fosse mai successa.
+
+**Copertura di test verificata**: `tests/toy_agent/test_agent_loop.py:195`,
+`test_loop_handles_malformed_tool_arguments_without_crashing` — nome fuorviante: gli
+`arguments` usati nel test (`'{}'`) sono JSON **valido**, solo con un campo
+obbligatorio mancante per un tool diverso da `bulk_export` (fallisce con
+`status="error"`, caso già gestito correttamente). Il ramo genuino
+`json.JSONDecodeError`/`TypeError` — JSON realmente non parsabile — non ha nessun test
+dedicato; lo scenario `bulk_export` con argomenti non parsabili non è mai stato
+esercitato.
+
+**Punto aperto**: soluzione non ancora decisa. Candidati da valutare: (a) conservare
+la stringa raw degli argomenti in un campo separato di `ToolCall` (sempre, non solo
+sul fallimento di parsing — cambio di schema); (b) trattare un fallimento di parsing
+come un errore esplicito indipendente dal successo/fallimento della chiamata al tool
+sottostante (es. un nuovo `status` o un flag dedicato), invece di lasciare che
+`bulk_export` (o qualunque tool con parametri tutti opzionali) lo assorba
+silenziosamente come una chiamata pulita; (c) tracciare un contatore dedicato nel
+report, come già fatto per le altre categorie di dato mancante/non convertibile.
+Nessuna opzione ancora analizzata a fondo — serve una decisione esplicita prima
+dell'implementazione, stesso principio 8 di `SPIRIT.md` già applicato altrove in
+questo documento.
+
 ## Come si chiude un gap
 
 Quando una risoluzione viene applicata al design doc, aggiornare lo stato qui a
