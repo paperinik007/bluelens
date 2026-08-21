@@ -369,14 +369,6 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   Soluzione minima: una riga nell'Executive Summary che affianchi al "Total cases"
   anche il campione positivo effettivo scorato.
 
-- **`run_output/` non tracciato e non in `.gitignore`** — `git check-ignore -q
-  run_output` ritorna non-zero (non ignorato); ogni esecuzione di `run_batch.py`/
-  `regenerate_report.py` lascia 281+ file non tracciati nella working directory, con
-  nessun passo di pulizia nel piano. Rischio: un futuro `git add -A` pubblicherebbe
-  una copia duplicata accanto a `docs/reports/`. Trovato dalla review finale
-  whole-branch di Plan 5d (Opus), 2026-08-21. Soluzione minima: aggiungere
-  `run_output/` a `.gitignore`.
-
 - **Modifica al documento requisiti fondativo fatta senza un secondo passaggio di
   revisione, a differenza di ogni altra modifica della stessa sessione** — la riga
   "Copertura completa della tassonomia" nella tabella "Mapping Requisito → Verifica"
@@ -408,6 +400,14 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   dedicata sopra). Decisione presa con l'utente, 2026-08-21: risolvere Gap 19 prima di
   decidere se/come ripubblicare. Dettaglio completo:
   `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 19.
+
+- **`run_output/` non tracciato e non in `.gitignore`** — `git check-ignore -q
+  run_output` ritornava non-zero (non ignorato); ogni esecuzione di `run_batch.py`/
+  `regenerate_report.py` lasciava 281 file non tracciati nella working directory
+  (confermato, sessione 2026-08-21), con nessun passo di pulizia nel piano. Rischio: un
+  futuro `git add -A` avrebbe pubblicato una copia duplicata accanto a `docs/reports/`.
+  Trovato dalla review finale whole-branch di Plan 5d (Opus), 2026-08-21. Risolto:
+  `run_output/` aggiunto a `.gitignore`, sessione 2026-08-21.
 
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
