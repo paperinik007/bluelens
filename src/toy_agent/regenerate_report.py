@@ -1,0 +1,142 @@
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+from . import criteria
+from .dataset import load_dataset
+from .metrics import compute_metrics
+from .report import render_report
+from .run_batch import AGENT_TIMEOUT_S, BREAKER_THRESHOLD, DETECTOR_TIMEOUT_S, _setup_notes
+from .schema import TestCase, Verdict
+from .sequence import BatchResult, _fallback_verdict
+from .serialization import transcript_from_dict, verdict_from_dict
+
+
+def regenerate(dataset_dir: Path, run_output_dir: Path) -> str:
+    """Rebuild report.md from a COMPLETED run's already-persisted output —
+    verdicts.jsonl + raw/*.transcript.json — without re-invoking any
+    container or making a new API call.
+
+    Replicates execute_sequence()'s per-case reconstruction (sequence.py,
+    ~lines 191-260) reading from disk instead of from a live
+    run_test_case_fn result, and run_batch.py's default sequence's
+    unconditional counts_toward_metric=True (every reconstructed case
+    counts toward the metric — metric_cases == cases, metric_verdicts ==
+    verdicts). Does not write any file itself; the caller decides where the
+    returned report string goes.
+    """
+    dataset = load_dataset(dataset_dir)
+    dataset_by_case_id = {c.case_id: c for c in dataset}
+
+    verdicts_path = run_output_dir / "verdicts.jsonl"
+    raw_dir = run_output_dir / "raw"
+
+    raw_lines = [
+        line for line in verdicts_path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
+    raw_verdict_dicts = [json.loads(line) for line in raw_lines]
+
+    # Precondition (this tool's substitute for run_batch.py's
+    # executed_count/total_count/breaker_tripped signal, which isn't
+    # available from disk): a truncated run_output/ (e.g. an interrupted
+    # batch) must never silently produce a report that claims full
+    # coverage.
+    if len(raw_verdict_dicts) != len(dataset):
+        raise ValueError(
+            f"verdicts.jsonl has {len(raw_verdict_dicts)} entries but the dataset at "
+            f"{dataset_dir} has {len(dataset)} cases — this tool only regenerates a "
+            f"report from a COMPLETE run; a truncated run_output/ (e.g. from an "
+            f"interrupted batch) must not silently produce a report claiming full "
+            f"coverage"
+        )
+
+    cases: list[TestCase] = []
+    verdicts: list[Verdict] = []
+    transcript_conversion_failure_count = 0
+    verdict_conversion_failure_count = 0
+
+    for raw_verdict_dict in raw_verdict_dicts:
+        case_id = raw_verdict_dict.get("case_id")
+        ground_truth = dataset_by_case_id.get(case_id)
+        if ground_truth is None:
+            raise ValueError(
+                f"verdicts.jsonl references case_id {case_id!r} which has no matching "
+                f"entry in dataset_dir {dataset_dir} — dataset/ and run_output/ are out "
+                f"of sync; refusing to regenerate a mismatched report"
+            )
+
+        try:
+            verdict_obj = verdict_from_dict(raw_verdict_dict)
+        except Exception as exc:
+            verdict_conversion_failure_count += 1
+            verdict_obj = _fallback_verdict(case_id, exc)
+
+        transcript_path = raw_dir / f"{case_id}.transcript.json"
+        transcript_obj = None
+        if transcript_path.exists():
+            raw_transcript_dict = json.loads(transcript_path.read_text(encoding="utf-8"))
+            try:
+                transcript_obj = transcript_from_dict(raw_transcript_dict)
+            except Exception:
+                transcript_obj = None
+                transcript_conversion_failure_count += 1
+        # else: no transcript file (analogous to result["transcript"] being
+        # None in the live pipeline) -> transcript_obj stays None; this is
+        # NOT a conversion failure, matching sequence.py's exact counting
+        # convention (only a parse exception increments the counter).
+
+        attack_succeeded = None
+        if ground_truth.label == "malicious" and transcript_obj is not None:
+            try:
+                attack_succeeded = criteria.evaluate(ground_truth.attack_success_criteria, transcript_obj)
+            except Exception:
+                attack_succeeded = None
+
+        case_obj = TestCase(
+            case_id=case_id,
+            label=ground_truth.label,
+            technique_target=ground_truth.technique_target,
+            rationale=ground_truth.rationale,
+            transcript=transcript_obj,
+            attack_success_criteria=ground_truth.attack_success_criteria,
+            attack_succeeded=attack_succeeded,
+        )
+        cases.append(case_obj)
+        verdicts.append(verdict_obj)
+
+    result = BatchResult(
+        cases=cases,
+        verdicts=verdicts,
+        metric_cases=cases,
+        metric_verdicts=verdicts,
+        total_count=len(cases),
+        executed_count=len(cases),
+        breaker_tripped=False,
+        transcript_conversion_failure_count=transcript_conversion_failure_count,
+        verdict_conversion_failure_count=verdict_conversion_failure_count,
+    )
+
+    metrics = compute_metrics(result.metric_cases, result.metric_verdicts)
+    setup_notes = _setup_notes(result, AGENT_TIMEOUT_S, DETECTOR_TIMEOUT_S, BREAKER_THRESHOLD)
+    return render_report(result.cases, result.verdicts, metrics, setup_notes=setup_notes)
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = sys.argv[1:] if argv is None else argv
+    parser = argparse.ArgumentParser(prog="python -m toy_agent.regenerate_report")
+    parser.add_argument("dataset_dir")
+    parser.add_argument("run_output_dir")
+    parsed = parser.parse_args(args)
+
+    dataset_dir = Path(parsed.dataset_dir)
+    run_output_dir = Path(parsed.run_output_dir)
+
+    report = regenerate(dataset_dir, run_output_dir)
+    (run_output_dir / "report.md").write_text(report, encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()
