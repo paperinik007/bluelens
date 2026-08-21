@@ -65,7 +65,14 @@ piano: Task 1 (nuovo tipo) + Task 2 (per_technique usa il nuovo tipo).
 
 ## Gap 14 — Denominatore zero produce un intervallo di confidenza fabbricato, non "non misurato"
 
-**Stato**: open (in correzione).
+**Stato**: risolto nel codice — commit `d387506`, revisionato (task reviewer,
+Approved, nessun finding Critical/Important). `MetricScores`/`TechniqueBreakdown`
+ora `Optional` su precision/recall/f1 e le rispettive CI; entrambe restituite
+`None` insieme quando il denominatore è zero, mai un numero fabbricato.
+2 finding Minor dalla review, non bloccanti, differiti:
+(a) nessun test end-to-end in `test_report.py` che verifichi "n/a" nel markdown
+renderizzato (la copertura unitaria su `_compute_scores`/`_compute_technique_breakdown`
+c'è, manca lo strato di rendering); (b) questa riga di stato, ora aggiornata.
 
 **Trovato da**: review finale whole-branch di Plan 5d (Opus), confermato
 indipendentemente dal controller sul codice (`metrics.py:135-139`,
