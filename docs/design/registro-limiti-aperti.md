@@ -397,6 +397,18 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   sempre un secondo passaggio di revisione, indipendentemente da quanto la modifica
   sembri una semplice sincronizzazione.
 
+- **Secondo run reale completo (`run_output/`, 2026-08-21, 31/31 casi) prodotto ma non
+  pubblicato** — deliberatamente parcheggiato in attesa della chiusura di Gap 19: non è
+  possibile verificare a posteriori se questo run contiene già una corruzione mascherata
+  da Gap 19 (parsing di argomenti fallito su `bulk_export` assorbito silenziosamente come
+  chiamata pulita), perché il codice che la renderebbe visibile non esiste ancora.
+  Confrontato con `docs/reports/agentic-threat-detection-2026-08-19/report.md`: solo
+  differenze numeriche coerenti con la normale variabilità di campionamento del modello
+  (non un errore). Non tracciato in git (`run_output/` non in `.gitignore`, vedi voce
+  dedicata sopra). Decisione presa con l'utente, 2026-08-21: risolvere Gap 19 prima di
+  decidere se/come ripubblicare. Dettaglio completo:
+  `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 19.
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **T0007 senza uno scenario valido nel catalogo/dataset** — design finalizzato

@@ -1938,6 +1938,35 @@ Nessuna opzione ancora analizzata a fondo — serve una decisione esplicita prim
 dell'implementazione, stesso principio 8 di `SPIRIT.md` già applicato altrove in
 questo documento.
 
+**Verifica esterna sulla documentazione OpenRouter** (sessione utente, 2026-08-21,
+`openrouter.ai/docs`): due fatti sourced che vincolano l'analisi sopra.
+
+- `max_tokens` non impostato (come oggi in `model_client.py:36-40`): OpenRouter non
+  applica un proprio default, omette il parametro a monte e lascia che sia il
+  **provider sottostante** ad applicare il suo default
+  (`openrouter.ai/docs/api-reference/parameters`) — il rischio di troncamento che
+  contribuisce a questo gap dipende quindi dal default interno del provider di
+  `gpt-4o-mini`, fuori dal controllo diretto di questo codice finché `max_tokens` non
+  viene impostato esplicitamente.
+- Esiste un plugin OpenRouter, **"Response Healing"**, che ripara automaticamente JSON
+  malformato (`openrouter.ai/docs/guides/features/plugins/response-healing.md") — **non
+  è una soluzione alternativa per questo gap**: è opt-in (non abilitato qui), si applica
+  solo alla risposta JSON di primo livello del messaggio, non agli argomenti delle tool
+  call, non funziona in streaming, e non può comunque riparare un troncamento causato da
+  `max_tokens`. Va scartato esplicitamente come alternativa, non lasciato come opzione
+  implicita non considerata.
+
+**Perché il run del 2026-08-21 (`run_output/`, 31/31 casi) non va pubblicato prima che
+questo gap sia chiuso**: il codice che permetterebbe di verificare se quel run specifico
+contiene già una corruzione mascherata da Gap 19 (un parsing fallito su `bulk_export`
+assorbito silenziosamente come chiamata pulita) non esiste ancora — non è possibile
+escludere la contaminazione a posteriori sui dati già raccolti, solo prevenirla in un
+run futuro dopo il fix. Pubblicare un secondo report sapendo questo, senza almeno
+dichiararlo come caveat esplicito in `_setup_notes()`, ripeterebbe consapevolmente il
+pattern già corretto per Gap 14 (limite noto non dichiarato in un report pubblicato).
+Decisione presa con l'utente, 2026-08-21: risolvere Gap 19 prima di decidere se/come
+ripubblicare, non pubblicare e correggere dopo.
+
 ## Gap 20 — Il modello dell'agente giocattolo è hardcoded, non configurabile e mai registrato nel report
 
 **Stato**: open.
@@ -2008,6 +2037,25 @@ editando il codice sorgente.
 **Nota strutturale vs. contingente** (principio 8, `SPIRIT.md`): la soluzione proposta è
 strutturale — si applica a qualunque modello futuro per l'agente o il detector, non
 dipende da quale modello è oggi in uso (`gpt-4o-mini` / `qwen3-*`).
+
+**Addendum — nessuna motivazione documentata per la scelta di `gpt-4o-mini`** (sessione
+utente, 2026-08-21): oltre a essere hardcoded e non registrato nel report, il valore
+stesso non ha mai avuto un criterio di selezione scritto da nessuna parte. Verificato in
+`docs/design/2026-08-14-toy-agent-e-pipeline-misura.md` (nessuna menzione) e nel piano di
+implementazione originale, `docs/superpowers/plans/2026-08-14-toy-agent-core.md:754`:
+`gpt-4o-mini` compare direttamente nella firma dell'interfaccia del Task 4
+(`OpenRouterModelClient(model: str = "openai/gpt-4o-mini", ...)`), senza alcuna
+discussione sul perché questo modello e non un altro. Verifica esterna sulla
+documentazione OpenRouter (`openrouter.ai/docs/guides/features/tool-calling.md`):
+OpenRouter espone una metrica pubblica per modello, il **Tool Call Error Rate** (tab
+Performance di ogni pagina modello), pensata esattamente per informare questo tipo di
+scelta — non risulta consultata in nessun design doc. Non è la stessa cosa della mancanza
+di configurabilità già trattata sopra: anche rendendo il modello configurabile (proposta
+1), resterebbe senza risposta la domanda "perché questo default". Non trattato come gap
+a sé — è la stessa causa di fondo (il modello dell'agente trattato come dettaglio
+implementativo invece che come parametro sperimentale) — ma la proposta 2 (provenienza
+nel report) dovrebbe rendere il default effettivamente usato sempre visibile, così che la
+domanda possa almeno essere posta a posteriori leggendo un report.
 
 ## Gap 21 — Errori transitori della chiamata al modello (rete, rate limit) sono indistinguibili da un esito comportamentale genuino e non sono esclusi dalle metriche
 
