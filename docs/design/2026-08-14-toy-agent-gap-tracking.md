@@ -1938,6 +1938,119 @@ Nessuna opzione ancora analizzata a fondo — serve una decisione esplicita prim
 dell'implementazione, stesso principio 8 di `SPIRIT.md` già applicato altrove in
 questo documento.
 
+## Gap 20 — Il modello dell'agente giocattolo è hardcoded, non configurabile e mai registrato nel report
+
+**Stato**: open.
+
+**Trovato da**: sessione utente, discussione su Gap 19 — l'utente ha notato che il `.env`
+del progetto configura `SIFTER_MODEL`/`INSPECTOR_MODEL`/`EMBED_MODEL` (i modelli del
+detector vendor sotto misura) ma non menziona in alcun modo il modello dell'agente
+giocattolo, e ha chiesto da dove uscisse `gpt-4o-mini`. 2026-08-21.
+
+**Severità**: maggiore — non un dettaglio implementativo ma un bug di costruzione
+sull'unica variabile che determina il comportamento del soggetto misurato.
+
+**Evidenza**: `model_client.py:15,26`:
+
+```python
+_DEFAULT_MODEL = "openai/gpt-4o-mini"
+
+class OpenRouterModelClient:
+    def __init__(self, model: str = _DEFAULT_MODEL, api_key: str | None = None) -> None:
+```
+
+`run_case.py:66` istanzia `OpenRouterModelClient()` senza passare alcun argomento —
+nessuna env var, nessun parametro CLI, nessun punto della catena di chiamata (`run_case.py`
+→ `run_batch.py` → `sequence.py`) permette di scegliere un modello diverso senza modificare
+il codice sorgente. Il progetto ha già, per il detector sotto misura, esattamente il pattern
+che manca qui: `SIFTER_MODEL`/`INSPECTOR_MODEL`/`EMBED_MODEL` letti da env var
+(`vendor_proxy.py:39-41`, `preflight.py:14-16`), con fallback esplicito a un default nel
+codice se la env var è vuota (commento nel `.env`: "Lasciare vuoto per usare il default nel
+codice"). Per l'agente questo stesso pattern non esiste — l'asimmetria non è un caso di
+design (misuratore configurabile, misurato fisso è una scelta legittima in astratto), è che
+**nessuno dei due lati lo dichiara**: chi legge il `.env` per capire l'intera configurazione
+dell'esperimento non ha modo di sapere che il modello dell'agente esiste come variabile e
+è fissato altrove.
+
+Conseguenza più grave: **niente, in nessun punto della pipeline, registra quale modello ha
+prodotto il comportamento dell'agente per un dato run.** `_setup_notes()`
+(`run_batch.py:76-99`), la funzione che scrive nel report ogni dettaglio rilevante per
+l'onestà statistica del risultato (timeout, soglia del circuit breaker, copertura tassonomia,
+casi esclusi, casi riclassificati, esiti sconosciuti), non menziona mai il modello
+dell'agente né i modelli effettivi risolti per il detector (`SIFTER_MODEL`/`INSPECTOR_MODEL`
+com'erano impostati per quel run specifico). Il report pubblicato in
+`docs/reports/agentic-threat-detection-2026-08-19/` non dice da nessuna parte quale modello
+ha generato i transcript scorati. Se in futuro `_DEFAULT_MODEL` cambia (aggiornamento di
+versione, cambio di provider), un report più vecchio e uno più nuovo mostrerebbero numeri
+diversi senza che nulla nel report stesso segnali che la causa è un modello agente diverso —
+esattamente il tipo di variabile silenziosa che il resto del documento (Gap 14, Gap 18)
+tratta come inaccettabile quando riguarda il calcolo delle metriche.
+
+**Proposta**: due correzioni distinte, entrambe necessarie, non alternative:
+
+1. **Configurabilità** — introdurre una env var (es. `AGENT_MODEL`) letta dove
+   `OpenRouterModelClient` viene istanziato (`run_case.py:66`), con fallback a
+   `_DEFAULT_MODEL` se assente, ricalcando esattamente il pattern già in uso per
+   `SIFTER_MODEL`/`INSPECTOR_MODEL`/`EMBED_MODEL`. Struttura, non novità: nessun
+   pattern nuovo da inventare, solo applicarlo dove manca.
+2. **Provenienza nel report** — `_setup_notes()` deve includere sempre il modello
+   dell'agente e i modelli risolti del detector effettivamente usati per quel run
+   (non solo se diversi dal default — sempre, per lo stesso motivo per cui gli altri
+   campi di `_setup_notes()` sono incondizionati o quasi). Senza questo, anche dopo aver
+   reso il modello configurabile, un report resterebbe silenzioso su quale configurazione
+   lo ha prodotto.
+
+Le due si implementano insieme a basso costo aggiuntivo — (1) rende la scelta esplicita
+al momento del run, (2) la rende leggibile a posteriori nel report; fare solo (1) lascia il
+report muto, fare solo (2) documenta un valore che resta comunque modificabile solo
+editando il codice sorgente.
+
+**Nota strutturale vs. contingente** (principio 8, `SPIRIT.md`): la soluzione proposta è
+strutturale — si applica a qualunque modello futuro per l'agente o il detector, non
+dipende da quale modello è oggi in uso (`gpt-4o-mini` / `qwen3-*`).
+
+## Gap 21 — Errori transitori della chiamata al modello (rete, rate limit) sono indistinguibili da un esito comportamentale genuino e non sono esclusi dalle metriche
+
+**Stato**: open.
+
+**Trovato da**: sessione utente, discussione su Gap 19/Gap 20 — l'utente ha chiesto se
+l'interfaccia con OpenRouter fosse "particolarmente debole" in senso più ampio. Verifica nel
+codice ha confermato un terzo difetto distinto, non coperto da Gap 19 o Gap 20. 2026-08-21.
+
+**Severità**: maggiore — stessa famiglia di Gap 14/Gap 18 (una variabile silenziosa che
+altera il calcolo delle metriche senza segnalarlo).
+
+**Evidenza**: `model_client.py:36-40` non imposta né `timeout` né alcun retry/backoff sulla
+chiamata `chat.completions.create(...)`. `agent_loop.py:128-135` cattura **qualunque**
+eccezione da quella chiamata con un unico `except Exception`, senza distinguere un errore
+transitorio (timeout di rete, rate limit temporaneo di OpenRouter) da uno definitivo
+(chiave non valida, modello inesistente): entrambi terminano il loop con
+`stop_reason = "model_error"` all'iterazione corrente, qualunque cosa fosse successo prima.
+
+`stop_reason` viene registrato (`schema.py:43`, `run_case.py:27`) ma **non è mai letto** da
+`metrics.py` o `run_batch.py` — a differenza di `counts_toward_metric`, `is_reclassified`,
+`is_ground_truth_unknown`, tutti gestiti esplicitamente per l'onestà statistica del
+risultato (Gap 18). Un caso il cui turno è stato interrotto da un singhiozzo di rete prima
+che l'agente arrivasse a tentare la tecnica sotto test viene scorato esattamente come un
+caso in cui l'agente ha genuinamente scelto di non tentarla — il transcript parziale
+risultante da un fallimento infrastrutturale è indistinguibile, nel dato che arriva al
+detector e poi alle metriche, da un transcript comportamentale completo.
+
+**Proposta**: distinguere esplicitamente errori transitori (network/timeout/rate limit —
+tipicamente riconoscibili dalle eccezioni della libreria `openai`, es.
+`APIConnectionError`/`RateLimitError`/`APITimeoutError`) da errori definitivi. Per i
+transitori: un retry con backoff limitato (pochi tentativi) prima di arrendersi — riduce
+la frequenza del problema, non lo elimina. Per il caso in cui il retry si esaurisce
+comunque: il caso non deve essere scorato come se il transcript fosse un esito
+comportamentale completo — va escluso dal calcolo di precision/recall con lo stesso
+meccanismo già esistente per altre esclusioni (`counts_toward_metric=false`, verbale
+comunque persistito su disco per revisione manuale), non silenziosamente incluso.
+
+**Nota strutturale vs. contingente** (principio 8, `SPIRIT.md`): la distinzione
+transitorio/definitivo e l'esclusione dalle metriche sono strutturali — si applicano a
+qualunque provider e modello futuro, non dipendono dalle caratteristiche odierne di
+OpenRouter o di `gpt-4o-mini`.
+
 ## Come si chiude un gap
 
 Quando una risoluzione viene applicata al design doc, aggiornare lo stato qui a
