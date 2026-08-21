@@ -313,6 +313,70 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   solo in retrospettiva. Soluzione minima non ancora progettata: un `print`/log
   strutturato in `execute_sequence` dopo ogni `CommandStep` completato.
 
+- **`PYTHONPATH` mai documentato — stesso trabocchetto che ha causato due run sprecati
+  in Plan 5d** — `python -m toy_agent.run_batch` (il comando che README, "Come
+  eseguire", dice testualmente di lanciare) risolve silenziosamente il pacchetto
+  `toy_agent` dall'installazione editable globale della macchina, che punta al
+  checkout della repo principale, non alla working directory da cui si lancia il
+  comando — chiunque lo lanci da una worktree diversa dalla repo principale esegue in
+  silenzio il codice sbagliato. Trovato durante l'esecuzione operativa di Plan 5d
+  (`python -c "import toy_agent.run_batch as m; print(m.__file__)"` risolveva al
+  checkout principale anche da dentro la worktree), costato due run completi del
+  batch (i primi due dopo il fix Gap 17) prima di essere diagnosticato. Non ancora
+  documentato in README — il fix (`PYTHONPATH=<checkout>/src`) è stato usato "a mano"
+  in questa sessione ma mai scritto per un operatore futuro. Trovato dalla review
+  finale whole-branch di Plan 5d (Opus), 2026-08-21. Soluzione minima: una riga in
+  README, "Come eseguire", che documenti `PYTHONPATH` quando si esegue da una
+  worktree diversa dalla repo principale — o, alternativa più strutturale, abbandonare
+  l'installazione editable globale a favore di un virtualenv per-worktree.
+
+- **"12/14"/T0009/T0011 hardcoded in `_setup_notes()` senza guardia anti-drift** — la
+  frase di copertura (Gap 17) aggiunta a `run_batch.py::_setup_notes()` è un literal
+  indipendente dall'unica altra fonte della stessa informazione
+  (`tests/test_dataset_coverage.py::DECLARED_UNCOVERED_TECHNIQUES`) — se Gap 17 verrà
+  mai risolto (anche parzialmente, es. solo T0009), il gate di copertura si
+  aggiornerebbe correttamente ma il report continuerebbe a dichiarare "12/14... T0009
+  and T0011" per sempre, senza che nulla lo segnali. Trovato dalla review finale
+  whole-branch di Plan 5d (Opus), 2026-08-21 — non corretto in questo ciclo (deciso
+  esplicitamente con l'utente: solo il finding Critical, Gap 14, in questo giro).
+  Soluzione minima proposta dal reviewer: un test di coerenza in
+  `test_dataset_coverage.py` che calcoli `len(tutte le tecniche) -
+  len(DECLARED_UNCOVERED_TECHNIQUES)` e verifichi che `_setup_notes()` lo dichiari
+  correttamente — non serve leggere `catalog/` da `run_batch.py` (violerebbe il
+  confine architetturale dichiarato in README), il test può vivere accanto al gate
+  già esistente.
+
+- **La cartella del report pubblicato è datata `2026-08-19`, l'esecuzione reale è del
+  2026-08-21** — il piano nominava la cartella prima di eseguire (una data-non-ancora-
+  nota scritta come letterale nel testo del piano), e il report dichiara
+  esplicitamente "fully deterministic (no timestamp)" — quindi il nome della cartella
+  è l'unica data attaccata all'artefatto pubblicato, ed è sbagliata di due giorni.
+  Trovato dalla review finale whole-branch di Plan 5d (Opus), 2026-08-21, che ha
+  esplicitamente dissentito dalla scelta del controller di seguire il piano alla
+  lettera invece di correggere la data. Non corretto in questo ciclo (stessa
+  decisione: solo il Critical). Soluzione minima: rinominare la cartella in
+  `2026-08-21`, o aggiungere una riga esplicita di data di esecuzione alle Setup
+  notes del report (la seconda opzione sopravvive anche a un'eventuale futura
+  rinominazione).
+
+- **Executive Summary del report mostra "Total cases: 31" mentre il campione positivo
+  effettivo è 4** — dopo le riclassificazioni Gap 18 (12 casi malevoli riclassificati
+  come benigni), il numero di casi che contribuiscono realmente a TP/FN è 4, non 31 —
+  ma questo si vede solo leggendo le Setup notes in fondo alla sezione Methodology,
+  non nell'Executive Summary dove un lettore vede per primo "Total cases: 31" seguito
+  dai numeri P/R/F1. Trovato dalla review finale whole-branch di Plan 5d (Opus),
+  2026-08-21 — non corretto in questo ciclo (stessa decisione: solo il Critical).
+  Soluzione minima: una riga nell'Executive Summary che affianchi al "Total cases"
+  anche il campione positivo effettivo scorato.
+
+- **`run_output/` non tracciato e non in `.gitignore`** — `git check-ignore -q
+  run_output` ritorna non-zero (non ignorato); ogni esecuzione di `run_batch.py`/
+  `regenerate_report.py` lascia 281+ file non tracciati nella working directory, con
+  nessun passo di pulizia nel piano. Rischio: un futuro `git add -A` pubblicherebbe
+  una copia duplicata accanto a `docs/reports/`. Trovato dalla review finale
+  whole-branch di Plan 5d (Opus), 2026-08-21. Soluzione minima: aggiungere
+  `run_output/` a `.gitignore`.
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **T0007 senza uno scenario valido nel catalogo/dataset** — design finalizzato
