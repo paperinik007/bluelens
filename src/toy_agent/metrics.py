@@ -31,12 +31,12 @@ class MetricScores:
     fp: int
     fn: int
     tn: int
-    precision: float
-    recall: float
-    f1: float
-    precision_ci: ConfidenceInterval
-    recall_ci: ConfidenceInterval
-    f1_ci: ConfidenceInterval
+    precision: Optional[float]
+    recall: Optional[float]
+    f1: Optional[float]
+    precision_ci: Optional[ConfidenceInterval]
+    recall_ci: Optional[ConfidenceInterval]
+    f1_ci: Optional[ConfidenceInterval]
 
 
 @dataclass(frozen=True)
@@ -49,8 +49,8 @@ class TechniqueBreakdown:
     tp: int
     fn: int
     excluded: int
-    recall: float
-    recall_ci: ConfidenceInterval
+    recall: Optional[float]
+    recall_ci: Optional[ConfidenceInterval]
 
 
 @dataclass(frozen=True)
@@ -117,13 +117,23 @@ def _f1_ci_from_pr_ci(p_ci: ConfidenceInterval, r_ci: ConfidenceInterval) -> Con
 
 
 def _compute_scores(tp: int, fp: int, fn: int, tn: int, level: float = 0.95) -> MetricScores:
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+    # Gap 14: when a denominator is zero, no case was actually scored for
+    # that metric — the point estimate is undefined, not a measured 0.0.
+    # Point estimate and CI become None together (never a fabricated number,
+    # never one without the other), distinct from the "both defined, sum to
+    # zero" case below where 0.0 is a genuine measurement.
+    precision = tp / (tp + fp) if (tp + fp) > 0 else None
+    recall = tp / (tp + fn) if (tp + fn) > 0 else None
 
-    precision_ci = wilson_ci(tp, tp + fp, level) if (tp + fp) > 0 else wilson_ci(0, 1, level)
-    recall_ci = wilson_ci(tp, tp + fn, level) if (tp + fn) > 0 else wilson_ci(0, 1, level)
-    f1_ci = _f1_ci_from_pr_ci(precision_ci, recall_ci)
+    precision_ci = wilson_ci(tp, tp + fp, level) if (tp + fp) > 0 else None
+    recall_ci = wilson_ci(tp, tp + fn, level) if (tp + fn) > 0 else None
+
+    if precision is None or recall is None:
+        f1 = None
+        f1_ci = None
+    else:
+        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+        f1_ci = _f1_ci_from_pr_ci(precision_ci, recall_ci)
 
     return MetricScores(
         tp=tp, fp=fp, fn=fn, tn=tn,
@@ -133,9 +143,11 @@ def _compute_scores(tp: int, fp: int, fn: int, tn: int, level: float = 0.95) -> 
 
 
 def _compute_technique_breakdown(tp: int, fn: int, excluded: int, level: float = 0.95) -> TechniqueBreakdown:
-    """Per-technique scores — only recall is meaningful (Gap 9)."""
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-    recall_ci = wilson_ci(tp, tp + fn, level) if (tp + fn) > 0 else wilson_ci(0, 1, level)
+    """Per-technique scores — only recall is meaningful (Gap 9). Gap 14: a
+    zero denominator (no case scored for this technique) yields recall=None,
+    recall_ci=None — never a fabricated wilson_ci(0, 1, level)."""
+    recall = tp / (tp + fn) if (tp + fn) > 0 else None
+    recall_ci = wilson_ci(tp, tp + fn, level) if (tp + fn) > 0 else None
     return TechniqueBreakdown(tp=tp, fn=fn, excluded=excluded, recall=recall, recall_ci=recall_ci)
 
 

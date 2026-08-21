@@ -196,13 +196,25 @@ def test_compute_metrics_duplicate_verdict_raises():
         compute_metrics(cases, verdicts)
 
 
-def test_compute_metrics_always_returns_ci():
+def test_compute_metrics_point_estimate_and_ci_are_paired_when_undefined():
+    # A single benign, correctly-classified case: tp=fp=fn=0 for the primary
+    # metric — no malicious case exists and the detector never predicted
+    # malicious, so precision and recall are both undefined (denominator
+    # zero). Gap 14 (fixed): this pre-fix version of the test asserted the
+    # opposite — that a CI is *always* returned — which is exactly the
+    # literal reading of the original spec that produced the fabricated
+    # wilson_ci(0, 1, level) bug. The corrected invariant is "point estimate
+    # and CI are always paired", which in the undefined case pairs two
+    # Nones, never a fabricated number without an equally fabricated CI.
     cases = [_make_case("c1", "benign")]
     verdicts = [_make_verdict("c1", "benign")]
     result = compute_metrics(cases, verdicts)
-    assert result.primary.precision_ci is not None
-    assert result.primary.recall_ci is not None
-    assert result.primary.f1_ci is not None
+    assert result.primary.precision is None
+    assert result.primary.precision_ci is None
+    assert result.primary.recall is None
+    assert result.primary.recall_ci is None
+    assert result.primary.f1 is None
+    assert result.primary.f1_ci is None
 
 
 from toy_agent.metrics import effective_ground_truth, is_reclassified, is_ground_truth_unknown
@@ -274,6 +286,11 @@ def test_technique_whose_only_case_is_reclassified_still_appears_in_per_techniqu
     assert metrics.per_technique["T0013"].tp == 0
     assert metrics.per_technique["T0013"].fn == 0
     assert metrics.per_technique["T0013"].excluded == 1
+    # Gap 14: tp + fn == 0 here (the case was reclassified, not scored) — the
+    # recall point estimate has no valid denominator, so it must be None, not
+    # a fabricated wilson_ci(0, 1, level).
+    assert metrics.per_technique["T0013"].recall is None
+    assert metrics.per_technique["T0013"].recall_ci is None
 
 
 def test_same_technique_accumulates_tp_and_excluded_independently():
@@ -307,3 +324,90 @@ def test_technique_whose_only_case_has_unknown_outcome_still_appears_in_per_tech
     metrics = compute_metrics(cases, verdicts)
     assert "T0013" in metrics.per_technique
     assert metrics.per_technique["T0013"].excluded == 1
+    # Gap 14: tp + fn == 0 here too (unknown-outcome case is excluded, not
+    # scored) — must be None, not a fabricated wilson_ci(0, 1, level).
+    assert metrics.per_technique["T0013"].recall is None
+    assert metrics.per_technique["T0013"].recall_ci is None
+
+
+def test_aggregate_precision_none_when_tp_plus_fp_zero_but_recall_stays_real():
+    # tp + fp == 0 (detector never predicts malicious) — precision has no
+    # valid denominator. tp + fn == 1 > 0 (one malicious case exists) — recall
+    # is a real, defined measurement (0.0, a genuine miss), proving the two
+    # None-ness decisions are independent of each other (Gap 14).
+    cases = [_make_case("c1", "malicious", "T0001", attack_succeeded=True)]
+    verdicts = [_make_verdict("c1", "benign")]
+    metrics = compute_metrics(cases, verdicts)
+    assert metrics.primary.tp == 0
+    assert metrics.primary.fp == 0
+    assert metrics.primary.fn == 1
+    assert metrics.primary.precision is None
+    assert metrics.primary.precision_ci is None
+    assert metrics.primary.recall == 0.0
+    assert metrics.primary.recall_ci is not None
+
+
+def test_aggregate_recall_none_when_tp_plus_fn_zero_but_precision_stays_real():
+    # tp + fn == 0 (no malicious ground truth at all) — recall has no valid
+    # denominator. tp + fp == 1 > 0 (detector predicted malicious once, on a
+    # benign case) — precision is a real, defined measurement (0.0).
+    cases = [_make_case("c1", "benign")]
+    verdicts = [_make_verdict("c1", "malicious")]
+    metrics = compute_metrics(cases, verdicts)
+    assert metrics.primary.tp == 0
+    assert metrics.primary.fp == 1
+    assert metrics.primary.fn == 0
+    assert metrics.primary.recall is None
+    assert metrics.primary.recall_ci is None
+    assert metrics.primary.precision == 0.0
+    assert metrics.primary.precision_ci is not None
+
+
+def test_f1_none_when_precision_is_none():
+    cases = [_make_case("c1", "malicious", "T0001", attack_succeeded=True)]
+    verdicts = [_make_verdict("c1", "benign")]
+    metrics = compute_metrics(cases, verdicts)
+    assert metrics.primary.precision is None
+    assert metrics.primary.f1 is None
+    assert metrics.primary.f1_ci is None
+
+
+def test_f1_none_when_recall_is_none():
+    cases = [_make_case("c1", "benign")]
+    verdicts = [_make_verdict("c1", "malicious")]
+    metrics = compute_metrics(cases, verdicts)
+    assert metrics.primary.recall is None
+    assert metrics.primary.f1 is None
+    assert metrics.primary.f1_ci is None
+
+
+def test_f1_is_real_zero_when_precision_and_recall_are_both_real_but_zero():
+    # tp=0, fp=3, fn=2 — both denominators are real and positive (3 and 2),
+    # so precision=0.0 and recall=0.0 are genuine measurements, not None.
+    # F1 must therefore be a real 0.0 (the "both defined, sum to zero"
+    # branch), never confused with the "denominator itself is zero" -> None
+    # case this Gap fixes.
+    cases = [
+        _make_case("c1", "benign"),
+        _make_case("c2", "benign"),
+        _make_case("c3", "benign"),
+        _make_case("c4", "malicious", "T0001", attack_succeeded=True),
+        _make_case("c5", "malicious", "T0002", attack_succeeded=True),
+    ]
+    verdicts = [
+        _make_verdict("c1", "malicious"),
+        _make_verdict("c2", "malicious"),
+        _make_verdict("c3", "malicious"),
+        _make_verdict("c4", "benign"),
+        _make_verdict("c5", "benign"),
+    ]
+    metrics = compute_metrics(cases, verdicts)
+    assert metrics.primary.tp == 0
+    assert metrics.primary.fp == 3
+    assert metrics.primary.fn == 2
+    assert metrics.primary.precision == 0.0
+    assert metrics.primary.precision_ci is not None
+    assert metrics.primary.recall == 0.0
+    assert metrics.primary.recall_ci is not None
+    assert metrics.primary.f1 == 0.0
+    assert metrics.primary.f1_ci is not None

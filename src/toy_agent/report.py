@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Optional
+
 from .metrics import MetricsResult, MetricScores, ConfidenceInterval, TechniqueBreakdown, effective_ground_truth, is_reclassified
 from .schema import TestCase, Verdict, Transcript
 
@@ -8,18 +10,27 @@ def _fmt_ci(ci: ConfidenceInterval) -> str:
     return f"[{ci.lower:.3f}, {ci.upper:.3f}]"
 
 
+def _fmt_point_and_ci(point: Optional[float], ci: Optional[ConfidenceInterval]) -> str:
+    """Format a point estimate with its CI, or 'n/a' when the denominator was
+    zero (Gap 14) — point and CI are always None together, never a
+    fabricated number, so either both are present or neither is."""
+    if point is None or ci is None:
+        return "n/a"
+    return f"{point:.3f} {_fmt_ci(ci)}"
+
+
 def _fmt_scores_table_row(name: str, s: MetricScores) -> str:
     return (
-        f"| {name} | {s.precision:.3f} {_fmt_ci(s.precision_ci)} | "
-        f"{s.recall:.3f} {_fmt_ci(s.recall_ci)} | "
-        f"{s.f1:.3f} {_fmt_ci(s.f1_ci)} | "
+        f"| {name} | {_fmt_point_and_ci(s.precision, s.precision_ci)} | "
+        f"{_fmt_point_and_ci(s.recall, s.recall_ci)} | "
+        f"{_fmt_point_and_ci(s.f1, s.f1_ci)} | "
         f"{s.tp} | {s.fp} | {s.fn} | {s.tn} |"
     )
 
 
 def _fmt_technique_row(name: str, tb: TechniqueBreakdown) -> str:
     return (
-        f"| {name} | {tb.recall:.3f} {_fmt_ci(tb.recall_ci)} | "
+        f"| {name} | {_fmt_point_and_ci(tb.recall, tb.recall_ci)} | "
         f"{tb.tp} | {tb.fn} | {tb.excluded} |"
     )
 
@@ -92,15 +103,15 @@ def render_report(
     lines.append("")
     lines.append("### Primary metric (label-only)")
     lines.append("")
-    lines.append(f"- **Precision:** {metrics.primary.precision:.3f} {_fmt_ci(metrics.primary.precision_ci)}")
-    lines.append(f"- **Recall:** {metrics.primary.recall:.3f} {_fmt_ci(metrics.primary.recall_ci)}")
-    lines.append(f"- **F1:** {metrics.primary.f1:.3f} {_fmt_ci(metrics.primary.f1_ci)}")
+    lines.append(f"- **Precision:** {_fmt_point_and_ci(metrics.primary.precision, metrics.primary.precision_ci)}")
+    lines.append(f"- **Recall:** {_fmt_point_and_ci(metrics.primary.recall, metrics.primary.recall_ci)}")
+    lines.append(f"- **F1:** {_fmt_point_and_ci(metrics.primary.f1, metrics.primary.f1_ci)}")
     lines.append("")
     lines.append("### Strict metric (technique attribution)")
     lines.append("")
-    lines.append(f"- **Precision:** {metrics.strict.precision:.3f} {_fmt_ci(metrics.strict.precision_ci)}")
-    lines.append(f"- **Recall:** {metrics.strict.recall:.3f} {_fmt_ci(metrics.strict.recall_ci)}")
-    lines.append(f"- **F1:** {metrics.strict.f1:.3f} {_fmt_ci(metrics.strict.f1_ci)}")
+    lines.append(f"- **Precision:** {_fmt_point_and_ci(metrics.strict.precision, metrics.strict.precision_ci)}")
+    lines.append(f"- **Recall:** {_fmt_point_and_ci(metrics.strict.recall, metrics.strict.recall_ci)}")
+    lines.append(f"- **F1:** {_fmt_point_and_ci(metrics.strict.f1, metrics.strict.f1_ci)}")
     lines.append("")
     lines.append("### Vendor-declared numbers (for comparison)")
     lines.append("")
@@ -138,6 +149,7 @@ def render_report(
     lines.append("## 3. Methodology and Limitations")
     lines.append("")
     lines.append("- **Confidence intervals:** Wilson score interval (95% level), appropriate for small samples (Brown, Cai & DasGupta 2001).")
+    lines.append("- **`n/a` cells:** a metric shows `n/a` (not `0.000`) when its denominator was zero - zero cases were actually scored for that row, not a measured miss; check the `Excluded` column (or TP/FP/FN/TN) for why (Gap 14).")
     lines.append("- **F1 CI:** Conservative approximation from P and R interval corners (declared limitation, not an exact interval).")
     lines.append(f"- **Sample size:** {metrics.total_count} cases total, {metrics.error_count} detector errors and {metrics.ground_truth_unknown_count} ground-truth-unknown cases excluded from TP/FP/FN/TN.")
     lines.append(f"- **Small sample warning:** With {metrics.total_count} cases, confidence intervals are wide - results are indicative, not definitive. Consistent with SPIRIT.md principle 3 (statistical honesty).")
