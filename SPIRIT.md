@@ -43,9 +43,20 @@ misure.
 6. **Pubblicazione e disclosure responsabile.** Tutto ciò che serve a verificare in modo
    indipendente un risultato viene pubblicato: metodologia, dataset, risultati grezzi —
    non solo le conclusioni (vedi principio 4). Questo include, esplicitamente, il codice
-   del **misuratore** (schema dati, adapter, modulo metriche, generatore del report):
-   è lo strumento che giudica il tool sotto test, quindi è il pezzo con l'obbligo di
-   trasparenza più stringente di tutti — un misuratore che dichiara di essere imparziale
+   del **misuratore**, definito **per criterio e non per elenco**: ogni componente che
+   produce, giudica o verifica il numero pubblicato. Schema dati, adapter, modulo metriche
+   e generatore del report ne sono esempi, non il perimetro — e con loro l'orchestrazione,
+   l'esecuzione delle sequenze, la raccolta delle prove, la registrazione della provenienza
+   e gli strumenti con cui un terzo verifica noi. Un elenco di moduli sarebbe una
+   definizione contingente (principio 8): scade al componente successivo, ed esenta per
+   omissione proprio ciò che è stato aggiunto per ultimo. Non c'è ragione perché un
+   componente valga più di un altro — **sono una catena**, e la verificabilità del
+   risultato vale quanto quella dell'anello meno trasparente. Resta fuori ciò che produce
+   il *materiale* invece del numero: l'agente giocattolo è parte del banco di prova, non
+   dello strumento che giudica (vedi "Confine misuratore/misurato" nel design doc), ed è
+   comunque già pubblicato per obbligo proprio dal principio 4.
+   Il misuratore è lo strumento che giudica il tool sotto test, quindi è il pezzo con
+   l'obbligo di trasparenza più stringente di tutti — un misuratore che dichiara di essere imparziale
    ma non è verificabile da terzi ricade esattamente nel difetto "self-reported" che
    questo progetto contesta ai vendor (vedi "Perché esiste questo repo"). Gli unici
    elementi esclusi dalla pubblicazione sono credenziali/segreti, l'eventuale immagine
