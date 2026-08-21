@@ -63,6 +63,86 @@ significativi), ma il per-technique dict usa un tipo più snello
 ConfidenceInterval)` che espone solo i campi significativi. Aggiunto al
 piano: Task 1 (nuovo tipo) + Task 2 (per_technique usa il nuovo tipo).
 
+## Gap 14 — Denominatore zero produce un intervallo di confidenza fabbricato, non "non misurato"
+
+**Stato**: open (in correzione).
+
+**Trovato da**: review finale whole-branch di Plan 5d (Opus), confermato
+indipendentemente dal controller sul codice (`metrics.py:135-139`,
+`report.py:20-23`) prima di agire, poi tracciato alla causa radice su
+richiesta esplicita dell'utente ("perché i test non hanno fallito?").
+2026-08-21.
+
+**Severità**: critica — non tocca la validità della misura sottostante, ma
+il report pubblicato presenta un numero statisticamente fabbricato come se
+fosse una misura reale, sul tool di terzi sotto audit. Stessa famiglia di
+Gap 9, ma più grave: qui il numero non è solo fuorviante per costruzione,
+è inventato.
+
+**Evidenza**: quando una tecnica ha zero casi effettivamente valutati in un
+run (`tp + fn == 0` — perché tutti i casi malevoli di quella tecnica sono
+stati riclassificati come benigni, Gap 18, o hanno esito sconosciuto),
+`_compute_technique_breakdown` (e allo stesso modo `_compute_scores` per le
+metriche aggregate, stesso pattern su `precision`/`recall`) non lascia il
+punto stimato "non definito": calcola comunque `wilson_ci(0, 1, level)` — un
+denominatore inventato di 1 — e lo restituisce come se fosse un intervallo
+di confidenza reale. Nel primo report reale pubblicato (Plan 5d,
+`docs/reports/agentic-threat-detection-2026-08-19/report.md`) questo produce
+8 righe su 12 nella tabella per-tecnica con "0.000 [0.000, 0.793]" —
+visivamente indistinguibile da una tecnica dove il detector ha davvero
+mancato un attacco.
+
+**Causa radice** (`git log -S "wilson_ci(0, 1, level)"`): la riga esiste dal
+primissimo commit di `compute_metrics` (`c2525bd`, Plan 2), dove soddisfaceva
+alla lettera il requisito del design doc originale
+(`2026-08-14-toy-agent-e-pipeline-misura.md`, tabella "Mapping Requisito →
+Verifica"): *"la funzione di calcolo metriche restituisce **sempre** un
+intervallo di confidenza insieme al punto stimato, non è possibile ottenere
+l'uno senza l'altro dall'interfaccia pubblica."* Il requisito non
+considerava il caso in cui il punto stimato stesso non esiste (denominatore
+zero) — un'ambiguità di specifica, non un'omissione di implementazione:
+l'implementazione ha rispettato la lettera del requisito nell'unico modo che
+conosceva, fabbricando un punto stimato pur di non violare "sempre... l'uno
+senza l'altro". Quando il breakdown per-tecnica (Gap 13) ha reso frequente
+un caso che a livello aggregato è raro, il problema è diventato visibile.
+
+**Perché i test esistenti non l'hanno preso**: `tests/toy_agent/test_metrics.py`
+contiene già, dai tempi di Gap 13, due test che costruiscono esattamente lo
+scenario `tp=0, fn=0` (`test_technique_whose_only_case_is_reclassified_still_appears_in_per_technique`,
+`test_technique_whose_only_case_has_unknown_outcome_still_appears_in_per_technique`)
+— ma verificano solo che la riga non sparisca dalla tabella (il requisito
+reale di Gap 13), mai il valore di `recall`/`recall_ci` in quel caso. Il
+caso limite era presente nell'input dei test, mancava nell'asserzione
+sull'output — non un test che ha fallito, un requisito mai scritto in una
+forma verificabile.
+
+**Risoluzione applicata**: la riga di specifica in
+`2026-08-14-toy-agent-e-pipeline-misura.md:971` va corretta per dichiarare
+esplicitamente il caso limite (punto stimato e CI diventano entrambi `None`
+insieme quando il denominatore è zero — "mai l'uno senza l'altro" resta
+vero, ora accoppia due `None`, non un numero fabbricato). `MetricScores`/
+`TechniqueBreakdown` (`precision`, `recall`, `f1`, le rispettive CI)
+diventano `Optional` — la garanzia si sposta dal livello "test/disciplina"
+al livello "tipo", coerente col principio già applicato a `render_report`
+("no hand-editing... enforced by code"). I due renderer (`_fmt_scores_table_row`,
+`_fmt_technique_row`) stampano "n/a" per `None`. I due test di Gap 13 sopra
+citati vengono estesi (non riscritti) con l'asserzione mancante.
+
+**Lezione di processo (richiesta esplicita dell'utente, da applicare oltre
+questo bug)**: la checklist di Step 4 di Plan 5d (piano stesso,
+`2026-08-19-plan5d-integration.md`) chiedeva "i numeri P/R/F1 hanno un
+intervallo di confidenza?" — una verifica di **presenza**. Il controller
+l'ha eseguita alla lettera due volte (dopo il primo run completo e dopo
+l'ultimo) senza notare l'incoerenza interna dei numeri (un CI accanto a
+"Excluded: 1" per la stessa riga). Stessa categoria di lacuna dei test di
+Gap 13, spostata dal livello automatico al livello di revisione umana:
+verificare che un marcatore di rigore statistico ci sia, non che i numeri
+dietro siano coerenti con i dati che li circondano (es. la colonna
+`Excluded` nella stessa riga). Le checklist di verifica di piani operativi
+futuri (Step "review manuale prima di pubblicare") dovrebbero includere
+esplicitamente un controllo di coerenza sui casi limite (denominatore zero,
+campione escluso), non solo di presenza dei marcatori attesi.
+
 ## Gap 10 — Duplicate case_id nei verdicts silenziosamente sovrascritti
 
 **Stato**: risolto nel piano.
