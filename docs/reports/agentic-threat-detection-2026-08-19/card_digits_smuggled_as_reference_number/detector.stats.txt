@@ -1,0 +1,2 @@
+CONTAINER ID   NAME                       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O         BLOCK I/O     PIDS
+408a50d91a46   plan5d-readme-detector-1   0.05%     32.55MiB / 15.56GiB   0.20%     846kB / 123kB   0B / 1.66MB   23

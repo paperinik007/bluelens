@@ -1,0 +1,53 @@
+egress-proxy-1  | 2026/08/20 23:18:44| Processing Configuration File: /etc/squid/squid.conf (depth 0)
+egress-proxy-1  | 2026/08/20 23:18:44| Created PID file (/run/squid.pid)
+egress-proxy-1  | 2026/08/20 23:18:44| Current Directory is /
+egress-proxy-1  | 2026/08/20 23:18:45| Starting Squid Cache version 6.14 for x86_64-pc-linux-gnu...
+egress-proxy-1  | 2026/08/20 23:18:45| Service Name: squid
+egress-proxy-1  | 2026/08/20 23:18:45| Process ID 1
+egress-proxy-1  | 2026/08/20 23:18:45| Process Roles: master worker
+egress-proxy-1  | 2026/08/20 23:18:45| With 1048576 file descriptors available
+egress-proxy-1  | 2026/08/20 23:18:45| Initializing IP Cache...
+egress-proxy-1  | 2026/08/20 23:18:45| DNS IPv6 socket created at [::], FD 10
+egress-proxy-1  | 2026/08/20 23:18:45| DNS IPv4 socket created at 0.0.0.0, FD 11
+egress-proxy-1  | 2026/08/20 23:18:45| Adding nameserver 127.0.0.11 from /etc/resolv.conf
+egress-proxy-1  | 2026/08/20 23:18:45| Adding ndots 1 from /etc/resolv.conf
+egress-proxy-1  | 2026/08/20 23:18:45| Logfile: opening log daemon:/var/log/squid/access.log
+egress-proxy-1  | 2026/08/20 23:18:45| Logfile Daemon: opening log /var/log/squid/access.log
+egress-proxy-1  | 2026/08/20 23:18:45| Local cache digest enabled; rebuild/rewrite every 3600/3600 sec
+egress-proxy-1  | 2026/08/20 23:18:45| Store logging disabled
+egress-proxy-1  | 2026/08/20 23:18:45| Swap maxSize 0 + 262144 KB, estimated 20164 objects
+egress-proxy-1  | 2026/08/20 23:18:45| Target number of buckets: 1008
+egress-proxy-1  | 2026/08/20 23:18:45| Using 8192 Store buckets
+egress-proxy-1  | 2026/08/20 23:18:45| Max Mem  size: 262144 KB
+egress-proxy-1  | 2026/08/20 23:18:45| Max Swap size: 0 KB
+egress-proxy-1  | 2026/08/20 23:18:45| Using Least Load store dir selection
+egress-proxy-1  | 2026/08/20 23:18:45| Current Directory is /
+egress-proxy-1  | 2026/08/20 23:18:45| Finished loading MIME types and icons.
+egress-proxy-1  | 2026/08/20 23:18:45| HTCP Disabled.
+egress-proxy-1  | 2026/08/20 23:18:45| Pinger socket opened on FD 16
+egress-proxy-1  | 2026/08/20 23:18:45| Squid plugin modules loaded: 0
+egress-proxy-1  | 2026/08/20 23:18:45| Adaptation support is off.
+egress-proxy-1  | 2026/08/20 23:18:45| Accepting SSL bumped HTTP Socket connections at conn3 local=[::]:3128 remote=[::] FD 14 flags=9
+egress-proxy-1  |     listening port: 3128
+egress-proxy-1  | 2026/08/20 23:18:46| storeLateRelease: released 0 objects
+egress-proxy-1  | 2026/08/21 00:13:24| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 00:13:24| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 00:13:24| NETDB state saved; 2 entries, 5 msec
+egress-proxy-1  | 2026/08/21 01:07:06| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 01:07:06| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 01:07:06| NETDB state saved; 2 entries, 3 msec
+egress-proxy-1  | 2026/08/21 01:53:45| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 01:53:45| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 01:53:45| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/21 03:03:26| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 03:03:26| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 03:03:26| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/21 03:59:22| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 03:59:22| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 03:59:22| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/21 05:06:45| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 05:06:45| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 05:06:45| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/21 05:51:24| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 05:51:24| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 05:51:24| NETDB state saved; 2 entries, 0 msec
