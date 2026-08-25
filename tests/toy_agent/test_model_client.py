@@ -1,5 +1,7 @@
 from types import SimpleNamespace
 
+import httpx
+import openai
 import pytest
 
 from toy_agent.model_client import compute_cost_usd, ModelReply, OpenRouterModelClient
@@ -136,3 +138,98 @@ def test_complete_sends_an_explicit_max_tokens_and_timeout(monkeypatch):
     client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
     assert captured["max_tokens"] == 2048
     assert captured["timeout"] == 20.0
+
+
+# ---------------------------------------------------------------------------
+# Retry helpers (Task 4)
+# ---------------------------------------------------------------------------
+
+
+class _FailThenSucceed:
+    def __init__(self, failures, exc_factory):
+        self.remaining = failures
+        self.calls = 0
+        self._exc_factory = exc_factory
+
+    def __call__(self, **kwargs):
+        self.calls += 1
+        if self.remaining > 0:
+            self.remaining -= 1
+            raise self._exc_factory()
+        return _fake_response_with_cost(0.001)
+
+
+def _rate_limit_error():
+    return openai.RateLimitError(
+        "rate limited",
+        response=httpx.Response(429, request=httpx.Request("POST", "https://openrouter.ai/api/v1/chat/completions")),
+        body=None,
+    )
+
+
+def _auth_error():
+    return openai.AuthenticationError(
+        "bad key",
+        response=httpx.Response(401, request=httpx.Request("POST", "https://openrouter.ai/api/v1/chat/completions")),
+        body=None,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Retry tests (Task 4)
+# ---------------------------------------------------------------------------
+
+
+class TestRetryLogic:
+    def test_a_transient_failure_is_retried_and_still_counted(self, monkeypatch):
+        monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+        client = OpenRouterModelClient(api_key="sk-test-not-real")
+        create = _FailThenSucceed(1, _rate_limit_error)
+        client._client.chat.completions.create = create
+        slept = []
+        client._sleep = slept.append
+
+        reply = client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
+
+        assert reply.cost_usd == pytest.approx(0.001)
+        assert create.calls == 2
+        assert client.retry_count == 1
+        assert slept == [1.0]
+
+    def test_a_permanent_failure_is_not_retried(self, monkeypatch):
+        monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+        client = OpenRouterModelClient(api_key="sk-test-not-real")
+        create = _FailThenSucceed(1, _auth_error)
+        client._client.chat.completions.create = create
+        slept = []
+        client._sleep = slept.append
+
+        with pytest.raises(openai.AuthenticationError):
+            client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
+
+        assert create.calls == 1
+        assert client.retry_count == 0
+
+    def test_the_retry_budget_is_per_case_not_per_call(self, monkeypatch):
+        monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+        client = OpenRouterModelClient(api_key="sk-test-not-real")
+        create = _FailThenSucceed(99, _rate_limit_error)  # never succeeds
+        client._client.chat.completions.create = create
+        slept = []
+        client._sleep = slept.append
+
+        with pytest.raises(openai.RateLimitError):
+            client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
+
+        # 1 initial attempt + 2 retries = 3 calls
+        assert create.calls == 3
+        assert client.retry_count == 2
+        assert slept == [1.0, 3.0]
+
+        # Second complete() fails without retry (budget already exhausted)
+        with pytest.raises(openai.RateLimitError):
+            client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
+
+        # One more call attempt (no retries)
+        assert create.calls == 4
+        assert client.retry_count == 2

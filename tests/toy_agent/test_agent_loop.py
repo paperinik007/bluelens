@@ -228,6 +228,30 @@ def test_system_prompt_declares_the_bulk_export_guardrail():
 
 
 # ---------------------------------------------------------------------------
+# Retry-count transcript tests (Task 4)
+# ---------------------------------------------------------------------------
+
+
+class RetryCountingFakeClient(FakeModelClient):
+    def __init__(self, script, retry_count):
+        super().__init__(script)
+        self.retry_count = retry_count
+
+
+def test_the_transcript_carries_the_retry_count_out_of_the_loop():
+    client = RetryCountingFakeClient([ModelReply(content="done", tool_calls=[], cost_usd=0.001)], retry_count=3)
+    transcript = run_agent("hi", tools={}, state=fresh_state(), model_client=client, session_id="s1")
+    assert transcript.model_retry_count == 3
+    assert transcript.stop_reason == "completed"
+
+
+def test_a_client_without_a_retry_counter_yields_zero():
+    client = FakeModelClient([ModelReply(content="done", tool_calls=[], cost_usd=0.001)])
+    transcript = run_agent("hi", tools={}, state=fresh_state(), model_client=client, session_id="s1")
+    assert transcript.model_retry_count == 0
+
+
+# ---------------------------------------------------------------------------
 # Helpers for parse-failure tests (Task 2)
 # ---------------------------------------------------------------------------
 

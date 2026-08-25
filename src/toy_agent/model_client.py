@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import dataclass
 from typing import Any
 
+import openai
 from openai import OpenAI
 
 # Pricing per 1M tokens (input, output), USD. This drives the toy agent's own
@@ -17,6 +19,10 @@ _DEFAULT_MODEL = "openai/gpt-4o-mini"
 MAX_TOKENS = 2048
 REQUEST_TIMEOUT_S = 20.0
 
+TRANSIENT_EXCEPTIONS = (openai.APIConnectionError, openai.APITimeoutError, openai.RateLimitError)
+MAX_RETRIES_PER_CASE = 2
+BACKOFF_S = (1.0, 3.0)
+
 
 @dataclass
 class ModelReply:
@@ -26,14 +32,27 @@ class ModelReply:
 
 
 class OpenRouterModelClient:
-    def __init__(self, model: str = _DEFAULT_MODEL, api_key: str | None = None) -> None:
+    def __init__(self, model: str = _DEFAULT_MODEL, api_key: str | None = None, sleep=time.sleep) -> None:
         self._model = model
         key = api_key if api_key is not None else os.environ.get("OPENROUTER_API_KEY")
         if not key:
             raise RuntimeError("OPENROUTER_API_KEY is not set")
         self._client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=key)
+        self._sleep = sleep
+        self.retry_count = 0
 
     def complete(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> ModelReply:
+        while True:
+            try:
+                return self._complete_once(messages, tools)
+            except TRANSIENT_EXCEPTIONS:
+                if self.retry_count >= MAX_RETRIES_PER_CASE:
+                    raise
+                backoff = BACKOFF_S[self.retry_count]
+                self.retry_count += 1
+                self._sleep(backoff)
+
+    def _complete_once(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> ModelReply:
         response = self._client.chat.completions.create(
             model=self._model,
             messages=messages,

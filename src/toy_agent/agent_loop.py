@@ -203,4 +203,7 @@ def run_agent(
 
         seq += 1
 
-    return Transcript(session_id=session_id, turns=turns, stop_reason=stop_reason)
+    return Transcript(
+        session_id=session_id, turns=turns, stop_reason=stop_reason,
+        model_retry_count=getattr(model_client, "retry_count", 0),
+    )
