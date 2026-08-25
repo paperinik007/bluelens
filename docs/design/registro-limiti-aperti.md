@@ -313,6 +313,22 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   solo in retrospettiva. Soluzione minima non ancora progettata: un `print`/log
   strutturato in `execute_sequence` dopo ogni `CommandStep` completato.
 
+- **`run_batch` tronca `verdicts.jsonl` a inizio run ma non pulisce `raw/` né le
+  cartelle di evidenza `<case_id>/`** — `sequence.py:161-162` fa
+  `raw_dir.mkdir(parents=True, exist_ok=True)` e scrive i transcript di questo run,
+  ma non rimuove mai quelli del run precedente; lo stesso vale per le cartelle
+  `<case_id>/` con i `detector.vendor_proxy.jsonl` e i log. `verdicts.jsonl` invece
+  viene troncato correttamente (test: `test_verdicts_jsonl_is_truncated_at_the_start`).
+  Effetto: ogni run accumula i residui del precedente in silenzio — un operatore che
+  non li cancella a mano si ritrova con transcript di due run diversi nella stessa
+  directory, e le cartelle di evidenza del run precedente che non sono state
+  riscritte restano lì con dati obsoleti. Trovato durante il cleanup del run
+  troncato (13/31) del 2026-08-25: `raw/` conteneva 18 transcript datati Aug 21
+  (run precedente) mescolati ai 13 nuovi. Il cleanup manuale ha ridotto
+  `run_output/` da 118M a 23M. Soluzione minima: svuotare `raw/` e tutte le
+  cartelle `<case_id>/` a inizio run (in `sequence.py` o `run_batch.py`), coerentemente
+  col troncamento già esistente di `verdicts.jsonl`.
+
 - **`PYTHONPATH` mai documentato — stesso trabocchetto che ha causato due run sprecati
   in Plan 5d** — `python -m toy_agent.run_batch` (il comando che README, "Come
   eseguire", dice testualmente di lanciare) risolve silenziosamente il pacchetto
