@@ -243,7 +243,14 @@ def main(argv: list[str] | None = None) -> None:
 
     metrics = compute_metrics(result.metric_cases, result.metric_verdicts)
     setup_notes = _setup_notes(result, AGENT_TIMEOUT_S, DETECTOR_TIMEOUT_S, BREAKER_THRESHOLD, prov)
-    report = render_report(result.cases, result.verdicts, metrics, setup_notes=setup_notes)
+    report = render_report(
+        result.cases,
+        result.verdicts,
+        metrics,
+        setup_notes=setup_notes,
+        transcript_unusable=result.transcript_unusable,
+        provenance=prov,
+    )
     run_output_dir.mkdir(parents=True, exist_ok=True)
     (run_output_dir / "report.md").write_text(report, encoding="utf-8")
 

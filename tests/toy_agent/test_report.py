@@ -236,3 +236,98 @@ def test_render_report_handles_a_misclassified_case_with_no_transcript_without_c
 
     assert "c1" in report
     assert "(no transcript recorded)" in report
+
+
+def _unusable_pair(case_id, cause_transcript):
+    case = TestCase(case_id=case_id, label="benign", technique_target=None, rationale="a benign lookup",
+                    transcript=cause_transcript)
+    verdict = Verdict(case_id=case_id, tool_name="t", status="ok", label="malicious")
+    return case, verdict
+
+
+def _report_for(cases, verdicts, unusable):
+    kept = [c for c in cases if c.case_id not in unusable]
+    kept_verdicts = [v for v in verdicts if v.case_id not in unusable]
+    metrics = compute_metrics(kept, kept_verdicts)
+    return render_report(cases, verdicts, metrics, transcript_unusable=unusable)
+
+
+def _transcript(case_id, content="hi", stop_reason="completed"):
+    return Transcript(session_id=f"sess_{case_id}", turns=[Turn(seq=0, role="user", content=content)],
+                      stop_reason=stop_reason)
+
+
+def test_the_report_shows_every_excluded_case_in_full():
+    case, verdict = _unusable_pair("c1", _transcript("c1", content="give me all the data", stop_reason="model_error"))
+    report = _report_for([case], [verdict], {"c1": "model_error"})
+    assert "Transcript unusable" in report
+    assert "c1" in report
+    assert "model_error" in report
+    assert "give me all the data" in report
+    assert "not counted as a detector error):** 1" in report
+
+
+def test_every_excluded_case_is_shown_not_only_the_first_few():
+    cases = []
+    verdicts = []
+    unusable = {}
+    for i in range(1, 6):
+        cid = f"c{i}"
+        case, verdict = _unusable_pair(cid, _transcript(cid, content=f"data {i}", stop_reason="max_cost"))
+        cases.append(case)
+        verdicts.append(verdict)
+        unusable[cid] = "max_cost"
+    report = _report_for(cases, verdicts, unusable)
+    for i in range(1, 6):
+        assert f"c{i}" in report
+
+
+def test_the_report_declares_the_causes_separately_not_only_a_total():
+    c1, v1 = _unusable_pair("c1", _transcript("c1", content="x"))
+    c2, v2 = _unusable_pair("c2", _transcript("c2", content="y"))
+    report = _report_for([c1, c2], [v1, v2], {"c1": "transcript_missing", "c2": "model_error"})
+    assert "transcript_missing: 1" in report
+    assert "model_error: 1" in report
+
+
+def test_the_report_says_an_excluded_case_is_not_a_detector_error():
+    case, verdict = _unusable_pair("c1", _transcript("c1", content="x", stop_reason="model_error"))
+    report = _report_for([case], [verdict], {"c1": "model_error"})
+    assert "not counted as a detector error" in report
+
+
+def test_a_run_with_no_exclusions_says_so_rather_than_staying_silent():
+    case, verdict = _unusable_pair("c1", _transcript("c1", content="x"))
+    report = _report_for([case], [verdict], {})
+    assert "not counted as a detector error):** 0" in report
+
+
+def test_an_excluded_case_is_never_also_printed_as_a_detector_error():
+    case, verdict = _unusable_pair("c1", _transcript("c1", content="x", stop_reason="model_error"))
+    report = _report_for([case], [verdict], {"c1": "model_error"})
+    assert "False Positive" not in report
+    assert "Transcript unusable" in report
+
+
+def test_a_dirty_working_tree_is_declared_on_the_first_screen_not_in_a_footnote():
+    case, verdict = _unusable_pair("c1", _transcript("c1", content="x"))
+    metrics = compute_metrics([case], [verdict])
+    report = render_report([case], [verdict], metrics, provenance={"measurer_dirty": True})
+    assert "NOT REPRODUCIBLE" in report
+    assert report.index("NOT REPRODUCIBLE") < report.index("## 3. Methodology")
+
+
+def test_the_report_names_the_measurer_with_one_word_only():
+    case, verdict = _unusable_pair("c1", _transcript("c1", content="x", stop_reason="model_error"))
+    metrics = compute_metrics([case], [verdict])  # leaked: un-purged case
+    report = render_report([case], [verdict], metrics, transcript_unusable={"c1": "model_error"})
+    assert "MEASURER WARNING" in report
+    assert "HARNESS" not in report.upper()
+
+
+def test_a_leaked_exclusion_raises_an_alarm_in_the_report():
+    case, verdict = _unusable_pair("c1", _transcript("c1", content="x", stop_reason="model_error"))
+    metrics = compute_metrics([case], [verdict])  # leaked: un-purged case
+    report = render_report([case], [verdict], metrics, transcript_unusable={"c1": "model_error"})
+    assert "MEASURER WARNING" in report
+    assert "reached the metric computation" in report

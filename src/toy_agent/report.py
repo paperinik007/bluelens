@@ -49,14 +49,21 @@ def _format_transcript_excerpt(transcript: Transcript, max_turns: int = 3, max_c
 
 
 def _find_misclassified_cases(
-    cases: list[TestCase], verdicts: list[Verdict], limit: int = 3
+    cases: list[TestCase],
+    verdicts: list[Verdict],
+    limit: int = 3,
+    transcript_unusable: dict[str, str] | None = None,
 ) -> list[tuple[TestCase, Verdict]]:
     """Return up to `limit` cases where the detector was wrong (FP or FN).
-    Cases whose true outcome is unknown (Gap 18: transcript unavailable) are
-    excluded — there is no ground truth to compare the verdict against."""
+    Cases whose true outcome is unknown (Gap 18: transcript unavailable) and
+    cases the measurer excluded because their transcript could not be judged
+    are excluded — there is no ground truth to compare the verdict against."""
+    unusable = transcript_unusable or {}
     verdict_map = {v.case_id: v for v in verdicts}
     misclassified = []
     for case in cases:
+        if case.case_id in unusable:
+            continue
         v = verdict_map.get(case.case_id)
         if v is None or v.status == "error":
             continue
@@ -71,12 +78,21 @@ def _find_misclassified_cases(
     return misclassified
 
 
+def _find_unusable_cases(
+    cases: list[TestCase], transcript_unusable: dict[str, str]
+) -> list[tuple[TestCase, str]]:
+    """Every case the measurer excluded because its transcript could not be judged, each with its cause."""
+    return [(case, transcript_unusable[case.case_id]) for case in cases if case.case_id in transcript_unusable]
+
+
 def render_report(
     cases: list[TestCase],
     verdicts: list[Verdict],
     metrics: MetricsResult,
     tool_name: str = "agentic-threat-detection",
     setup_notes: str = "",
+    transcript_unusable: dict[str, str] | None = None,
+    provenance: dict | None = None,
 ) -> str:
     """Generate a 5-part Markdown audit report from metrics + cases.
 
@@ -84,6 +100,7 @@ def render_report(
     numbers is allowed, ensuring the link between reported and computed
     values is mechanical, not discretionary (SPIRIT.md principle 4).
     """
+    unusable = transcript_unusable or {}
     lines: list[str] = []
 
     # --- Part 1: Executive Summary ---
@@ -104,6 +121,27 @@ def render_report(
         f"**Ground truth unknown (transcript unavailable/unconvertible, or attack_success_criteria "
         f"could not be evaluated against it):** {metrics.ground_truth_unknown_count}"
     )
+    lines.append(
+        f"**Transcript unusable (excluded — fault in the transcript's generation, not in the "
+        f"detector; not counted as a detector error):** {len(unusable)}"
+    )
+    if unusable:
+        by_cause: dict[str, int] = {}
+        for cause in unusable.values():
+            by_cause[cause] = by_cause.get(cause, 0) + 1
+        lines.append("**Unusable by cause:** " + ", ".join(f"{c}: {n}" for c, n in sorted(by_cause.items())))
+    if provenance is not None and provenance.get("measurer_dirty"):
+        lines.append(
+            "**NOT REPRODUCIBLE:** produced from a modified working tree, not from the "
+            "declared commit — a third party cannot reconstruct the exact measurer code "
+            "behind these numbers (SPIRIT.md, principles 4 and 7)."
+        )
+    if metrics.transcript_unusable_count:
+        lines.append(
+            f"**MEASURER WARNING:** {metrics.transcript_unusable_count} unjudgeable case(s) "
+            f"reached the metric computation despite being excluded upstream — the primary "
+            f"exclusion did not hold. Treat this run's numbers as suspect and open a defect."
+        )
     lines.append("")
     lines.append("### Primary metric (label-only)")
     lines.append("")
@@ -176,6 +214,12 @@ def render_report(
         "Declared limitation, not fixed in this dataset revision - see "
         "docs/design/registro-limiti-aperti.md."
     )
+    lines.append(
+        "- **Transcript-unusable exclusion bucket:** a case whose transcript could not be judged "
+        "(transcript missing, model error, max cost, or parse failure) is excluded from scoring "
+        "and listed in full with its cause in Part 4 — the fault is in the transcript's generation, "
+        "not in the detector, so it is never counted as a detector error."
+    )
     lines.append("- **Determinism:** This report is fully deterministic (no timestamp) - regenerating from the same data produces a bit-identical file.")
     if setup_notes:
         lines.append(f"- **Setup notes:** {setup_notes}")
@@ -184,7 +228,7 @@ def render_report(
     # --- Part 4: Concrete Cases ---
     lines.append("## 4. Concrete Cases (Misclassifications)")
     lines.append("")
-    misclassified = _find_misclassified_cases(cases, verdicts)
+    misclassified = _find_misclassified_cases(cases, verdicts, transcript_unusable=unusable)
     if misclassified:
         for case, verdict in misclassified:
             actual = effective_ground_truth(case)
@@ -210,6 +254,37 @@ def render_report(
         lines.append("No misclassifications detected.")
         lines.append("")
 
+    unusable_cases = _find_unusable_cases(cases, unusable)
+    if unusable_cases:
+        lines.append("### Transcript-unusable cases (excluded)")
+        lines.append("")
+        lines.append(
+            "Each case below was excluded because its transcript could not be judged — the "
+            "fault is in the transcript's generation, not in the detector, and it is not "
+            "counted as a detector error."
+        )
+        lines.append("")
+        verdict_map = {v.case_id: v for v in verdicts}
+        for case, cause in unusable_cases:
+            verdict = verdict_map.get(case.case_id)
+            lines.append(f"#### {case.case_id} — {cause}")
+            lines.append("")
+            lines.append(f"- **Cause:** {cause}")
+            lines.append(f"- **Authored label:** {case.label}")
+            if verdict is not None:
+                if verdict.status == "error":
+                    lines.append(f"- **Detector verdict:** error ({verdict.rationale or 'no rationale recorded'})")
+                else:
+                    lines.append(f"- **Detector verdict:** {verdict.label}")
+            else:
+                lines.append("- **Detector verdict:** (none recorded)")
+            lines.append("- **Transcript excerpt:**")
+            if case.transcript is None:
+                lines.append("  - *(no transcript recorded)*")
+            else:
+                lines.append(_format_transcript_excerpt(case.transcript))
+            lines.append("")
+
     # --- Part 5: Raw Data ---
     lines.append("## 5. Raw Data")
     lines.append("")
@@ -218,6 +293,10 @@ def render_report(
     lines.append(f"- Total TestCase count: {len(cases)}")
     lines.append(f"- Total Verdict count: {len(verdicts)}")
     lines.append(f"- Detector errors: {metrics.error_count}/{metrics.total_count}")
+    lines.append(
+        "- Verify the counts above against the raw transcripts: "
+        "`python -m toy_agent.inspect_run <this report's directory>`"
+    )
     lines.append("")
 
     return "\n".join(lines)
