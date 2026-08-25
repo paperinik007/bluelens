@@ -31,12 +31,14 @@ def test_openrouter_client_accepts_explicit_api_key(monkeypatch):
     assert client is not None
 
 
-def test_openrouter_client_rejects_unpriced_model_at_construction(monkeypatch):
-    # I2 regression guard: an unpriced model must be rejected at construction
-    # time, before any (billed) network call could happen.
+# test_openrouter_client_rejects_unpriced_model_at_construction removed: the
+# guard it protected is the coupling design doc D3 removes (it made AGENT_MODEL
+# unusable). Replaced by test_a_model_absent_from_the_pricing_table_is_accepted_at_construction
+# plus the live preflight probe on the agent model.
+def test_a_model_absent_from_the_pricing_table_is_accepted_at_construction(monkeypatch):
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
-    with pytest.raises(ValueError):
-        OpenRouterModelClient(model="unknown/model", api_key="sk-test")
+    client = OpenRouterModelClient(model="anthropic/claude-haiku-4.5", api_key="sk-test")
+    assert client is not None
 
 
 def _fake_response(content: str, tool_calls: list | None, prompt_tokens: int, completion_tokens: int):
@@ -52,6 +54,12 @@ def _fake_response(content: str, tool_calls: list | None, prompt_tokens: int, co
     choice = SimpleNamespace(message=message)
     usage = SimpleNamespace(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
     return SimpleNamespace(choices=[choice], usage=usage)
+
+
+def _fake_response_with_cost(cost, prompt_tokens=1000, completion_tokens=1000):
+    message = SimpleNamespace(content="ok", tool_calls=None)
+    usage = SimpleNamespace(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, cost=cost)
+    return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=usage)
 
 
 def test_complete_parses_response_with_tool_call_into_correct_shape(monkeypatch):
@@ -96,3 +104,35 @@ def test_complete_parses_response_with_no_tool_calls(monkeypatch):
     assert reply.content == "All done, glad to help!"
     assert reply.tool_calls == []
     assert reply.cost_usd == 0.0
+
+
+def test_complete_prefers_the_cost_reported_by_openrouter(monkeypatch):
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    client = OpenRouterModelClient(api_key="sk-test-not-real")
+    client._client.chat.completions.create = lambda **kwargs: _fake_response_with_cost(0.0123)
+    reply = client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
+    assert reply.cost_usd == pytest.approx(0.0123)
+
+
+def test_complete_falls_back_to_the_pricing_table_while_it_still_exists(monkeypatch):
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    client = OpenRouterModelClient(api_key="sk-test-not-real")
+    response = _fake_response("ok", None, 1_000_000, 1_000_000)
+    client._client.chat.completions.create = lambda **kwargs: response
+    reply = client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
+    assert reply.cost_usd == pytest.approx(0.75)
+
+
+def test_complete_sends_an_explicit_max_tokens_and_timeout(monkeypatch):
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    client = OpenRouterModelClient(api_key="sk-test-not-real")
+    captured = {}
+
+    def capture_create(**kwargs):
+        captured.update(kwargs)
+        return _fake_response("ok", None, 1000, 1000)
+
+    client._client.chat.completions.create = capture_create
+    client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
+    assert captured["max_tokens"] == 2048
+    assert captured["timeout"] == 20.0

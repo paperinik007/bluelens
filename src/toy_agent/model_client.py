@@ -14,6 +14,9 @@ _PRICING_PER_MILLION_TOKENS: dict[str, tuple[float, float]] = {
 
 _DEFAULT_MODEL = "openai/gpt-4o-mini"
 
+MAX_TOKENS = 2048
+REQUEST_TIMEOUT_S = 20.0
+
 
 @dataclass
 class ModelReply:
@@ -25,8 +28,6 @@ class ModelReply:
 class OpenRouterModelClient:
     def __init__(self, model: str = _DEFAULT_MODEL, api_key: str | None = None) -> None:
         self._model = model
-        if model not in _PRICING_PER_MILLION_TOKENS:
-            raise ValueError(f"no known pricing for model {model!r}")
         key = api_key if api_key is not None else os.environ.get("OPENROUTER_API_KEY")
         if not key:
             raise RuntimeError("OPENROUTER_API_KEY is not set")
@@ -37,10 +38,14 @@ class OpenRouterModelClient:
             model=self._model,
             messages=messages,
             tools=tools,
+            max_tokens=MAX_TOKENS,
+            timeout=REQUEST_TIMEOUT_S,
         )
         choice = response.choices[0].message
         usage = response.usage
-        cost_usd = compute_cost_usd(self._model, usage.prompt_tokens, usage.completion_tokens)
+        cost_usd = getattr(usage, "cost", None)
+        if cost_usd is None:
+            cost_usd = compute_cost_usd(self._model, usage.prompt_tokens, usage.completion_tokens)
         tool_calls = [
             {"id": tc.id, "type": "function", "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
             for tc in (choice.tool_calls or [])
