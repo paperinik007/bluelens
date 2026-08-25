@@ -8,12 +8,6 @@ from typing import Any
 import openai
 from openai import OpenAI
 
-# Pricing per 1M tokens (input, output), USD. This drives the toy agent's own
-# reasoning — a different model from the vendor's Sifter/Inspector under test.
-_PRICING_PER_MILLION_TOKENS: dict[str, tuple[float, float]] = {
-    "openai/gpt-4o-mini": (0.15, 0.60),
-}
-
 _DEFAULT_MODEL = "openai/gpt-4o-mini"
 
 MAX_TOKENS = 2048
@@ -64,16 +58,10 @@ class OpenRouterModelClient:
         usage = response.usage
         cost_usd = getattr(usage, "cost", None)
         if cost_usd is None:
-            cost_usd = compute_cost_usd(self._model, usage.prompt_tokens, usage.completion_tokens)
+            raise ValueError("OpenRouter response carried no usage.cost")
         tool_calls = [
             {"id": tc.id, "type": "function", "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
             for tc in (choice.tool_calls or [])
         ]
         return ModelReply(content=choice.content or "", tool_calls=tool_calls, cost_usd=cost_usd)
 
-
-def compute_cost_usd(model: str, prompt_tokens: int, completion_tokens: int) -> float:
-    if model not in _PRICING_PER_MILLION_TOKENS:
-        raise ValueError(f"no known pricing for model {model!r}")
-    in_price, out_price = _PRICING_PER_MILLION_TOKENS[model]
-    return (prompt_tokens / 1_000_000) * in_price + (completion_tokens / 1_000_000) * out_price
