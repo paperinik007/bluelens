@@ -1,0 +1,86 @@
+import json
+from pathlib import Path
+from toy_agent import provenance
+
+
+def test_vendor_commit_is_read_from_the_pinned_dockerfile(tmp_path):
+    dockerfile = tmp_path / "docker" / "detector" / "Dockerfile"
+    dockerfile.parent.mkdir(parents=True)
+    dockerfile.write_text(
+        "RUN git clone https://example.invalid/x.git aidr-vendor \\\n"
+        "    && cd aidr-vendor \\\n"
+        "    && git checkout 7fad14d2478707e68a09b8ecd9942dec8fde1614\n",
+        encoding="utf-8",
+    )
+    assert provenance.vendor_commit(tmp_path) == "7fad14d2478707e68a09b8ecd9942dec8fde1614"
+
+
+def test_vendor_commit_is_none_when_the_pin_cannot_be_read(tmp_path):
+    assert provenance.vendor_commit(tmp_path) is None
+
+
+def test_an_ambiguous_pin_is_unknown_rather_than_plausibly_wrong(tmp_path):
+    dockerfile = tmp_path / "docker" / "detector" / "Dockerfile"
+    dockerfile.parent.mkdir(parents=True)
+    dockerfile.write_text(
+        "RUN git checkout 1111111111111111111111111111111111111111\n"
+        "RUN git checkout 7fad14d2478707e68a09b8ecd9942dec8fde1614\n",
+        encoding="utf-8",
+    )
+    assert provenance.vendor_commit(tmp_path) is None
+
+
+def test_the_real_dockerfile_pin_is_unambiguous():
+    assert provenance.vendor_commit(Path(".")) == "7fad14d2478707e68a09b8ecd9942dec8fde1614"
+
+
+def test_collect_provenance_records_every_declared_condition():
+    prov = provenance.collect_provenance({})
+    for key in (
+        "measurer_commit", "measurer_dirty", "vendor_commit", "agent_model",
+        "sifter_model", "inspector_model", "embed_model", "cost_source",
+        "agent_max_tokens", "agent_request_timeout_s", "agent_max_retries_per_case",
+    ):
+        assert key in prov, key
+
+
+def test_an_unset_model_env_var_is_recorded_as_the_code_default_not_omitted():
+    prov = provenance.collect_provenance({})
+    assert prov["agent_model"] == "openai/gpt-4o-mini"
+    assert prov["sifter_model"] == "(default in detector_adapter)"
+
+
+def test_an_explicit_model_env_var_wins():
+    prov = provenance.collect_provenance({"AGENT_MODEL": "vendor/other", "SIFTER_MODEL": "vendor/sifter"})
+    assert prov["agent_model"] == "vendor/other"
+    assert prov["sifter_model"] == "vendor/sifter"
+
+
+def test_format_provenance_names_every_condition():
+    text = provenance.format_provenance(provenance.collect_provenance({}))
+    for token in ("measurer_commit=", "vendor_commit=", "agent_model=", "sifter_model=",
+                  "inspector_model=", "embed_model=", "cost_source="):
+        assert token in text
+
+
+def test_format_provenance_declares_an_unrecorded_run_instead_of_guessing():
+    text = provenance.format_provenance(None)
+    assert "not recorded" in text
+    assert "measurer_commit=" not in text
+
+
+def test_provenance_round_trips_through_disk(tmp_path):
+    prov = provenance.collect_provenance({"AGENT_MODEL": "vendor/other"})
+    provenance.write_provenance(prov, tmp_path)
+    assert json.loads((tmp_path / "provenance.json").read_text(encoding="utf-8")) == prov
+    assert provenance.read_provenance(tmp_path) == prov
+
+
+def test_read_provenance_returns_none_for_a_directory_without_one(tmp_path):
+    assert provenance.read_provenance(tmp_path) is None
+
+
+def test_collect_provenance_never_raises_outside_a_git_repo(tmp_path):
+    prov = provenance.collect_provenance({}, repo_root=tmp_path)
+    assert prov["measurer_commit"] is None
+    assert prov["vendor_commit"] is None
