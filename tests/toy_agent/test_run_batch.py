@@ -420,6 +420,7 @@ def test_main_never_modifies_the_dataset_dir(tmp_path, monkeypatch):
         )
 
     monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
     run_batch.main([str(dataset_dir), str(run_output_dir)])
 
     after = (dataset_dir / "c1.yaml").read_text(encoding="utf-8")
@@ -441,6 +442,7 @@ def test_main_writes_a_report_declaring_operational_parameters(tmp_path, monkeyp
         )
 
     monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
     run_batch.main([str(dataset_dir), str(run_output_dir)])
 
     report = (run_output_dir / "report.md").read_text(encoding="utf-8")
@@ -464,6 +466,7 @@ def test_main_declares_a_circuit_breaker_trip_in_the_report(tmp_path, monkeypatc
         )
 
     monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
     run_batch.main([str(dataset_dir), str(run_output_dir)])
 
     report = (run_output_dir / "report.md").read_text(encoding="utf-8")
@@ -490,6 +493,7 @@ def test_main_reads_the_detector_api_key_from_the_environment(tmp_path, monkeypa
         )
 
     monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
     run_batch.main([str(dataset_dir), str(run_output_dir)])
 
     assert captured["api_key"] == "sk-test-key"
@@ -513,6 +517,7 @@ def test_main_accepts_the_container_lifecycle_flag_and_defaults_to_reused(tmp_pa
         )
 
     monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
 
     run_batch.main([str(dataset_dir), str(run_output_dir)])
     assert captured["container_lifecycle"] == "reused"
@@ -590,6 +595,7 @@ def test_main_stderr_notes_a_truncated_run_when_the_breaker_tripped_and_a_shortc
         )
 
     monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
 
     try:
         run_batch.main([str(dataset_dir), str(run_output_dir)])
@@ -648,6 +654,7 @@ def test_main_refuses_to_write_the_report_past_the_threshold(tmp_path, monkeypat
         )
 
     monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
 
     try:
         run_batch.main([str(dataset_dir), str(run_output_dir)])
@@ -676,6 +683,7 @@ def test_main_refuses_to_write_the_report_when_a_tool_appears_only_in_malicious_
         )
 
     monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
 
     try:
         run_batch.main([str(dataset_dir), str(run_output_dir)])
@@ -723,6 +731,22 @@ def test_setup_notes_declares_an_unrecorded_provenance_rather_than_omitting_it()
     assert "not recorded" in notes
 
 
+def test_main_passes_both_keys_to_the_preflight(tmp_path, monkeypatch):
+    dataset_dir = tmp_path / "dataset"
+    _write_dataset(dataset_dir, ["c1"])
+    monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-detector")
+    monkeypatch.setenv("AGENT_OPENROUTER_API_KEY", "sk-agent")
+    captured = {}
+    def fake_preflight(env, api_key, *, agent_api_key="", transport=None):
+        captured["api_key"] = api_key
+        captured["agent_api_key"] = agent_api_key
+        return []
+    monkeypatch.setattr(run_batch, "preflight_check_models", fake_preflight)
+    monkeypatch.setattr(run_batch, "execute_batch", lambda dataset, output_dir, **kw: BatchResult(cases=[], verdicts=[], total_count=0, executed_count=0, breaker_tripped=False))
+    run_batch.main([str(dataset_dir), str(tmp_path / "out")])
+    assert captured == {"api_key": "sk-detector", "agent_api_key": "sk-agent"}
+
+
 def test_main_writes_the_provenance_file_next_to_the_raw_data(tmp_path, monkeypatch):
     dataset_dir = tmp_path / "dataset"
     run_output_dir = tmp_path / "out"
@@ -733,6 +757,7 @@ def test_main_writes_the_provenance_file_next_to_the_raw_data(tmp_path, monkeypa
         return BatchResult(cases=[case], verdicts=[verdict], total_count=1, executed_count=1,
                            breaker_tripped=False, metric_cases=[case], metric_verdicts=[verdict])
     monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
     run_batch.main([str(dataset_dir), str(run_output_dir)])
     prov = json.loads((run_output_dir / "provenance.json").read_text(encoding="utf-8"))
     assert prov["agent_model"] == "openai/gpt-4o-mini"

@@ -208,8 +208,9 @@ def main(argv: list[str] | None = None) -> None:
 
     dataset = load_dataset(dataset_dir)
     api_key = os.environ.get("DETECTOR_OPENROUTER_API_KEY", "")
+    agent_api_key = os.environ.get("AGENT_OPENROUTER_API_KEY", "")
 
-    preflight_failures = preflight_check_models(os.environ, api_key)
+    preflight_failures = preflight_check_models(os.environ, api_key, agent_api_key=agent_api_key)
     if preflight_failures:
         for failure in preflight_failures:
             print(f"preflight model check failed: {failure}", file=sys.stderr)
