@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from toy_agent import run_batch
+from toy_agent import provenance, run_batch
 from toy_agent.orchestrator import CommandResult
 from toy_agent.run_batch import BatchResult
 from toy_agent.schema import Transcript, Turn, TestCase, Verdict, Always, ToolCall
@@ -683,3 +683,57 @@ def test_main_refuses_to_write_the_report_when_a_tool_appears_only_in_malicious_
     except SystemExit as exc:
         assert exc.code == 1
     assert not (run_output_dir / "report.md").exists()
+
+
+def test_setup_notes_declares_every_experimental_condition_unconditionally():
+    prov = provenance.collect_provenance({})
+    notes = run_batch._setup_notes(
+        BatchResult(cases=[], verdicts=[], total_count=0, executed_count=0, breaker_tripped=False),
+        120.0, 180.0, 3, prov,
+    )
+    for token in ("measurer_commit=", "vendor_commit=", "agent_model=", "sifter_model=",
+                  "inspector_model=", "embed_model=", "cost_source="):
+        assert token in notes
+
+
+def test_setup_notes_declares_the_unusable_threshold_even_when_nothing_was_excluded():
+    notes = run_batch._setup_notes(
+        BatchResult(cases=[], verdicts=[], total_count=0, executed_count=0, breaker_tripped=False),
+        120.0, 180.0, 3, provenance.collect_provenance({}),
+    )
+    assert "transcript_unusable_threshold=" in notes
+
+
+def test_setup_notes_reports_unusable_cases_by_cause():
+    result = BatchResult(
+        cases=[], verdicts=[], total_count=3, executed_count=3, breaker_tripped=False,
+        transcript_unusable={"c1": "transcript_missing", "c2": "model_error", "c3": "arguments_parse_failed"},
+    )
+    notes = run_batch._setup_notes(result, 120.0, 180.0, 3, provenance.collect_provenance({}))
+    assert "transcript_unusable=3/3" in notes
+    for cause in ("transcript_missing=1", "model_error=1", "arguments_parse_failed=1"):
+        assert cause in notes
+
+
+def test_setup_notes_declares_an_unrecorded_provenance_rather_than_omitting_it():
+    notes = run_batch._setup_notes(
+        BatchResult(cases=[], verdicts=[], total_count=0, executed_count=0, breaker_tripped=False),
+        120.0, 180.0, 3, None,
+    )
+    assert "not recorded" in notes
+
+
+def test_main_writes_the_provenance_file_next_to_the_raw_data(tmp_path, monkeypatch):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+        case = dataset[0]
+        verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
+        return BatchResult(cases=[case], verdicts=[verdict], total_count=1, executed_count=1,
+                           breaker_tripped=False, metric_cases=[case], metric_verdicts=[verdict])
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    run_batch.main([str(dataset_dir), str(run_output_dir)])
+    prov = json.loads((run_output_dir / "provenance.json").read_text(encoding="utf-8"))
+    assert prov["agent_model"] == "openai/gpt-4o-mini"
+    assert "measurer_commit=" in (run_output_dir / "report.md").read_text(encoding="utf-8")

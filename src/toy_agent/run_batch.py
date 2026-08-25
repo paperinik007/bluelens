@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import Callable
 
-from . import evidence
+from . import evidence, provenance
 from .dataset import load_dataset
 from .metrics import compute_metrics, is_reclassified, is_ground_truth_unknown
 from .orchestrator import CommandRunner, default_command_runner, run_test_case
@@ -101,8 +101,9 @@ def transcript_unusable_gate_failure(result: BatchResult) -> str | None:
     return message
 
 
-def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s: float, breaker_threshold: int) -> str:
+def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s: float, breaker_threshold: int, prov: dict | None = None) -> str:
     notes = [
+        provenance.format_provenance(prov),
         f"agent_timeout_s={agent_timeout_s}",
         f"detector_timeout_s={detector_timeout_s}",
         f"circuit_breaker_threshold={breaker_threshold}",
@@ -128,6 +129,21 @@ def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s
             f"{unknown_outcome} malicious case(s) have unknown attack outcome "
             f"(transcript unavailable/unconvertible, or attack_success_criteria could not be "
             f"evaluated against it) - excluded from scoring"
+        )
+    notes.append(
+        f"transcript_unusable_threshold=at most {MAX_TRANSCRIPT_UNUSABLE_FRACTION:.0%} of the "
+        f"cases eligible for scoring, and never fewer than 1 allowed; above that the run is "
+        f"not published at all"
+    )
+    if result.transcript_unusable:
+        by_cause: dict[str, int] = {}
+        for cause in result.transcript_unusable.values():
+            by_cause[cause] = by_cause.get(cause, 0) + 1
+        causes = ", ".join(f"{c}={n}" for c, n in sorted(by_cause.items()))
+        notes.append(
+            f"transcript_unusable={len(result.transcript_unusable)}/{result.executed_count} case(s) "
+            f"excluded: the transcript could not be judged — the fault is in its generation, not in "
+            f"the detector ({causes}); case ids: {', '.join(sorted(result.transcript_unusable))}"
         )
     if result.transcript_conversion_failure_count > 0:
         notes.append(f"transcript_conversion_failures={result.transcript_conversion_failure_count}")
@@ -199,6 +215,9 @@ def main(argv: list[str] | None = None) -> None:
             print(f"preflight model check failed: {failure}", file=sys.stderr)
         sys.exit(1)
 
+    prov = provenance.collect_provenance(os.environ)
+    provenance.write_provenance(prov, run_output_dir)
+
     result = execute_batch(dataset, run_output_dir, container_lifecycle=parsed.container_lifecycle, api_key=api_key)
 
     unusable_failure = transcript_unusable_gate_failure(result)
@@ -223,7 +242,7 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(1)
 
     metrics = compute_metrics(result.metric_cases, result.metric_verdicts)
-    setup_notes = _setup_notes(result, AGENT_TIMEOUT_S, DETECTOR_TIMEOUT_S, BREAKER_THRESHOLD)
+    setup_notes = _setup_notes(result, AGENT_TIMEOUT_S, DETECTOR_TIMEOUT_S, BREAKER_THRESHOLD, prov)
     report = render_report(result.cases, result.verdicts, metrics, setup_notes=setup_notes)
     run_output_dir.mkdir(parents=True, exist_ok=True)
     (run_output_dir / "report.md").write_text(report, encoding="utf-8")
