@@ -511,17 +511,10 @@ sopravvivono alla validazione. Su un `usage` contenente `cost` e `cost_details`,
 compaiono in `model_extra` e sono anche accessibili come attributi diretti
 (`usage.cost`). Nessun fallback necessario.
 
-**Verifica (b) — l'unità: APERTA, con un test già individuato.** La FAQ OpenRouter dichiara
-che *"the base currency is US dollars. All of the pricing on our site and API is denoted in
-dollars"*, ma non afferma in modo stretto l'equivalenza 1 credito = 1 USD. Il test che
-chiude la questione non richiede altra documentazione: alla prima chiamata reale, confrontare
-`usage.cost` con il valore che `compute_cost_usd` avrebbe calcolato dalla tabella odierna per
-`openai/gpt-4o-mini`. Se coincidono entro l'arrotondamento, l'unità è USD e la rimozione è
-sicura. **La tabella che stiamo rimuovendo fa quindi da oracolo anche qui**: va tenuta viva
-finché quel confronto non è stato eseguito una volta, poi rimossa.
-
-Vincolo pratico: quel confronto richiede una chiamata reale, quindi una chiave API valida —
-va eseguito **dopo** la rotazione delle chiavi in corso, non prima.
+**Verifica (b) — l'unità: CONFERMATA USD (2026-08-25).** Chiamata reale a
+`openai/gpt-4o-mini` con 8 prompt token + 11 completion token: `usage.cost=7.8e-06`,
+`compute_cost_usd` (oracolo dalla tabella) = `7.8e-06`, ratio = 1.0. Il campo è in USD.
+La rimozione della tabella è sicura.
 
 ### 6.3 Disponibilità del modello dell'agente: probe live
 
