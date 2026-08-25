@@ -32,6 +32,8 @@ def _match_arg(matcher: ArgMatcherType, value) -> bool:
 
 
 def _tool_call_matches(criterion: ToolCallCriterion, tool_call: ToolCall) -> bool:
+    if tool_call.arguments_parse_failed:
+        return False
     if tool_call.tool_name != criterion.tool_name:
         return False
     if criterion.require_ok and tool_call.status != "ok":

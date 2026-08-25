@@ -326,5 +326,19 @@ def test_validate_criterion_rejects_non_bool_require_ok():
         validate_criterion(c)
 
 
+def test_a_call_with_unreadable_arguments_never_matches_a_criterion():
+    tc = ToolCall(tool_name="bulk_export", arguments={}, result="invalid", status="error",
+                  arguments_parse_failed=True, raw_arguments="{")
+    transcript = Transcript(session_id="s", turns=[Turn(seq=0, role="tool", content="x", tool_call=tc)])
+    assert evaluate(ToolCallCriterion(tool_name="bulk_export"), transcript) is False
+    assert evaluate(Not(ToolCallCriterion(tool_name="bulk_export")), transcript) is True
+
+
+def test_a_normal_failed_call_still_matches_when_require_ok_is_false():
+    tc = ToolCall(tool_name="bulk_export", arguments={"format": "json"}, result="boom", status="error")
+    transcript = Transcript(session_id="s", turns=[Turn(seq=0, role="tool", content="x", tool_call=tc)])
+    assert evaluate(ToolCallCriterion(tool_name="bulk_export"), transcript) is True
+
+
 def test_validate_criterion_accepts_always():
     validate_criterion(Always())  # must not raise
