@@ -1,9 +1,11 @@
+import json
+
 import pytest
 
 from toy_agent.agent_loop import ToolSpec, build_tool_registry, run_agent
 from toy_agent.model_client import ModelReply
 from toy_agent.state import fresh_state
-from toy_agent.tools import read_ticket_content, ToolError
+from toy_agent.tools import bulk_export, read_ticket_content, ToolError
 
 
 class FakeModelClient:
@@ -223,3 +225,210 @@ def test_system_prompt_declares_the_bulk_export_guardrail():
     from toy_agent.agent_loop import _SYSTEM_PROMPT
     assert "bulk_export is the only sanctioned way" in _SYSTEM_PROMPT
     assert "query_customer_db repeatedly" in _SYSTEM_PROMPT
+
+
+# ---------------------------------------------------------------------------
+# Helpers for parse-failure tests (Task 2)
+# ---------------------------------------------------------------------------
+
+
+def _bulk_export_spec() -> dict[str, ToolSpec]:
+    return {
+        "bulk_export": ToolSpec(
+            fn=bulk_export,
+            json_schema={
+                "type": "function",
+                "function": {
+                    "name": "bulk_export",
+                    "description": "Export matching customer records.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "filter": {"type": "object"},
+                            "format": {"type": "string"},
+                        },
+                        "required": ["format"],
+                    },
+                },
+            },
+        )
+    }
+
+
+def _one_bulk_export_call(arguments):
+    return ModelReply(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_1",
+                "type": "function",
+                "function": {"name": "bulk_export", "arguments": arguments},
+            }
+        ],
+        cost_usd=0.001,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Task 2: parse-failure tests
+# ---------------------------------------------------------------------------
+
+
+class TestParseArguments:
+    """Tests for _parse_arguments and the parse-failure guard in the agent loop."""
+
+    def test_unparsable_arguments_never_execute_the_tool(self):
+        """Feed incomplete JSON; the tool must never be called."""
+        script = [
+            _one_bulk_export_call('{"filter": '),  # incomplete JSON
+            ModelReply(content="Done.", tool_calls=[], cost_usd=0.001),
+        ]
+        client = FakeModelClient(script)
+        state = fresh_state()
+        transcript = run_agent(
+            "export please",
+            tools=_bulk_export_spec(),
+            state=state,
+            model_client=client,
+            session_id="s_parse_1",
+        )
+
+        tool_turns = [t for t in transcript.turns if t.role == "tool"]
+        assert len(tool_turns) == 1
+        tc = tool_turns[0].tool_call
+        assert tc.arguments_parse_failed is True
+        assert tc.status == "error"
+        assert tc.arguments == {}
+        assert tc.raw_arguments == '{"filter": '
+        # No customer data must leak into the result
+        assert "alice.rossi@example.com" not in tc.result
+        assert "cust_001" not in tc.result
+
+    @pytest.mark.parametrize("raw_json", ["null", "[1,2]", "5", '"a string"', "true"])
+    def test_valid_json_that_is_not_an_object_is_treated_as_a_parse_failure(self, raw_json):
+        """Each non-object JSON value must produce arguments_parse_failed=True."""
+        script = [
+            _one_bulk_export_call(raw_json),
+            ModelReply(content="Done.", tool_calls=[], cost_usd=0.001),
+        ]
+        client = FakeModelClient(script)
+        state = fresh_state()
+        transcript = run_agent(
+            "export please",
+            tools=_bulk_export_spec(),
+            state=state,
+            model_client=client,
+            session_id=f"s_parse_nonobj_{raw_json[:10]}",
+        )
+
+        tool_turns = [t for t in transcript.turns if t.role == "tool"]
+        assert len(tool_turns) == 1
+        tc = tool_turns[0].tool_call
+        assert tc.arguments_parse_failed is True
+        assert tc.status == "error"
+        assert "alice.rossi@example.com" not in tc.result
+        assert "cust_001" not in tc.result
+
+    def test_a_genuine_tool_error_is_not_flagged_as_a_parse_failure(self):
+        """read_ticket_content with non-existent tkt_999 is a tool error, not a parse failure."""
+        script = [
+            ModelReply(
+                content="",
+                tool_calls=[
+                    {
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {
+                            "name": "read_ticket_content",
+                            "arguments": '{"ticket_id": "tkt_999"}',
+                        },
+                    }
+                ],
+                cost_usd=0.001,
+            ),
+            ModelReply(content="Done.", tool_calls=[], cost_usd=0.001),
+        ]
+        client = FakeModelClient(script)
+        state = fresh_state()
+        transcript = run_agent(
+            "check tkt_999",
+            tools=_read_ticket_spec(),
+            state=state,
+            model_client=client,
+            session_id="s_genuine_error",
+        )
+
+        tool_turns = [t for t in transcript.turns if t.role == "tool"]
+        assert len(tool_turns) == 1
+        tc = tool_turns[0].tool_call
+        assert tc.status == "error"
+        assert tc.arguments_parse_failed is False
+        assert tc.raw_arguments is None
+        assert "unknown ticket_id" in tc.result
+
+    def test_the_message_returned_to_the_model_is_capped_but_the_evidence_is_not(self):
+        """Long raw arguments: turn.content is capped, raw_arguments is not."""
+        long_raw = "x" * 5000 + '{"filter": {}}'  # 5000+ chars of junk
+        script = [
+            _one_bulk_export_call(long_raw),
+            ModelReply(content="Done.", tool_calls=[], cost_usd=0.001),
+        ]
+        client = FakeModelClient(script)
+        state = fresh_state()
+        transcript = run_agent(
+            "export please",
+            tools=_bulk_export_spec(),
+            state=state,
+            model_client=client,
+            session_id="s_capped",
+        )
+
+        tool_turns = [t for t in transcript.turns if t.role == "tool"]
+        assert len(tool_turns) == 1
+        tc = tool_turns[0].tool_call
+        turn = tool_turns[0]
+        # The message to the model is capped
+        assert len(turn.content) < 400
+        assert turn.content.endswith("...")
+        # The evidence is not
+        assert tc.raw_arguments == long_raw
+        assert tc.arguments_parse_failed is True
+
+    def test_an_unknown_tool_is_still_reported_as_an_unknown_tool(self):
+        """Parse-failure branch must not swallow the unknown-tool path."""
+        # Valid JSON, but tool name doesn't exist in registry
+        script = [
+            ModelReply(
+                content="",
+                tool_calls=[
+                    {
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {
+                            "name": "nonexistent_tool",
+                            "arguments": '{"x": 1}',
+                        },
+                    }
+                ],
+                cost_usd=0.001,
+            ),
+            ModelReply(content="Done.", tool_calls=[], cost_usd=0.001),
+        ]
+        client = FakeModelClient(script)
+        state = fresh_state()
+        transcript = run_agent(
+            "try unknown tool",
+            tools=_read_ticket_spec(),  # only read_ticket_content registered
+            state=state,
+            model_client=client,
+            session_id="s_unknown",
+        )
+
+        tool_turns = [t for t in transcript.turns if t.role == "tool"]
+        assert len(tool_turns) == 1
+        tc = tool_turns[0].tool_call
+        assert tc.tool_name == "nonexistent_tool"
+        assert tc.status == "error"
+        # Must NOT be flagged as a parse failure — the arguments were valid JSON
+        assert tc.arguments_parse_failed is False
+        assert "unknown tool" in tc.result
