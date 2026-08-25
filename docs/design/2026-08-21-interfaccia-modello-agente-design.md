@@ -353,9 +353,10 @@ nel report come *"N caso/i escluso/i: transcript non utilizzabile — guasto nel
 generazione, non nel detector"*.
 
 **Perché non "guasto dello strumento di misura"** (reperto del grill, non emerso dal
-council): quel nome collide con vocabolario già consolidato. `SPIRIT.md:46` definisce
-"misuratore" per elencazione — *"schema dati, adapter, modulo metriche, generatore del
-report"* — e l'agente giocattolo **non ne fa parte**; "Confine misuratore/misurato" è una
+council): quel nome collide con vocabolario già consolidato. `SPIRIT.md` principio 6
+definisce "misuratore" per criterio — *"ogni componente che produce, giudica o verifica
+il numero pubblicato"* — e l'agente giocattolo produce il materiale (i transcript), non
+il numero, quindi non ne fa parte; "Confine misuratore/misurato" è una
 sezione stabile del design doc principale (`2026-08-14-toy-agent-e-pipeline-misura.md:453`,
 risoluzione Gap 9). Un lettore informato capirebbe "la pipeline di misura si è rotta"
 invece di "l'agente ha prodotto un transcript inutilizzabile": su un report la cui funzione

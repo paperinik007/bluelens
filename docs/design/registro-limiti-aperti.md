@@ -427,6 +427,52 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   str | None` (o rifiuta, o ritorna il messaggio), chiamata da entrambi. Stima bassa
   (estrarre una funzione, spostare 4-6 test). Non ancora programmata.
 
+- **Nessuna motivazione documentata per il default `gpt-4o-mini`** — il modello agente
+  è ora configurabile e dichiarato, ma la scelta del default non ha una motivazione
+  scritta. OpenRouter pubblica un "Tool Call Error Rate" per modello, che sarebbe il
+  criterio naturale; scegliere su quella base è una decisione sperimentale separata.
+  Design: `docs/design/2026-08-21-interfaccia-modello-agente-design.md`, sezione 11.6.
+
+- **Il wall-clock budget per caso non è strutturalmente sotto `AGENT_TIMEOUT_S`** —
+  8 turni × timeout 20s = 160s contro un limite di 120s, e fino a ~204s con il retry
+  budget speso. Meglio di prima (il timeout non esisteva), ma ancora non una garanzia.
+  `AGENT_TIMEOUT_S` deliberatamente non alzato: è una condizione sperimentale pubblicata.
+
+- **Una causa per caso escluso** — `transcript_unusable_cause` restituisce la prima
+  causa in un ordine di precedenza dichiarato. Un caso contaminato e poi troncato è
+  attribuito solo a come è finito. Accettabile finché le esclusioni sono rare.
+
+- **Una risposta senza campo `cost` fa uscire il caso dalla misura** — senza la tabella
+  prezzi (rimossa al Task 19), un `usage.cost` mancante solleva e il caso diventa
+  `model_error`. Deliberato e coerente col criterio del design, ma un'omissione lato
+  provider costa un caso.
+
+- **Un trip del circuit breaker ora sopprime anche il report** — i tre `infra`
+  consecutivi sono tre `transcript_missing`, che su qualunque run sotto ~30 casi
+  superano il 10%. Un run troncato prima pubblicava un report dichiarando il troncamento;
+  ora non pubblica affatto. Deliberato, il messaggio stderr nomina entrambe le condizioni.
+
+- **Il circuit breaker è cieco a un run che risponde pulito senza niente di utilizzabile**
+  — conta solo `error_kind == "infra"`, che `orchestrator.py` assegna in 4 punti.
+  Un `stop_reason="model_error"` esce 0, il detector viene invocato e pagato, il breaker
+  vede un caso sano. Sistemico: se la chiave agente esaurisce i crediti a metà run, ogni
+  caso rimanente è pagato e il run non pubblica nulla. Estendere il breaker è stato
+  scritto, revisionato e deliberatamente tagliato (decisione utente 2026-08-21, opzione
+  C): compra solo tempo e denaro, su un evento mai osservato, al prezzo di toccare l'unico
+  meccanismo di controllo del batch. Il costo che avrebbe protetto è ora misurato:
+  **$0.0136 per l'intero run di 31 casi** — il che chiude la questione. Riaprire solo
+  se il costo per caso del detector cresce di ordini di grandezza.
+
+- **Il costo del detector è catturato ma mai aggregato** — `Verdict.cost_usd` è `None`
+  senza una buona ragione. 519 risposte vendor su 519 portano un campo `cost` nel
+  thin-proxy log (run pubblicato). `adapter.py:88` ignora il costo reale e forwarda
+  `in_tokens`/`out_tokens` dall'autodichiarazione del vendor. Chiudere questo è economico
+  e retroattivo: i numeri sono già su disco. Lavoro separato, non questo piano.
+
+- **`error_count` ora esclude i guasti infra nostri** (decisione D-I) — confrontare
+  `error_count` tra un report pre-fix e uno post-fix è confrontare due quantità diverse.
+  Il report lo dice; un lettore che diffa due run deve saperlo.
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **T0007 senza uno scenario valido nel catalogo/dataset** — design finalizzato

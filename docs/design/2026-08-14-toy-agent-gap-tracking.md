@@ -1877,7 +1877,18 @@ scriverlo. Registrato anche in `registro-limiti-aperti.md`.
 
 ## Gap 19 — Argomenti di tool call non parsabili vengono sostituiti in silenzio con `{}`, mai conservati
 
-**Stato**: open.
+**Stato**: risolto (2026-08-25). Design: `docs/design/2026-08-21-interfaccia-modello-agente-design.md`.
+Piano: `docs/superpowers/plans/2026-08-21-interfaccia-modello-agente-implementation.md`.
+Merge commit: branch `agentpi/gap-19-20-21-agent-model-interface`.
+
+**Cosa è stato fatto**: `ToolCall` ha due nuovi campi (`arguments_parse_failed: bool`,
+`raw_arguments: Optional[str]`) con default retrocompatibili; `agent_loop.py` rifiuta di
+eseguire un tool con argomenti non parsabili e registra l'evento; `metrics.py` esclude il
+caso dalla misura con attribuzione per causa; `criteria.py` ha una seconda barriera
+indipendente. Il run del 2026-08-21 (`run_output/`) è stato verificato esente da
+contaminazione da `inspect_run.py` — l'affermazione originale che "non è possibile
+escludere la contaminazione a posteriori" era falsa: l'evidenza era già su disco, andava
+solo cercata. Registrato in `docs/design/2026-08-21-verifica-run-esistenti.md`.
 
 **Trovato da**: sessione utente, durante la chiusura di Plan 5d — richiesta esplicita
 di cercare nel codice altri punti dove una scelta implicita risolve un'ambiguità o un
@@ -1959,17 +1970,26 @@ questo documento.
 **Perché il run del 2026-08-21 (`run_output/`, 31/31 casi) non va pubblicato prima che
 questo gap sia chiuso**: il codice che permetterebbe di verificare se quel run specifico
 contiene già una corruzione mascherata da Gap 19 (un parsing fallito su `bulk_export`
-assorbito silenziosamente come chiamata pulita) non esiste ancora — non è possibile
-escludere la contaminazione a posteriori sui dati già raccolti, solo prevenirla in un
-run futuro dopo il fix. Pubblicare un secondo report sapendo questo, senza almeno
-dichiararlo come caveat esplicito in `_setup_notes()`, ripeterebbe consapevolmente il
-pattern già corretto per Gap 14 (limite noto non dichiarato in un report pubblicato).
-Decisione presa con l'utente, 2026-08-21: risolvere Gap 19 prima di decidere se/come
+assorbito silenziosamente come chiamata pulita) ora esiste — `inspect_run.py` ha
+confermato che il run è esente da contaminazione (0 argomenti vuoti, 0 non-dict su 44
+chiamate). L'affermazione originale che "non è possibile escludere la contaminazione a
+posteriori" era falsa: l'evidenza era già su disco, andava solo cercata. Registrato in
+`docs/design/2026-08-21-verifica-run-esistenti.md`. Il run resta comunque non pubblicato
+per altri motivi (provenance ricostruita, modelli detector non registrati, costi da
+tabella).
 ripubblicare, non pubblicare e correggere dopo.
 
 ## Gap 20 — Il modello dell'agente giocattolo è hardcoded, non configurabile e mai registrato nel report
 
-**Stato**: open.
+**Stato**: risolto (2026-08-25). Design: `docs/design/2026-08-21-interfaccia-modello-agente-design.md`.
+Piano: `docs/superpowers/plans/2026-08-21-interfaccia-modello-agente-implementation.md`.
+Merge commit: branch `agentpi/gap-19-20-21-agent-model-interface`.
+
+**Cosa è stato fatto**: scope allargato rispetto alla formulazione originale. Non solo il
+modello agente: ogni condizione sperimentale che determina il numero è ora configurabile,
+catturata a inizio run da `provenance.py` e dichiarata sempre in `_setup_notes()`. Nel
+report pubblicato, zero condizioni su sei erano dichiarate. `AGENT_MODEL` è una env var
+(opzionale, default `_DEFAULT_MODEL`), passata al container agent via docker-compose.
 
 **Trovato da**: sessione utente, discussione su Gap 19 — l'utente ha notato che il `.env`
 del progetto configura `SIFTER_MODEL`/`INSPECTOR_MODEL`/`EMBED_MODEL` (i modelli del
@@ -2059,7 +2079,15 @@ domanda possa almeno essere posta a posteriori leggendo un report.
 
 ## Gap 21 — Errori transitori della chiamata al modello (rete, rate limit) sono indistinguibili da un esito comportamentale genuino e non sono esclusi dalle metriche
 
-**Stato**: open.
+**Stato**: risolto (2026-08-25). Design: `docs/design/2026-08-21-interfaccia-modello-agente-design.md`.
+Piano: `docs/superpowers/plans/2026-08-21-interfaccia-modello-agente-implementation.md`.
+Merge commit: branch `agentpi/gap-19-20-21-agent-model-interface`.
+
+**Cosa è stato fatto**: retry budget per caso (2 tentativi, backoff 1s/3s) su errori
+transitori (`APIConnectionError`, `APITimeoutError`, `RateLimitError`); ogni retry è contato
+anche quando riesce, il contatore viaggia in `Transcript.model_retry_count`; esauriti i
+retry il caso esce dalla misura con `stop_reason="model_error"`. `max_tokens=2048` e
+`timeout=20s` espliciti rimuovono due cause nostre di troncamento.
 
 **Trovato da**: sessione utente, discussione su Gap 19/Gap 20 — l'utente ha chiesto se
 l'interfaccia con OpenRouter fosse "particolarmente debole" in senso più ampio. Verifica nel
