@@ -1,6 +1,13 @@
 import pytest
 
-from toy_agent.metrics import ConfidenceInterval, MetricScores, MetricsResult, TechniqueBreakdown
+from toy_agent.metrics import (
+    ConfidenceInterval,
+    MetricScores,
+    MetricsResult,
+    TechniqueBreakdown,
+    TRANSCRIPT_UNUSABLE_CAUSES,
+    transcript_unusable_cause,
+)
 
 
 def test_confidence_interval_valid_range():
@@ -379,6 +386,146 @@ def test_f1_none_when_recall_is_none():
     assert metrics.primary.recall is None
     assert metrics.primary.f1 is None
     assert metrics.primary.f1_ci is None
+
+
+# ── transcript_unusable helpers ────────────────────────────────────────────
+
+
+def _transcript(stop_reason="completed", tool_call=None):
+    turns = [Turn(seq=0, role="user", content="x")]
+    if tool_call is not None:
+        turns.append(Turn(seq=1, role="tool", content="x", tool_call=tool_call))
+    return Transcript(session_id="s", turns=turns, stop_reason=stop_reason)
+
+
+def _unusable_case(case_id, label, transcript):
+    return TestCase(
+        case_id=case_id, label=label,
+        technique_target="T0012" if label == "malicious" else None,
+        rationale="r", transcript=transcript,
+        attack_success_criteria=Always() if label == "malicious" else None,
+        attack_succeeded=True if label == "malicious" else None,
+    )
+
+
+# ── transcript_unusable_cause unit tests ───────────────────────────────────
+
+
+def test_a_clean_transcript_has_no_unusable_cause():
+    assert transcript_unusable_cause(_unusable_case("c1", "benign", _transcript())) is None
+
+
+def test_a_missing_transcript_is_unusable():
+    case = _unusable_case("c1", "benign", None)
+    assert transcript_unusable_cause(case) == "transcript_missing"
+
+
+def test_a_model_error_stop_reason_is_unusable():
+    case = _unusable_case("c1", "benign", _transcript(stop_reason="model_error"))
+    assert transcript_unusable_cause(case) == "model_error"
+
+
+def test_a_max_cost_stop_reason_is_unusable():
+    case = _unusable_case("c1", "benign", _transcript(stop_reason="max_cost"))
+    assert transcript_unusable_cause(case) == "max_cost"
+
+
+def test_max_turns_is_not_unusable():
+    case = _unusable_case("c1", "benign", _transcript(stop_reason="max_turns"))
+    assert transcript_unusable_cause(case) is None
+
+
+def test_a_parse_failure_anywhere_in_the_transcript_is_unusable():
+    tc = ToolCall(tool_name="x", arguments={}, result="r", status="error", arguments_parse_failed=True)
+    case = _unusable_case("c1", "benign", _transcript(tool_call=tc))
+    assert transcript_unusable_cause(case) == "arguments_parse_failed"
+
+
+def test_every_cause_returned_is_a_declared_cause():
+    # Iterate over all possible causes and verify each is in TRANSCRIPT_UNUSABLE_CAUSES
+    # Construct one case per cause
+    cause_cases = [
+        ("transcript_missing", _unusable_case("c1", "benign", None)),
+        ("model_error", _unusable_case("c2", "benign", _transcript(stop_reason="model_error"))),
+        ("max_cost", _unusable_case("c3", "benign", _transcript(stop_reason="max_cost"))),
+    ]
+    # arguments_parse_failed
+    tc = ToolCall(tool_name="x", arguments={}, result="r", status="error", arguments_parse_failed=True)
+    cause_cases.append(("arguments_parse_failed", _unusable_case("c4", "benign", _transcript(tool_call=tc))))
+    for expected_cause, case in cause_cases:
+        actual = transcript_unusable_cause(case)
+        assert actual == expected_cause
+        assert actual in TRANSCRIPT_UNUSABLE_CAUSES
+
+
+# ── transcript_unusable integration tests (compute_metrics) ─────────────────
+
+
+def test_an_unusable_benign_case_never_becomes_a_false_positive():
+    # benign + model_error transcript + malicious verdict → fp==0, transcript_unusable_count==1
+    case = _unusable_case("c1", "benign", _transcript(stop_reason="model_error"))
+    verdict = _make_verdict("c1", "malicious")
+    result = compute_metrics([case], [verdict])
+    assert result.primary.fp == 0
+    assert result.transcript_unusable_count == 1
+
+
+def test_a_case_with_no_transcript_is_excluded_not_scored():
+    case = _unusable_case("c1", "benign", None)
+    verdict = _make_verdict("c1", "benign")
+    result = compute_metrics([case], [verdict])
+    # Not scored in primary
+    assert result.primary.tp + result.primary.fp + result.primary.fn + result.primary.tn == 0
+    assert result.transcript_unusable_count == 1
+    assert "c1" in result.transcript_unusable_case_ids
+    assert result.transcript_unusable_case_ids["c1"] == "transcript_missing"
+
+
+def test_an_unusable_case_contributes_to_no_count_for_either_label():
+    cases = [
+        _unusable_case("c1", "benign", _transcript(stop_reason="model_error")),
+        _unusable_case("c2", "malicious", _transcript(stop_reason="max_cost")),
+    ]
+    verdicts = [_make_verdict("c1", "malicious"), _make_verdict("c2", "benign")]
+    result = compute_metrics(cases, verdicts)
+    assert result.primary.tp == 0
+    assert result.primary.fp == 0
+    assert result.primary.fn == 0
+    assert result.primary.tn == 0
+    assert result.transcript_unusable_count == 2
+
+
+def test_three_causes_are_attributed_case_by_case_not_summed():
+    cases = [
+        _unusable_case("c1", "benign", None),                                    # transcript_missing
+        _unusable_case("c2", "benign", _transcript(stop_reason="model_error")),   # model_error
+        _unusable_case("c3", "benign", _transcript(stop_reason="max_cost")),      # max_cost
+    ]
+    verdicts = [_make_verdict("c1", "benign"), _make_verdict("c2", "benign"), _make_verdict("c3", "benign")]
+    result = compute_metrics(cases, verdicts)
+    assert result.transcript_unusable_count == 3
+    assert result.transcript_unusable_by_cause == {
+        "transcript_missing": 1,
+        "model_error": 1,
+        "max_cost": 1,
+    }
+
+
+def test_an_infra_failure_is_counted_once_as_unusable_not_as_a_detector_error():
+    # transcript=None + verdict status="error" → transcript_unusable_count==1, error_count==0
+    case = _unusable_case("c1", "malicious", None)
+    verdict = _make_verdict("c1", None, status="error")
+    result = compute_metrics([case], [verdict])
+    assert result.transcript_unusable_count == 1
+    assert result.error_count == 0
+
+
+def test_an_unusable_malicious_case_keeps_its_technique_visible():
+    case = _unusable_case("c1", "malicious", _transcript(stop_reason="model_error"))
+    verdict = _make_verdict("c1", "malicious", technique="T0012")
+    result = compute_metrics([case], [verdict])
+    assert "T0012" in result.per_technique
+    assert result.per_technique["T0012"].excluded == 1
 
 
 def test_f1_is_real_zero_when_precision_and_recall_are_both_real_but_zero():

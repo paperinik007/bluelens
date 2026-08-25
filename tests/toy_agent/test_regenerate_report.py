@@ -155,11 +155,11 @@ def test_missing_transcript_file_is_handled_gracefully_and_not_counted_as_a_conv
     report = regenerate_report.regenerate(dataset_dir, run_output_dir)
 
     assert "transcript_conversion_failures" not in report
-    assert "ground-truth-unknown" in report.lower() or "Ground truth unknown" in report
+    # transcript file missing → transcript_unusable (D-I: checked first, before ground_truth_unknown)
+    assert "**Transcript unusable" in report
+    assert "**Transcript unusable (transcript missing, model error, max cost, or parse failure):** 1" in report
     assert "**Ground truth unknown" in report
-    # A malicious case with no transcript has attack_succeeded=None -> unknown outcome,
-    # excluded from scoring (matches the live pipeline's raw_transcript_dict is None path).
-    assert "**Ground truth unknown (transcript unavailable/unconvertible, or attack_success_criteria could not be evaluated against it):** 1" in report
+    assert "**Ground truth unknown (transcript unavailable/unconvertible, or attack_success_criteria could not be evaluated against it):** 0" in report
 
 
 def test_reclassified_technique_row_shows_na_not_a_fabricated_zero(tmp_path):

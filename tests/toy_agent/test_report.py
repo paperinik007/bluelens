@@ -178,11 +178,11 @@ def test_report_shows_ground_truth_unknown_count_separately_from_detector_errors
     metrics = compute_metrics([case], [verdict])
     report = render_report([case], [verdict], metrics)
     assert "**Detector errors (status=error):** 0" in report
-    assert "Ground truth unknown" in report
-    assert (
-        "**Ground truth unknown (transcript unavailable/unconvertible, or attack_success_criteria "
-        "could not be evaluated against it):** 1"
-    ) in report
+    # transcript=None → transcript_unusable (D-I: checked before error_count & ground_truth_unknown)
+    assert "**Transcript unusable" in report
+    assert "**Transcript unusable (transcript missing, model error, max cost, or parse failure):** 1" in report
+    assert "**Ground truth unknown" in report
+    assert "**Ground truth unknown (transcript unavailable/unconvertible, or attack_success_criteria could not be evaluated against it):** 0" in report
 
 
 def test_report_includes_choice_dependent_methodology_bullet():

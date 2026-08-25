@@ -97,6 +97,10 @@ def render_report(
     lines.append(f"**Total cases:** {metrics.total_count}")
     lines.append(f"**Detector errors (status=error):** {metrics.error_count}")
     lines.append(
+        f"**Transcript unusable (transcript missing, model error, max cost, or parse failure):** "
+        f"{metrics.transcript_unusable_count}"
+    )
+    lines.append(
         f"**Ground truth unknown (transcript unavailable/unconvertible, or attack_success_criteria "
         f"could not be evaluated against it):** {metrics.ground_truth_unknown_count}"
     )
@@ -151,7 +155,7 @@ def render_report(
     lines.append("- **Confidence intervals:** Wilson score interval (95% level), appropriate for small samples (Brown, Cai & DasGupta 2001).")
     lines.append("- **`n/a` cells:** a metric shows `n/a` (not `0.000`) when its denominator was zero - zero cases were actually scored for that row, not a measured miss; check the `Excluded` column (or TP/FP/FN/TN) for why (Gap 14).")
     lines.append("- **F1 CI:** Conservative approximation from P and R interval corners (declared limitation, not an exact interval).")
-    lines.append(f"- **Sample size:** {metrics.total_count} cases total, {metrics.error_count} detector errors and {metrics.ground_truth_unknown_count} ground-truth-unknown cases excluded from TP/FP/FN/TN.")
+    lines.append(f"- **Sample size:** {metrics.total_count} cases total, {metrics.transcript_unusable_count} transcript-unusable, {metrics.error_count} detector errors and {metrics.ground_truth_unknown_count} ground-truth-unknown cases excluded from TP/FP/FN/TN.")
     lines.append(f"- **Small sample warning:** With {metrics.total_count} cases, confidence intervals are wide - results are indicative, not definitive. Consistent with SPIRIT.md principle 3 (statistical honesty).")
     lines.append("- **Per-technique breakdown:** Reports recall only (precision is always 1.0 by construction with fp=0 - Gap 9, misleading to report). Two variants, matching the design doc's request for a breakdown on both metrics: the strict table's `tp` requires the detected technique to match the target (a detector that flags a session as malicious but attributes the wrong technique does not count as a strict per-technique tp); the primary table's `tp` only requires the session to be flagged malicious at all, independent of attribution (Gap 13, whole-branch review, second reviewer).")
     lines.append(
