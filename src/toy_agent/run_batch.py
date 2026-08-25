@@ -18,6 +18,7 @@ from .sequence import BatchResult, CloseStep, CommandStep, KNOWN_CONTAINERS, Ope
 AGENT_TIMEOUT_S = 120.0
 DETECTOR_TIMEOUT_S = 180.0
 BREAKER_THRESHOLD = 3
+MAX_TRANSCRIPT_UNUSABLE_FRACTION = 0.10
 
 
 def _default_sequence(dataset: list[TestCase], container_lifecycle: str) -> list:
@@ -71,6 +72,33 @@ def execute_batch(
         collect_thin_proxy_log_fn=collect_thin_proxy_log_fn,
         run_command=run_command,
     )
+
+
+def transcript_unusable_gate_failure(result: BatchResult) -> str | None:
+    """The message to print when the run must not be published, else None."""
+    unusable = len(result.transcript_unusable)
+    eligible = len(result.metric_cases) + unusable
+    allowed = max(1.0, MAX_TRANSCRIPT_UNUSABLE_FRACTION * eligible)
+    if eligible <= 0 or unusable <= allowed:
+        return None
+    by_cause: dict[str, int] = {}
+    for cause in result.transcript_unusable.values():
+        by_cause[cause] = by_cause.get(cause, 0) + 1
+    causes = ", ".join(f"{cause}={count}" for cause, count in sorted(by_cause.items()))
+    message = (
+        f"transcript_unusable gate failed: {unusable}/{eligible} metric-eligible case(s) could not be "
+        f"judged ({causes}), above the declared threshold of "
+        f"{MAX_TRANSCRIPT_UNUSABLE_FRACTION:.0%} (floor: 1) — refusing to write report.md. The raw data "
+        f"is still on disk in the run output directory; fix the cause and re-run."
+    )
+    if result.breaker_tripped:
+        message += (
+            f" | NOTE: the circuit breaker also tripped after {result.executed_count}/"
+            f"{result.total_count} cases (last infra failure: {result.last_infra_rationale}) — "
+            f"the three consecutive infra failures that tripped it are themselves counted above, "
+            f"so this gate and the breaker are reporting the same underlying fault, not two."
+        )
+    return message
 
 
 def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s: float, breaker_threshold: int) -> str:
@@ -172,6 +200,11 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(1)
 
     result = execute_batch(dataset, run_output_dir, container_lifecycle=parsed.container_lifecycle, api_key=api_key)
+
+    unusable_failure = transcript_unusable_gate_failure(result)
+    if unusable_failure:
+        print(unusable_failure, file=sys.stderr)
+        sys.exit(1)
 
     shortcut_tools = find_malicious_only_tools(result.metric_cases)
     if shortcut_tools:

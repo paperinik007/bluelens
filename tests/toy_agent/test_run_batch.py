@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 
+import pytest
 import yaml
 
 from toy_agent import run_batch
@@ -598,6 +599,61 @@ def test_main_stderr_notes_a_truncated_run_when_the_breaker_tripped_and_a_shortc
     captured = capsys.readouterr()
     assert "circuit breaker tripped" in captured.err
     assert "truncated" in captured.err
+    assert not (run_output_dir / "report.md").exists()
+
+
+def _result_with_unusable(dataset, unusable_count, executed):
+    cases = dataset[:executed]
+    verdicts = [Verdict(case_id=c.case_id, tool_name="agentic_threat_detection", status="ok", label="benign") for c in cases]
+    unusable = {c.case_id: "model_error" for c in cases[:unusable_count]}
+    keep = [i for i, c in enumerate(cases) if c.case_id not in unusable]
+    return BatchResult(
+        cases=cases, verdicts=verdicts,
+        total_count=executed, executed_count=executed, breaker_tripped=False,
+        metric_cases=[cases[i] for i in keep], metric_verdicts=[verdicts[i] for i in keep],
+        transcript_unusable=unusable,
+    )
+
+
+def test_the_gate_passes_at_or_below_the_declared_fraction():
+    dataset = [_ground_truth(f"c{i}") for i in range(1, 11)]
+    result = _result_with_unusable(dataset, unusable_count=1, executed=10)
+    assert run_batch.transcript_unusable_gate_failure(result) is None
+
+
+def test_the_gate_fails_above_the_declared_fraction():
+    dataset = [_ground_truth(f"c{i}") for i in range(1, 11)]
+    result = _result_with_unusable(dataset, unusable_count=2, executed=10)
+    message = run_batch.transcript_unusable_gate_failure(result)
+    assert message is not None
+    assert "2/10" in message
+    assert "model_error" in message
+
+
+def test_main_refuses_to_write_the_report_past_the_threshold(tmp_path, monkeypatch):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, [f"c{i}" for i in range(1, 11)])
+
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+        cases = dataset[:10]
+        verdicts = [Verdict(case_id=c.case_id, tool_name="agentic_threat_detection", status="ok", label="benign") for c in cases]
+        unusable = {c.case_id: "model_error" for c in cases[:2]}
+        keep = [i for i, c in enumerate(cases) if c.case_id not in unusable]
+        return BatchResult(
+            cases=cases, verdicts=verdicts,
+            total_count=10, executed_count=10, breaker_tripped=False,
+            metric_cases=[cases[i] for i in keep], metric_verdicts=[verdicts[i] for i in keep],
+            transcript_unusable=unusable,
+        )
+
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+
+    try:
+        run_batch.main([str(dataset_dir), str(run_output_dir)])
+        assert False, "expected SystemExit"
+    except SystemExit as exc:
+        assert exc.code == 1
     assert not (run_output_dir / "report.md").exists()
 
 
