@@ -13,7 +13,11 @@ from .state import fresh_state
 def _tool_call_to_dict(tc: ToolCall | None) -> dict | None:
     if tc is None:
         return None
-    return {"tool_name": tc.tool_name, "arguments": tc.arguments, "result": tc.result, "status": tc.status}
+    return {
+        "tool_name": tc.tool_name, "arguments": tc.arguments, "result": tc.result, "status": tc.status,
+        "arguments_parse_failed": tc.arguments_parse_failed,
+        "raw_arguments": tc.raw_arguments,
+    }
 
 
 def _turn_to_dict(turn: Turn) -> dict:
@@ -25,6 +29,7 @@ def transcript_to_dict(transcript: Transcript) -> dict:
         "session_id": transcript.session_id,
         "turns": [_turn_to_dict(t) for t in transcript.turns],
         "stop_reason": transcript.stop_reason,
+        "model_retry_count": transcript.model_retry_count,
     }
 
 

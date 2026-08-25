@@ -141,3 +141,24 @@ def test_criterion_dataclasses_support_equality():
     assert Equals(value="x") == Equals(value="x")
     assert AllOf(criteria=(Always(),)) == AllOf(criteria=(Always(),))
     assert Not(criterion=Always()) == Not(criterion=Always())
+
+
+# --- R5: new ToolCall & Transcript fields (arguments_parse_failed, raw_arguments, model_retry_count) ---
+
+def test_tool_call_defaults_keep_the_pre_fix_shape_constructible():
+    """ToolCall with the 4 old args must still construct; new fields default."""
+    tc = ToolCall(tool_name="x", arguments={}, result=None, status="ok")
+    assert tc.arguments_parse_failed is False
+    assert tc.raw_arguments is None
+
+
+def test_tool_call_with_unparsable_arguments_must_be_an_error():
+    """arguments_parse_failed=True requires status='error'."""
+    with pytest.raises(ValueError):
+        ToolCall(tool_name="x", arguments={}, result=None, status="ok", arguments_parse_failed=True)
+
+
+def test_transcript_defaults_to_zero_model_retries():
+    """Transcript(session_id='s1').model_retry_count == 0"""
+    t = Transcript(session_id="s1")
+    assert t.model_retry_count == 0

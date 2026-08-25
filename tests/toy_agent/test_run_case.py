@@ -6,6 +6,7 @@ import pytest
 from toy_agent.model_client import ModelReply
 from toy_agent.run_case import _extract_scenario, main, run_case, transcript_to_dict
 from toy_agent.schema import Transcript, Turn, ToolCall
+from toy_agent.serialization import transcript_from_dict
 
 
 class FakeModelClient:
@@ -71,6 +72,7 @@ def test_transcript_to_dict_round_trips_a_tool_turn():
     assert d["turns"][1]["tool_call"] == {
         "tool_name": "read_ticket_content", "arguments": {"ticket_id": "tkt_001"},
         "result": "result text", "status": "ok",
+        "arguments_parse_failed": False, "raw_arguments": None,
     }
 
 
@@ -125,3 +127,33 @@ def test_main_exits_nonzero_and_writes_to_stderr_on_bad_input(monkeypatch, capsy
     captured = capsys.readouterr()
     assert captured.out == ""
     assert "run_case failed" in captured.err
+
+
+# --- R5: round-trip preserves new Transcript & ToolCall fields ---
+
+def test_transcript_to_dict_round_trips_the_new_fields():
+    """Create Transcript with model_retry_count=2 and a ToolCall with
+    arguments_parse_failed=True, raw_arguments='{"filter": ', round-trip
+    through transcript_to_dict → transcript_from_dict, assert equality."""
+    transcript = Transcript(
+        session_id="s1",
+        model_retry_count=2,
+        turns=[
+            Turn(seq=0, role="user", content="hi"),
+            Turn(
+                seq=1, role="tool", content="",
+                tool_call=ToolCall(
+                    tool_name="send_email",
+                    arguments={},
+                    result=None,
+                    status="error",
+                    arguments_parse_failed=True,
+                    raw_arguments='{"filter": ',
+                ),
+            ),
+        ],
+        stop_reason="completed",
+    )
+    d = transcript_to_dict(transcript)
+    rebuilt = transcript_from_dict(d)
+    assert rebuilt == transcript

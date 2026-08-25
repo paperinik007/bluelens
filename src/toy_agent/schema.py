@@ -14,10 +14,14 @@ class ToolCall:
     arguments: dict
     result: Optional[str]
     status: Status
+    arguments_parse_failed: bool = False
+    raw_arguments: Optional[str] = None
 
     def __post_init__(self) -> None:
         if self.status not in ("ok", "error"):
             raise ValueError(f"ToolCall.status must be 'ok' or 'error', got {self.status!r}")
+        if self.arguments_parse_failed and self.status != "error":
+            raise ValueError("ToolCall with arguments_parse_failed must have status='error'")
 
 
 @dataclass
@@ -41,6 +45,7 @@ class Transcript:
     session_id: str
     turns: list[Turn] = field(default_factory=list)
     stop_reason: Optional[Literal["completed", "max_turns", "max_cost", "model_error"]] = None
+    model_retry_count: int = 0
 
 
 # --- attack_success_criteria DSL (Gap 18) ---

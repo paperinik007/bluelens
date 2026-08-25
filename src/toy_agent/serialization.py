@@ -6,7 +6,14 @@ from .schema import ToolCall, Transcript, Turn, Verdict
 def _tool_call_from_dict(d: dict | None) -> ToolCall | None:
     if d is None:
         return None
-    return ToolCall(tool_name=d["tool_name"], arguments=d["arguments"], result=d.get("result"), status=d["status"])
+    return ToolCall(
+        tool_name=d["tool_name"],
+        arguments=d["arguments"],
+        result=d.get("result"),
+        status=d["status"],
+        arguments_parse_failed=d.get("arguments_parse_failed", False),
+        raw_arguments=d.get("raw_arguments"),
+    )
 
 
 def _turn_from_dict(d: dict) -> Turn:
@@ -19,6 +26,7 @@ def transcript_from_dict(d: dict) -> Transcript:
         session_id=d["session_id"],
         turns=[_turn_from_dict(t) for t in d.get("turns", [])],
         stop_reason=d.get("stop_reason"),
+        model_retry_count=d.get("model_retry_count", 0),
     )
 
 
