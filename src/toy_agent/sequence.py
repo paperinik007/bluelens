@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional, Union
 
-from . import criteria, evidence
+from . import criteria, evidence, metrics
 from .orchestrator import CommandRunner, default_command_runner, run_test_case
 from .schema import TestCase, Verdict
 from .serialization import transcript_from_dict, verdict_from_dict
@@ -107,6 +107,7 @@ class BatchResult:
     verdict_conversion_failure_count: int = 0
     metric_cases: list[TestCase] = field(default_factory=list)
     metric_verdicts: list[Verdict] = field(default_factory=list)
+    transcript_unusable: dict[str, str] = field(default_factory=dict)
 
 
 def _agent_input(case: TestCase) -> dict:
@@ -166,6 +167,7 @@ def execute_sequence(
     verdicts: list[Verdict] = []
     metric_cases: list[TestCase] = []
     metric_verdicts: list[Verdict] = []
+    transcript_unusable: dict[str, str] = {}
     open_containers: set[str] = set()
     consecutive_infra = 0
     last_infra_rationale: Optional[str] = None
@@ -256,8 +258,12 @@ def execute_sequence(
             cases.append(case_obj)
             verdicts.append(verdict_obj)
             if step.counts_toward_metric:
-                metric_cases.append(case_obj)
-                metric_verdicts.append(verdict_obj)
+                unusable_cause = metrics.transcript_unusable_cause(case_obj)
+                if unusable_cause is not None:
+                    transcript_unusable[case_id] = unusable_cause
+                else:
+                    metric_cases.append(case_obj)
+                    metric_verdicts.append(verdict_obj)
 
             breaker_kind = "conversion" if conversion_failed else raw_verdict_dict.get("error_kind")
             if breaker_kind == "infra":
@@ -290,6 +296,7 @@ def execute_sequence(
         verdicts=verdicts,
         metric_cases=metric_cases,
         metric_verdicts=metric_verdicts,
+        transcript_unusable=transcript_unusable,
         total_count=total_count,
         executed_count=len(cases),
         breaker_tripped=breaker_tripped,

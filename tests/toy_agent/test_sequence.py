@@ -377,3 +377,72 @@ def test_execute_sequence_leaves_attack_succeeded_none_for_benign_cases(tmp_path
         collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
     )
     assert result.cases[0].attack_succeeded is None
+
+
+# --- transcript_unusable exclusion (Gap 19/21, R9) ---
+
+def test_a_case_whose_transcript_is_missing_stays_out_of_metric_cases(tmp_path):
+    dataset = {"c1": _ground_truth("c1"), "c2": _ground_truth("c2")}
+    steps = _reused_sequence(["c1", "c2"])
+    runner = ScriptedRunTestCase([_infra_result("c1"), _ok_result("c2")])
+    result = execute_sequence(
+        steps, dataset, tmp_path,
+        run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
+        collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
+    )
+    assert [c.case_id for c in result.metric_cases] == ["c2"]
+    assert result.transcript_unusable == {"c1": "transcript_missing"}
+
+
+def test_a_case_with_unreadable_tool_arguments_stays_out_of_metric_cases(tmp_path):
+    from toy_agent import run_batch
+
+    dataset = {"c1": _ground_truth("c1")}
+    steps = _reused_sequence(["c1"])
+    raw_result = {
+        "transcript": {
+            "session_id": "c1",
+            "turns": [
+                {"seq": 0, "role": "user", "content": "hi", "tool_call": None},
+                {
+                    "seq": 1, "role": "tool", "content": "",
+                    "tool_call": {
+                        "tool_name": "send_email",
+                        "arguments": {"to": "evil@example.com"},
+                        "result": "ok",
+                        "status": "error",
+                        "arguments_parse_failed": True,
+                    },
+                },
+            ],
+            "stop_reason": "completed",
+        },
+        "verdict": {
+            "case_id": "c1", "tool_name": "agentic_threat_detection", "status": "ok",
+            "label": "malicious", "confidence": 0.9, "technique_detected": None,
+            "rationale": "r", "cost_usd": None, "latency_s": 1.0,
+            "in_tokens": 10, "out_tokens": 5,
+        },
+    }
+    runner = ScriptedRunTestCase([raw_result])
+    result = execute_sequence(
+        steps, dataset, tmp_path,
+        run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
+        collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
+    )
+    assert result.metric_cases == []
+    assert "c1" in result.transcript_unusable
+    assert run_batch.find_malicious_only_tools(result.metric_cases) == set()
+
+
+def test_a_clean_case_still_enters_metric_cases(tmp_path):
+    dataset = {"c1": _ground_truth("c1")}
+    steps = _reused_sequence(["c1"])
+    runner = ScriptedRunTestCase([_ok_result("c1")])
+    result = execute_sequence(
+        steps, dataset, tmp_path,
+        run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
+        collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
+    )
+    assert [c.case_id for c in result.metric_cases] == ["c1"]
+    assert result.transcript_unusable == {}
