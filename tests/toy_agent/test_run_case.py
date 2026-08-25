@@ -1,8 +1,13 @@
+import io
 import json
+import sys
 import uuid
+from pathlib import Path
 
 import pytest
+import yaml
 
+import toy_agent.run_case as run_case_module
 from toy_agent.model_client import ModelReply
 from toy_agent.run_case import _extract_scenario, main, run_case, transcript_to_dict
 from toy_agent.schema import Transcript, Turn, ToolCall
@@ -107,7 +112,7 @@ def test_main_writes_only_the_transcript_json_to_stdout(monkeypatch, capsys):
     monkeypatch.setattr(run_case_module.sys, "stdin", __import__("io").StringIO(json.dumps(_SEED_INPUT)))
     monkeypatch.setattr(
         run_case_module, "OpenRouterModelClient",
-        lambda: FakeModelClient([ModelReply(content="done", tool_calls=[], cost_usd=0.0)]),
+        lambda model=None, api_key=None: FakeModelClient([ModelReply(content="done", tool_calls=[], cost_usd=0.0)]),
     )
     run_case_module.main()
     captured = capsys.readouterr()
@@ -130,6 +135,37 @@ def test_main_exits_nonzero_and_writes_to_stderr_on_bad_input(monkeypatch, capsy
 
 
 # --- R5: round-trip preserves new Transcript & ToolCall fields ---
+
+def test_main_passes_the_configured_agent_model_to_the_client(monkeypatch):
+    captured = {}
+    class FakeClient:
+        def __init__(self, model=None, api_key=None):
+            captured["model"] = model
+    monkeypatch.setenv("AGENT_MODEL", "vendor/other-model")
+    monkeypatch.setattr(run_case_module, "OpenRouterModelClient", FakeClient)
+    monkeypatch.setattr(run_case_module, "run_case", lambda data, client: {"session_id": "s", "turns": [], "stop_reason": "completed", "model_retry_count": 0})
+    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps({"case_id": "c1", "transcript": {"turns": [{"seq": 0, "role": "user", "content": "hi"}]}})))
+    run_case_module.main()
+    assert captured["model"] == "vendor/other-model"
+
+
+def test_main_falls_back_to_the_code_default_when_the_variable_is_unset(monkeypatch):
+    captured = {}
+    class FakeClient:
+        def __init__(self, model=None, api_key=None):
+            captured["model"] = model
+    monkeypatch.delenv("AGENT_MODEL", raising=False)
+    monkeypatch.setattr(run_case_module, "OpenRouterModelClient", FakeClient)
+    monkeypatch.setattr(run_case_module, "run_case", lambda data, client: {"session_id": "s", "turns": [], "stop_reason": "completed", "model_retry_count": 0})
+    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps({"case_id": "c1", "transcript": {"turns": [{"seq": 0, "role": "user", "content": "hi"}]}})))
+    run_case_module.main()
+    assert captured["model"] == "openai/gpt-4o-mini"
+
+
+def test_docker_compose_passes_agent_model_to_the_agent_service():
+    compose = yaml.safe_load(Path("docker-compose.yml").read_text(encoding="utf-8"))
+    assert "AGENT_MODEL" in compose["services"]["agent"]["environment"]
+
 
 def test_transcript_to_dict_round_trips_the_new_fields():
     """Create Transcript with model_retry_count=2 and a ToolCall with

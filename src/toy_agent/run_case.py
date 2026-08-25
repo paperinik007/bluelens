@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import uuid
 
 from .agent_loop import build_tool_registry, run_agent
-from .model_client import OpenRouterModelClient
+from .model_client import OpenRouterModelClient, _DEFAULT_MODEL
 from .schema import ToolCall, Transcript, Turn
 from .state import fresh_state
 
@@ -68,7 +69,8 @@ def run_case(data: dict, model_client) -> dict:
 def main() -> None:
     try:
         data = json.loads(sys.stdin.read())
-        result = run_case(data, OpenRouterModelClient())
+        model = os.environ.get("AGENT_MODEL") or _DEFAULT_MODEL
+        result = run_case(data, OpenRouterModelClient(model=model))
     except Exception as exc:
         # Never propagate the raw exception message — may contain the
         # OpenRouter API key (same discipline as agent_loop.py's own

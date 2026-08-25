@@ -60,6 +60,11 @@ Servono due chiavi API OpenRouter distinte, una per `agent` e una per `detector`
 principio, non per necessità tecnica: un container compromesso non deve poter
 spendere o agire per conto dell'altro (Gap 9, confine misuratore/misurato).
 
+I modelli per i tier del detector (`SIFTER_MODEL`, `INSPECTOR_MODEL`, `EMBED_MODEL`)
+e per l'agente giocattolo (`AGENT_MODEL`) sono opzionali — lasciare vuoto per usare
+i default del codice (`vendor_proxy.py` per i tier, `model_client.py` per l'agente).
+Tutti i modelli usati sono dichiarati nel report (Gap 20).
+
 ```
 cp .env.example .env
 # poi modificare .env e impostare AGENT_OPENROUTER_API_KEY=<chiave 1> e
