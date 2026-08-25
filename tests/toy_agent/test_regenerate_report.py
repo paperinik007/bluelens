@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from toy_agent import regenerate_report
+from toy_agent import provenance, regenerate_report
 
 
 def _dataset_entry(
@@ -157,7 +157,8 @@ def test_missing_transcript_file_is_handled_gracefully_and_not_counted_as_a_conv
     assert "transcript_conversion_failures" not in report
     # transcript file missing → transcript_unusable (D-I: checked first, before ground_truth_unknown)
     assert "**Transcript unusable" in report
-    assert "**Transcript unusable (transcript missing, model error, max cost, or parse failure):** 1" in report
+    assert "c1_malicious" in report
+    assert "transcript_missing" in report
     assert "**Ground truth unknown" in report
     assert "**Ground truth unknown (transcript unavailable/unconvertible, or attack_success_criteria could not be evaluated against it):** 0" in report
 
@@ -228,6 +229,100 @@ def _case_with_tool_call_entry(case_id: str, label: str, tool_name: str, techniq
     find_malicious_only_tools() inspects (case.transcript.turns[*].tool_call),
     never the authored seed turn."""
     return _dataset_entry(case_id, label=label, technique_target=technique_target)
+
+
+def test_regeneration_excludes_an_unusable_case_from_the_metric(tmp_path):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "run_output"
+
+    _write_dataset(dataset_dir, [
+        _dataset_entry("c1_benign", label="benign"),
+        _dataset_entry("c2_model_error", label="benign"),
+    ])
+    _write_verdicts_jsonl(run_output_dir, [
+        _verdict_dict("c1_benign", label="benign"),
+        _verdict_dict("c2_model_error", label="malicious"),
+    ])
+    _write_transcript(run_output_dir, "c1_benign", turns=[])
+    _write_transcript(run_output_dir, "c2_model_error", turns=[], stop_reason="model_error")
+
+    report = regenerate_report.regenerate(dataset_dir, run_output_dir)
+
+    assert "**Transcript unusable" in report
+    assert "c2_model_error" in report
+    assert "model_error" in report
+    assert "False Positive" not in report
+
+
+def test_regeneration_refuses_past_the_unusable_threshold(tmp_path):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "run_output"
+
+    _write_dataset(dataset_dir, [
+        _dataset_entry("c1", label="benign"),
+        _dataset_entry("c2", label="benign"),
+    ])
+    _write_verdicts_jsonl(run_output_dir, [
+        _verdict_dict("c1", label="benign"),
+        _verdict_dict("c2", label="benign"),
+    ])
+    _write_transcript(run_output_dir, "c1", turns=[], stop_reason="model_error")
+    _write_transcript(run_output_dir, "c2", turns=[], stop_reason="model_error")
+
+    with pytest.raises(ValueError, match="transcript_unusable"):
+        regenerate_report.regenerate(dataset_dir, run_output_dir)
+
+
+def test_regeneration_uses_the_recorded_provenance_not_todays(tmp_path):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "run_output"
+
+    _write_dataset(dataset_dir, [
+        _dataset_entry("c1", label="benign"),
+    ])
+    _write_verdicts_jsonl(run_output_dir, [
+        _verdict_dict("c1", label="benign"),
+    ])
+    _write_transcript(run_output_dir, "c1", turns=[])
+
+    prov = {
+        "measurer_commit": "0745490",
+        "measurer_dirty": False,
+        "vendor_commit": "abc1234",
+        "agent_model": "test-model",
+        "sifter_model": "test-sifter",
+        "inspector_model": "test-inspector",
+        "embed_model": "test-embed",
+        "cost_source": "pricing table (pre-fix run)",
+        "agent_max_tokens": 1000,
+        "agent_request_timeout_s": 30,
+        "agent_max_retries_per_case": 1,
+    }
+    provenance.write_provenance(prov, run_output_dir)
+
+    report = regenerate_report.regenerate(dataset_dir, run_output_dir)
+
+    assert "measurer_commit=0745490" in report
+    assert "cost_source=pricing table (pre-fix run)" in report
+    assert "vendor_commit=abc1234" in report
+
+
+def test_regeneration_declares_a_run_with_no_recorded_provenance(tmp_path):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "run_output"
+
+    _write_dataset(dataset_dir, [
+        _dataset_entry("c1", label="benign"),
+    ])
+    _write_verdicts_jsonl(run_output_dir, [
+        _verdict_dict("c1", label="benign"),
+    ])
+    _write_transcript(run_output_dir, "c1", turns=[])
+
+    # No provenance.json written
+    report = regenerate_report.regenerate(dataset_dir, run_output_dir)
+
+    assert "not recorded" in report
 
 
 def test_anti_shortcut_gate_refuses_to_regenerate_when_a_tool_appears_only_in_malicious_cases(tmp_path):

@@ -6,10 +6,18 @@ import sys
 from pathlib import Path
 
 from . import criteria
+from . import metrics as metrics_module, provenance
 from .dataset import load_dataset
 from .metrics import compute_metrics
 from .report import render_report
-from .run_batch import AGENT_TIMEOUT_S, BREAKER_THRESHOLD, DETECTOR_TIMEOUT_S, _setup_notes, find_malicious_only_tools
+from .run_batch import (
+    AGENT_TIMEOUT_S,
+    BREAKER_THRESHOLD,
+    DETECTOR_TIMEOUT_S,
+    _setup_notes,
+    find_malicious_only_tools,
+    transcript_unusable_gate_failure,
+)
 from .schema import TestCase, Verdict
 from .sequence import BatchResult, _fallback_verdict
 from .serialization import transcript_from_dict, verdict_from_dict
@@ -107,17 +115,33 @@ def regenerate(dataset_dir: Path, run_output_dir: Path) -> str:
         cases.append(case_obj)
         verdicts.append(verdict_obj)
 
+    metric_cases = []
+    metric_verdicts = []
+    transcript_unusable: dict[str, str] = {}
+    for case_obj, verdict_obj in zip(cases, verdicts):
+        cause = metrics_module.transcript_unusable_cause(case_obj)
+        if cause is not None:
+            transcript_unusable[case_obj.case_id] = cause
+        else:
+            metric_cases.append(case_obj)
+            metric_verdicts.append(verdict_obj)
+
     result = BatchResult(
         cases=cases,
         verdicts=verdicts,
-        metric_cases=cases,
-        metric_verdicts=verdicts,
+        metric_cases=metric_cases,
+        metric_verdicts=metric_verdicts,
+        transcript_unusable=transcript_unusable,
         total_count=len(cases),
         executed_count=len(cases),
         breaker_tripped=False,
         transcript_conversion_failure_count=transcript_conversion_failure_count,
         verdict_conversion_failure_count=verdict_conversion_failure_count,
     )
+
+    unusable_failure = transcript_unusable_gate_failure(result)
+    if unusable_failure:
+        raise ValueError(unusable_failure)
 
     # Anti-shortcut gate (mirrors run_batch.py::main(), lines ~176-190): the
     # live pipeline refuses to write report.md at all when a tool appears
@@ -141,9 +165,17 @@ def regenerate(dataset_dir: Path, run_output_dir: Path) -> str:
             f"regenerate report.md (anti-shortcut gate, mirrors run_batch.py::main())"
         )
 
+    prov = provenance.read_provenance(run_output_dir)
     metrics = compute_metrics(result.metric_cases, result.metric_verdicts)
-    setup_notes = _setup_notes(result, AGENT_TIMEOUT_S, DETECTOR_TIMEOUT_S, BREAKER_THRESHOLD)
-    return render_report(result.cases, result.verdicts, metrics, setup_notes=setup_notes)
+    setup_notes = _setup_notes(result, AGENT_TIMEOUT_S, DETECTOR_TIMEOUT_S, BREAKER_THRESHOLD, prov)
+    return render_report(
+        result.cases,
+        result.verdicts,
+        metrics,
+        setup_notes=setup_notes,
+        transcript_unusable=result.transcript_unusable,
+        provenance=prov,
+    )
 
 
 def main(argv: list[str] | None = None) -> None:
