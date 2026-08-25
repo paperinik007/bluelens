@@ -33,6 +33,11 @@ You review the ENTIRE branch diff from merge-base to head. You return:
 - Issues (Critical / Important / Minor)
 - Assessment: Ready to merge? Yes / No / With fixes
 
+**For spec compliance you must receive the FULL plan, design doc, and ledger — never a
+controller's synthesis.** A summary carries the controller's bias and drops the R-mapping
+table and binding decisions (D-*). If you are given only a diff, say so and request the
+full documents — a review without them is code-quality only, not spec compliance.
+
 ## Global constraints (bind every review)
 
 - **Python >= 3.11**, **pytest >= 8.0.0**, no new dependency in `pyproject.toml`
