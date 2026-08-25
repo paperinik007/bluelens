@@ -456,3 +456,28 @@ class TestParseArguments:
         # Must NOT be flagged as a parse failure — the arguments were valid JSON
         assert tc.arguments_parse_failed is False
         assert "unknown tool" in tc.result
+
+    def test_none_arguments_does_not_crash_the_agent_loop(self):
+        """When raw arguments is None, the parse-failure branch must not crash on len(None)."""
+        script = [
+            _one_bulk_export_call(None),  # None instead of a string
+            ModelReply(content="Done.", tool_calls=[], cost_usd=0.001),
+        ]
+        client = FakeModelClient(script)
+        state = fresh_state()
+        transcript = run_agent(
+            "export please",
+            tools=_bulk_export_spec(),
+            state=state,
+            model_client=client,
+            session_id="s_parse_none",
+        )
+
+        tool_turns = [t for t in transcript.turns if t.role == "tool"]
+        assert len(tool_turns) == 1
+        tc = tool_turns[0].tool_call
+        assert tc.arguments_parse_failed is True
+        assert tc.status == "error"
+        # raw_arguments must be a str (repr of None), not the raw None
+        assert tc.raw_arguments == "None"
+        assert "not a readable JSON object" in tc.result

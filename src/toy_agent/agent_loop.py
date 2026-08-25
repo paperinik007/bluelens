@@ -167,10 +167,11 @@ def run_agent(
             arguments, parse_failed = _parse_arguments(raw_text)
 
             if parse_failed:
+                raw_text_str = raw_text if isinstance(raw_text, str) else repr(raw_text)
                 excerpt = (
-                    raw_text
-                    if len(raw_text) <= _RAW_ARGS_EXCERPT_LEN
-                    else raw_text[:_RAW_ARGS_EXCERPT_LEN] + "..."
+                    raw_text_str
+                    if len(raw_text_str) <= _RAW_ARGS_EXCERPT_LEN
+                    else raw_text_str[:_RAW_ARGS_EXCERPT_LEN] + "..."
                 )
                 result = f"invalid arguments for {tool_name!r}: not a readable JSON object: {excerpt}"
                 tool_call = ToolCall(
@@ -179,7 +180,7 @@ def run_agent(
                     result=result,
                     status="error",
                     arguments_parse_failed=True,
-                    raw_arguments=raw_text,
+                    raw_arguments=raw_text_str,
                 )
             else:
                 spec = tools.get(tool_name)

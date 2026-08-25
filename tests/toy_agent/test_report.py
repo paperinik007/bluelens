@@ -176,11 +176,12 @@ def test_report_shows_ground_truth_unknown_count_separately_from_detector_errors
     )
     verdict = Verdict(case_id="c1", tool_name="toy_support", status="ok", label="benign")
     metrics = compute_metrics([case], [verdict])
-    report = render_report([case], [verdict], metrics)
+    report = render_report([case], [verdict], metrics, transcript_unusable={"c1": "transcript_missing"})
     assert "**Detector errors (status=error):** 0" in report
     # transcript=None → transcript_unusable (D-I: checked before error_count & ground_truth_unknown)
     assert "**Transcript unusable" in report
-    assert "**Transcript unusable (transcript missing, model error, max cost, or parse failure):** 1" in report
+    # The exclusion count line reads from the unusable dict (decision D-J), not metrics.
+    assert "**Transcript unusable (excluded — fault in the transcript's generation, not in the detector; not counted as a detector error):** 1" in report
     assert "**Ground truth unknown" in report
     assert "**Ground truth unknown (transcript unavailable/unconvertible, or attack_success_criteria could not be evaluated against it):** 0" in report
 

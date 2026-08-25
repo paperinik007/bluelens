@@ -176,3 +176,48 @@ def test_the_published_run_is_inspectable_by_anyone_with_the_repo():
     assert result["non_dict_arguments"] == 0
     assert result["missing_transcripts"] == []
     assert result["stale_transcripts"] == []
+
+
+def test_corrupt_transcript_file_is_reported_not_crashed(tmp_path):
+    from toy_agent.inspect_run import inspect_run, format_inspection
+
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    # A valid transcript
+    (raw / "c1.transcript.json").write_text(
+        json.dumps({"session_id": "s1", "turns": [], "stop_reason": "completed"}),
+        encoding="utf-8",
+    )
+    # A corrupt transcript (not valid JSON)
+    (raw / "c2.transcript.json").write_text("this is not json", encoding="utf-8")
+    (tmp_path / "verdicts.jsonl").write_text(
+        json.dumps({"case_id": "c1", "status": "ok"}) + "\n" +
+        json.dumps({"case_id": "c2", "status": "ok"}) + "\n",
+        encoding="utf-8",
+    )
+
+    result = inspect_run(tmp_path)
+
+    # The valid transcript is counted
+    assert result["transcript_count"] == 2  # both files were attempted
+    assert result["corrupt_transcripts"] == [("c2.transcript.json", "JSONDecodeError")]
+    # The corrupt file's case_id is not added to transcript_case_ids
+    # so it appears as missing (verdict exists but no transcript was read)
+    assert "c2" in result["missing_transcripts"]
+
+    output = format_inspection(result)
+    assert "corrupt transcripts (skipped):" in output
+    assert "c2.transcript.json" in output
+    assert "JSONDecodeError" in output
+
+
+def test_no_corrupt_transcripts_reported_for_clean_run(tmp_path):
+    from toy_agent.inspect_run import inspect_run, format_inspection
+
+    transcripts = {"c1": _transcript()}
+    run_dir = _write_run(tmp_path, transcripts)
+
+    result = inspect_run(run_dir)
+    assert result["corrupt_transcripts"] == []
+    output = format_inspection(result)
+    assert "corrupt transcripts (skipped): none" in output

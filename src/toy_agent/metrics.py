@@ -63,6 +63,9 @@ class MetricsResult:
     per_technique: dict[str, TechniqueBreakdown] = field(default_factory=dict)
     per_technique_primary: dict[str, TechniqueBreakdown] = field(default_factory=dict)
     transcript_unusable_count: int = 0
+    # transcript_unusable_by_cause and transcript_unusable_case_ids are populated
+    # for the alarm's diagnostic detail; the display source for exclusion counts
+    # in reports is BatchResult.transcript_unusable (decision D-J).
     transcript_unusable_by_cause: dict[str, int] = field(default_factory=dict)
     transcript_unusable_case_ids: dict[str, str] = field(default_factory=dict)
 

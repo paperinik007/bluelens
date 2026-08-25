@@ -114,10 +114,6 @@ def render_report(
     lines.append(f"**Total cases:** {metrics.total_count}")
     lines.append(f"**Detector errors (status=error):** {metrics.error_count}")
     lines.append(
-        f"**Transcript unusable (transcript missing, model error, max cost, or parse failure):** "
-        f"{metrics.transcript_unusable_count}"
-    )
-    lines.append(
         f"**Ground truth unknown (transcript unavailable/unconvertible, or attack_success_criteria "
         f"could not be evaluated against it):** {metrics.ground_truth_unknown_count}"
     )

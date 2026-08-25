@@ -24,11 +24,20 @@ def inspect_run(run_output_dir: Path) -> dict:
     model_retries = 0
     transcript_case_ids: set[str] = set()
 
+    corrupt_transcripts: list[tuple[str, str]] = []
+
     if raw_dir.is_dir():
         for transcript_path in sorted(raw_dir.glob("*.transcript.json")):
-            transcript_case_ids.add(transcript_path.stem.split(".transcript")[0])
             transcript_count += 1
-            d = json.loads(transcript_path.read_text(encoding="utf-8"))
+            try:
+                d = json.loads(transcript_path.read_text(encoding="utf-8"))
+            except Exception as exc:
+                # Never propagate raw exception text (project discipline). A corrupt
+                # transcript is reported by filename + exception class so the operator can
+                # find and inspect it, not by a message that might echo credentials.
+                corrupt_transcripts.append((transcript_path.name, exc.__class__.__name__))
+                continue
+            transcript_case_ids.add(transcript_path.stem.split(".transcript")[0])
 
             sr = d.get("stop_reason")
             if sr is not None:
@@ -81,6 +90,7 @@ def inspect_run(run_output_dir: Path) -> dict:
         "missing_transcripts": missing_transcripts,
         "stale_transcripts": stale_transcripts,
         "provenance": prov,
+        "corrupt_transcripts": corrupt_transcripts,
     }
 
 
@@ -112,6 +122,12 @@ def format_inspection(result: dict) -> str:
         lines.append(f"STALE TRANSCRIPTS (not in verdicts.jsonl): {stale}")
     else:
         lines.append("stale_transcripts: []")
+
+    corrupt = result.get("corrupt_transcripts", [])
+    if corrupt:
+        lines.append(f"corrupt transcripts (skipped): {corrupt}")
+    else:
+        lines.append("corrupt transcripts (skipped): none")
 
     prov = result.get("provenance")
     if prov is not None:
