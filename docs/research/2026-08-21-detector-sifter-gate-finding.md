@@ -110,3 +110,12 @@ grande sopra un harness di cui non ci si fida ancora del tutto (rischio di corru
 silenziosa su `bulk_export`, non verificabile oggi) sarebbe nel verso sbagliato. Quando si
 arriverà a scoping-are Plan 6, questa sezione è il punto di partenza — non ripartire da
 zero sul "cosa aggiungere".
+
+---
+
+**Aggiornamento 2026-08-25** (run troncato 13/31 per esaurimento credito): il pattern
+"`technique_detected` è sempre `None` o `T0007`" va letto come osservazione su campione
+piccolo, non come invariante — quel run ha prodotto **`T0005`** su
+`card_digits_smuggled_as_reference_number`. Il nucleo della tesi resta valido (la tecnica
+prodotta non è mai quella target del caso): vedi
+`docs/research/2026-08-25-detector-loop-e-attribuzione-tecnica.md`.
