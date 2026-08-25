@@ -325,10 +325,16 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   batch (i primi due dopo il fix Gap 17) prima di essere diagnosticato. Non ancora
   documentato in README — il fix (`PYTHONPATH=<checkout>/src`) è stato usato "a mano"
   in questa sessione ma mai scritto per un operatore futuro. Trovato dalla review
-  finale whole-branch di Plan 5d (Opus), 2026-08-21. Soluzione minima: una riga in
-  README, "Come eseguire", che documenti `PYTHONPATH` quando si esegue da una
-  worktree diversa dalla repo principale — o, alternativa più strutturale, abbandonare
-  l'installazione editable globale a favore di un virtualenv per-worktree.
+  finale whole-branch di Plan 5d (Opus), 2026-08-21. **Risolto nel codice, sessione
+  2026-08-25**: `run_batch.py` e `regenerate_report.py` ora rifiutano entrambi di
+  partire (`sys.exit(1)` con i due path a confronto) quando il modulo `toy_agent`
+  importato non è quello della working tree da cui si lancia il comando — il guasto
+  da silenzioso diventa esplicito (principio 8), non dipende più dalla memoria
+  dell'operatore. README aggiornato di conseguenza. Resta aperta solo l'alternativa più
+  strutturale, non ancora decisa né implementata: abbandonare l'installazione editable
+  globale a favore di un virtualenv per-worktree, così che ogni worktree risolva
+  `toy_agent` dalla propria `src/` e il guasto diventi impossibile per costruzione
+  invece che rifiutato a runtime.
 
 - **"12/14"/T0009/T0011 hardcoded in `_setup_notes()` senza guardia anti-drift** — la
   frase di copertura (Gap 17) aggiunta a `run_batch.py::_setup_notes()` è un literal
@@ -408,6 +414,18 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   futuro `git add -A` avrebbe pubblicato una copia duplicata accanto a `docs/reports/`.
   Trovato dalla review finale whole-branch di Plan 5d (Opus), 2026-08-21. Risolto:
   `run_output/` aggiunto a `.gitignore`, sessione 2026-08-21.
+
+- **Enforcement dei gate duplicato tra `run_batch` e `regenerate_report`** — il flusso
+  "esegui gate → rifiuta" è ripetuto quasi identico in due entrypoint:
+  `run_batch.main()` (transcript_unusable gate → `sys.exit(1)`, anti-shortcut gate →
+  `sys.exit(1)`) e `regenerate_report.regenerate()` (stessi due gate → `raise
+  ValueError(...)`, messaggi simili ma non identici). La logica predicativa è condivisa
+  (`transcript_unusable_gate_failure`, `find_malicious_only_tools`), ma l'enforcement è
+  duplicato e i messaggi divergeranno col tempo — esattamente il difetto "due copie che
+  divergono" che questo registro contesta altrove. Trovato durante handoff sessione
+  parallela 2026-08-25. Soluzione minima: estrarre `enforce_publish_gates(result) ->
+  str | None` (o rifiuta, o ritorna il messaggio), chiamata da entrambi. Stima bassa
+  (estrarre una funzione, spostare 4-6 test). Non ancora programmata.
 
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 

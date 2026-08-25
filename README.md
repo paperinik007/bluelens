@@ -89,6 +89,17 @@ python -m toy_agent.run_batch <dataset_dir> <run_output_dir> --container-lifecyc
 python -m toy_agent.run_batch <dataset_dir> <run_output_dir> --container-lifecycle per-case
 ```
 
+Attenzione alle worktree: `python -m toy_agent.run_batch` risolve il pacchetto
+`toy_agent` dall'installazione editable globale, che punta al checkout principale della
+repo — se lanci il comando da una worktree diversa, eseguiresti silenziosamente il
+codice sbagliato. `run_batch.py` ora **rifiuta di partire** quando il modulo importato
+non è quello della working tree da cui lanci il comando (fallisce con un messaggio che
+mostra i due path, invece di produrre numeri col codice sbagliato). Se vedi quel
+rifiuto, forza la risoluzione con
+`PYTHONPATH=<checkout>/src python -m toy_agent.run_batch <dataset_dir> <run_output_dir>`.
+Per verifica manuale:
+`python -c "import toy_agent.run_batch as m; print(m.__file__)"`.
+
 `reused` (default) tiene `agent`/`detector` aperti per l'intero batch — fedele alla
 condizione di misura dichiarata dal vendor (Gauntlet, `Pipeline()` istanziata una sola
 volta per 300 sessioni). `per-case` ricrea entrambi i container a ogni caso, per costruzione

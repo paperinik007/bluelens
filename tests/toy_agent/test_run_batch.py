@@ -762,3 +762,53 @@ def test_main_writes_the_provenance_file_next_to_the_raw_data(tmp_path, monkeypa
     prov = json.loads((run_output_dir / "provenance.json").read_text(encoding="utf-8"))
     assert prov["agent_model"] == "openai/gpt-4o-mini"
     assert "measurer_commit=" in (run_output_dir / "report.md").read_text(encoding="utf-8")
+
+
+# --- runtime guard: refuse to run the wrong checkout's code ---
+
+def _repo_root() -> Path:
+    # tests/toy_agent/test_run_batch.py -> repo root
+    return Path(__file__).resolve().parent.parent.parent
+
+
+def test_working_tree_root_finds_the_repo_from_its_own_root(monkeypatch):
+    monkeypatch.chdir(_repo_root())
+    assert run_batch._working_tree_root() == _repo_root()
+
+
+def test_working_tree_root_finds_the_repo_from_a_subdirectory(monkeypatch):
+    monkeypatch.chdir(_repo_root() / "tests")
+    assert run_batch._working_tree_root() == _repo_root()
+
+
+def test_working_tree_root_returns_none_outside_any_checkout(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    assert run_batch._working_tree_root() is None
+
+
+def test_runtime_guard_passes_when_imported_from_the_working_tree(monkeypatch):
+    monkeypatch.chdir(_repo_root())
+    run_batch._assert_running_from_this_working_tree()  # must not exit
+
+
+def test_runtime_guard_refuses_when_imported_from_elsewhere(monkeypatch):
+    monkeypatch.chdir(_repo_root())
+    monkeypatch.setattr(run_batch, "__file__", "/elsewhere/src/toy_agent/run_batch.py")
+    try:
+        run_batch._assert_running_from_this_working_tree()
+        assert False, "expected SystemExit"
+    except SystemExit as exc:
+        assert exc.code == 1
+
+
+def test_main_calls_the_guard_before_anything_else(monkeypatch, capsys):
+    monkeypatch.chdir(_repo_root())
+    monkeypatch.setattr(run_batch, "__file__", "/elsewhere/src/toy_agent/run_batch.py")
+    try:
+        run_batch.main(["dataset", "out"])
+        assert False, "expected SystemExit"
+    except SystemExit as exc:
+        assert exc.code == 1
+    captured = capsys.readouterr()
+    assert "refusing to run" in captured.err
+    assert "different checkout" in captured.err

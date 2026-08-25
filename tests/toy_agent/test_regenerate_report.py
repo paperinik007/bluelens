@@ -364,3 +364,38 @@ def test_anti_shortcut_gate_refuses_to_regenerate_when_a_tool_appears_only_in_ma
 
     with pytest.raises(ValueError, match="shortcut"):
         regenerate_report.regenerate(dataset_dir, run_output_dir)
+
+
+# --- runtime guard: refuse to run the wrong checkout's code ---
+
+def _repo_root() -> Path:
+    # tests/toy_agent/test_regenerate_report.py -> repo root
+    return Path(__file__).resolve().parent.parent.parent
+
+
+def test_main_passes_the_guard_in_the_real_working_tree(tmp_path, monkeypatch):
+    from toy_agent import run_batch
+    monkeypatch.chdir(_repo_root())
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "run_output"
+    _write_dataset(dataset_dir, [_dataset_entry("c1")])
+    _write_verdicts_jsonl(run_output_dir, [_verdict_dict("c1")])
+    _write_transcript(run_output_dir, "c1", turns=[])
+    # Must not exit: guard sees the package imported from the real working tree.
+    regenerate_report.main([str(dataset_dir), str(run_output_dir)])
+    assert (run_output_dir / "report.md").exists()
+
+
+def test_main_refuses_when_the_package_is_imported_from_elsewhere(tmp_path, monkeypatch):
+    from toy_agent import run_batch
+    monkeypatch.chdir(_repo_root())
+    monkeypatch.setattr(run_batch, "__file__", "/elsewhere/src/toy_agent/run_batch.py")
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "run_output"
+    _write_dataset(dataset_dir, [_dataset_entry("c1")])
+    _write_verdicts_jsonl(run_output_dir, [_verdict_dict("c1")])
+    _write_transcript(run_output_dir, "c1", turns=[])
+    with pytest.raises(SystemExit) as exc:
+        regenerate_report.main([str(dataset_dir), str(run_output_dir)])
+    assert exc.value.code == 1
+    assert not (run_output_dir / "report.md").exists()

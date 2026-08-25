@@ -14,6 +14,7 @@ from .run_batch import (
     AGENT_TIMEOUT_S,
     BREAKER_THRESHOLD,
     DETECTOR_TIMEOUT_S,
+    _assert_running_from_this_working_tree,
     _setup_notes,
     find_malicious_only_tools,
     transcript_unusable_gate_failure,
@@ -179,6 +180,7 @@ def regenerate(dataset_dir: Path, run_output_dir: Path) -> str:
 
 
 def main(argv: list[str] | None = None) -> None:
+    _assert_running_from_this_working_tree()
     args = sys.argv[1:] if argv is None else argv
     parser = argparse.ArgumentParser(prog="python -m toy_agent.regenerate_report")
     parser.add_argument("dataset_dir")

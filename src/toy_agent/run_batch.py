@@ -164,6 +164,58 @@ def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s
     return " | ".join(notes)
 
 
+def _working_tree_root() -> Path | None:
+    """The checkout root for the process's current working directory, found
+    by walking up from cwd until src/toy_agent/__init__.py is seen — the
+    marker that distinguishes a real checkout from an arbitrary cwd. Returns
+    None when launched from outside any checkout (the guard below treats this
+    as a refusal — the project convention is to run from the repository root)."""
+    start = Path.cwd().resolve()
+    for candidate in (start, *start.parents):
+        if (candidate / "src" / "toy_agent" / "__init__.py").is_file():
+            return candidate
+    return None
+
+
+def _assert_running_from_this_working_tree() -> None:
+    """Refuse to run when the imported toy_agent package is not the one in
+    the working tree we were launched from. An editable install (pip install
+    -e .) records a single absolute path — the main checkout — so launching
+    'python -m toy_agent.run_batch' from a worktree silently executes the
+    main checkout's code (two full batch runs were wasted this way before the
+    trap was diagnosed). This guard turns that silent failure into an
+    explicit refusal (SPIRIT.md, principle 8): the code fails loudly instead
+    of trusting the operator to remember PYTHONPATH.
+
+    Not called in run_case.py — that module runs inside the agent Docker
+    container where the code is baked into the image at build time, so the
+    editable-install trap does not apply."""
+    here = Path(__file__).resolve()
+    root = _working_tree_root()
+    if root is None:
+        print(
+            "refusing to run: could not locate the working tree "
+            "(no src/toy_agent/__init__.py found walking up from the current "
+            "directory). Run from the repository root.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    expected = (root / "src" / "toy_agent").resolve()
+    if here.parent != expected:
+        print(
+            "refusing to run: toy_agent was imported from a different checkout "
+            "than the one you launched from.\n"
+            f"  imported from: {here.parent}\n"
+            f"  working tree:  {expected}\n"
+            "An editable install points at one absolute path (the main checkout), so a "
+            "worktree launch silently runs the wrong code. Force the working tree's "
+            "src/ onto the path and re-run:\n"
+            f"  PYTHONPATH={root / 'src'} python -m toy_agent.run_batch <dataset_dir> <run_output_dir>",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
 def find_malicious_only_tools(cases: list[TestCase]) -> set[str]:
     """Tool names that appear only in malicious cases' observed transcripts,
     never in a benign one — the tool->label correlation shortcut a detector
@@ -186,6 +238,7 @@ def find_malicious_only_tools(cases: list[TestCase]) -> set[str]:
 
 
 def main(argv: list[str] | None = None) -> None:
+    _assert_running_from_this_working_tree()
     args = sys.argv[1:] if argv is None else argv
     parser = argparse.ArgumentParser(prog="python -m toy_agent.run_batch")
     parser.add_argument("dataset_dir")
