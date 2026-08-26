@@ -556,9 +556,82 @@ multi-turn trajectory detector and (b) immediately reachable without GPU or cont
 LlamaFirewall remains the strongest candidate for a second-vendor test. AgentDoG 1.5 is
 worth verifying on OpenRouter (if the model is available there) as a fallback.
 
----
+## External research update (2026-08-26) — lightweight models found
 
-## Recommendation for a future Phase 2 (original, pre-Fase 1 run)
+A parallel research pass by an external colleague confirmed the same vendor landscape but
+found two important updates that change the feasibility assessment.
+
+### AgentDoG 1.5 lightweight models (0.8B, 2B)
+
+AgentDoG 1.5 released smaller variants that were not previously evaluated:
+
+- **AgentDoG1.5-Qwen3.5-0.8B** (0.8B parameters, coarse-grained moderation): predicts
+  `safe` or `unsafe` for a full trajectory. Uses `AutoModelForCausalLM` from standard
+  `transformers` — no GPU required. `pipeline_tag: text-classification`.
+- **AgentDoG1.5-Qwen3.5-2B** (2B parameters, same task).
+- **AgentDoG1.5-FG-Qwen3.5-0.8B** (0.8B, fine-grained diagnosis): produces 3D taxonomy
+  (Failure Mode, Risk Consequence, Risk Source) when the trajectory is unsafe.
+
+Key implications for our harness:
+- **0.8B runs on CPU** via standard transformers. A container with `pip install transformers`
+  is sufficient. No GPU, no vLLM, no SGLang.
+- **Input**: serialized multi-turn trajectory (JSON turns formatted as text following the
+  model's chat template). Our transcript format is mappable.
+- **Output**: structured text with `safe`/`unsafe` label (coarse) or 3D diagnosis (FG).
+  The output follows a fixed pattern — parseable via regex.
+- **Adapter effort**: low. Serialize our transcript → call model → parse structured output.
+- **Caveat**: the 0.8B model is "coarse-grained moderation" (binary safe/unsafe), not
+  "unified classification" (which is the 4B model). The FG model (0.8B FG) adds 3D
+  diagnosis. The binary model is sufficient for the intent-vs-effect metric.
+
+**Assessment**: the 0.8B model changes AgentDoG from "GPU required" to "CPU-compatible".
+It becomes a viable second candidate alongside LlamaFirewall, especially for the 3D
+fine-grained diagnosis (which LlamaFirewall doesn't provide).
+
+### LlamaFirewall on OpenRouter — confirmed feasible
+
+Further verification of the AlignmentCheck code confirms:
+
+- `custom_check_scanner.py` passes `api_base_url` and `api_key_env_var` to `LLMClient`.
+  The default is Together, but these are constructor parameters, not hardcoded.
+- `AlignmentCheckScanner.__init__()` does NOT expose these parameters — it calls
+  `super().__init__()` without them. This means a 3-line subclass wrapper is needed:
+  ```python
+  class OpenRouterAlignmentCheck(AlignmentCheckScanner):
+      def __init__(self):
+          super().__init__()
+          self.llm = LLMClient(
+              model_name="meta-llama/llama-4-maverick-17b-128e-instruct-fp8",
+              api_base_url="https://openrouter.ai/api/v1",
+              api_key_env_var="OPENROUTER_API_KEY",
+          )
+  ```
+- OpenRouter hosts `meta-llama/llama-4-maverick:free` (zero cost for testing). The
+  model is compatible with LlamaFirewall's default prompt format.
+- OpenRouter requires `HTTP-Referer` and `X-Title` headers. The `LLMClient` uses the
+  OpenAI SDK, which accepts `extra_headers` in the client constructor. This requires
+  a small patch to `LLMClient` to pass `default_headers`.
+
+**Assessment**: confirmed feasible with a small adapter wrapper. The `:free` mode on
+OpenRouter makes testing cost-zero.
+
+### Updated recommendation (after external research)
+
+**Two viable paths, both immediately actionable:**
+
+| Path | What | Cost | Effort | Risk |
+|---|---|---|---|---|
+| **A — LlamaFirewall on OpenRouter** | Subclass wrapper + `:free` model | $0 | 1 day | AlignmentCheck is experimental |
+| **B — AgentDoG 1.5 0.8B local** | Docker container with transformers | $0 | 1-2 days | 0.8B model may be less accurate |
+
+Both paths can be built in parallel. The adapter for Path A uses the same pattern as
+`aidr`'s adapter (run container + stdin/stdout JSON). The adapter for Path B uses the
+Hugging Face `transformers` library in a lightweight container.
+
+**Recommendation**: start with Path A (LlamaFirewall on OpenRouter) because it requires
+no local model download and uses the same API-key pattern as the existing harness. Path B
+(AgentDoG 1.5 0.8B) is a fallback if the query-based AlignmentCheck is too slow or if
+we need the 3D taxonomy.
 
 Applying the three stated criteria — (a) architectural distance from `aidr`'s own design
 (open-source, self-hostable, three separate stages: Sifter/Inspector/Gauntlet), (b) reachability by a
