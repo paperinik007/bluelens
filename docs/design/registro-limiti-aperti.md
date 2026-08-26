@@ -21,6 +21,21 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
 
 ## Aperti
 
+- **`run_batch.main()` si fida ciecamente dell'output di `preflight_check_models`** —
+  il ciclo di fallimento del preflight (`run_batch.py`) stampa `preflight model check
+  failed: {failure}` passando la stringa tal quale a `progress()` (stderr + run.log),
+  senza alcun filtro. Oggi `preflight_check_models` restituisce solo `exc.__class__.__name__`
+  o uno status code HTTP, quindi il rischio è latente e non attivo — ma se in futuro una
+  causa di fallimento restituisse testo raw (es. il messaggio di un'eccezione), quel
+  testo finirebbe in `run.log` e su stderr, violando la disciplina "nessun messaggio raw
+  di eccezione". Trovato dal test R10 del piano run-observability (2026-08-26): il test
+  ha dovuto aggirare il problema (fake che *solleva* invece di *ritornare*) perché un fake
+  che ritorna una stringa con testo sentinella fallirebbe — il che espone la mancanza di
+  un filtro a monte. Soluzione minima: filtrare l'output del preflight nello stesso punto
+  dove il preflight costruisce le stringhe di fallimento (già quasi fatto), oppure
+  sanitizzare in `main()` prima di passare a `progress()`. Non bloccante, da chiudere
+  prima che il preflight possa produrre testo non controllato.
+
 - **Pubblicazione in `docs/reports/` manuale, senza copia automatica di `run.log`** —
   non esiste un punto di pubblicazione automatica: l'operatore copia `report.md` a mano
   in `docs/reports/`. Il refactor directory-per-run (2026-08-26) introduce `run.log`
