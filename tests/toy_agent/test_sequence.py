@@ -519,3 +519,108 @@ def test_progress_fn_none_is_silent(tmp_path, capsys):
     captured = capsys.readouterr()
     assert captured.out == ""
     assert captured.err == ""
+
+
+# --- regression: done-line content and error markers (R7, R8) ---
+
+def test_done_line_contains_label_latency_and_in_tokens(tmp_path):
+    dataset = {"c1": _ground_truth("c1")}
+    steps = _reused_sequence(["c1"])
+    raw = _ok_result("c1", label="benign")
+    raw["verdict"]["latency_s"] = 2.5
+    raw["verdict"]["in_tokens"] = 500
+    runner = ScriptedRunTestCase([raw])
+    lines = []
+
+    execute_sequence(
+        steps, dataset, tmp_path,
+        run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
+        collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
+        progress_fn=lines.append,
+    )
+
+    done_lines = [l for l in lines if "done" in l and "c1" in l]
+    assert len(done_lines) == 1
+    done = done_lines[0]
+    assert "***" not in done
+    assert "benign" in done
+    assert "s" in done
+    assert "in=" in done
+
+
+@pytest.mark.parametrize("marker, raw_result", [
+    ("*** MODEL_ERROR (transcript unusable) ***", {
+        "transcript": {"session_id": "c1", "turns": [], "stop_reason": "model_error"},
+        "verdict": {
+            "case_id": "c1", "tool_name": "agentic_threat_detection", "status": "ok",
+            "label": "malicious", "confidence": 0.9, "technique_detected": None,
+            "rationale": "r", "cost_usd": None, "latency_s": 1.0,
+        },
+    }),
+    ("*** MAX_COST (transcript unusable) ***", {
+        "transcript": {"session_id": "c1", "turns": [], "stop_reason": "max_cost"},
+        "verdict": {
+            "case_id": "c1", "tool_name": "agentic_threat_detection", "status": "ok",
+            "label": "malicious", "confidence": 0.9, "technique_detected": None,
+            "rationale": "r", "cost_usd": None, "latency_s": 1.0,
+        },
+    }),
+    ("*** TRANSCRIPT_MISSING ***", {
+        "transcript": None,
+        "verdict": {
+            "case_id": "c1", "tool_name": "agentic_threat_detection", "status": "ok",
+            "label": "malicious", "confidence": 0.9, "technique_detected": None,
+            "rationale": "r", "cost_usd": None, "latency_s": 1.0,
+        },
+    }),
+    ("*** ARGUMENTS_PARSE_FAILED ***", {
+        "transcript": {
+            "session_id": "c1",
+            "turns": [
+                {"seq": 0, "role": "user", "content": "hi", "tool_call": None},
+                {
+                    "seq": 1, "role": "tool", "content": "",
+                    "tool_call": {
+                        "tool_name": "send_email",
+                        "arguments": {"to": "evil@example.com"},
+                        "result": "ok",
+                        "status": "error",
+                        "arguments_parse_failed": True,
+                    },
+                },
+            ],
+            "stop_reason": "completed",
+        },
+        "verdict": {
+            "case_id": "c1", "tool_name": "agentic_threat_detection", "status": "ok",
+            "label": "malicious", "confidence": 0.9, "technique_detected": None,
+            "rationale": "r", "cost_usd": None, "latency_s": 1.0,
+        },
+    }),
+    ("*** VERDICT_CONVERSION_FAILED ***", {
+        "transcript": {"session_id": "c1", "turns": [], "stop_reason": "completed"},
+        "verdict": {
+            # missing "case_id" key — verdict_from_dict() will raise
+            "tool_name": "agentic_threat_detection", "status": "ok",
+            "label": "malicious", "confidence": 0.9, "technique_detected": None,
+            "rationale": "r", "cost_usd": None, "latency_s": 1.0,
+        },
+    }),
+])
+def test_done_line_error_markers(tmp_path, marker, raw_result):
+    """Each error outcome must produce its corresponding marker in the done line."""
+    dataset = {"c1": _ground_truth("c1", label="malicious", technique_target="T0012")}
+    steps = _reused_sequence(["c1"])
+    runner = ScriptedRunTestCase([raw_result])
+    lines = []
+
+    execute_sequence(
+        steps, dataset, tmp_path,
+        run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
+        collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
+        progress_fn=lines.append,
+    )
+
+    done_lines = [l for l in lines if "done" in l and "c1" in l]
+    assert len(done_lines) == 1
+    assert marker in done_lines[0]
