@@ -911,6 +911,114 @@ def test_run_log_contains_banner_and_summary(tmp_path, monkeypatch):
     assert "=== summary ===" in log
 
 
+# --- R9: log goes to stderr AND run.log, never stdout ---
+
+def test_main_logs_to_stderr_and_run_log_but_not_stdout(tmp_path, monkeypatch, capsys):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
+        case = dataset[0]
+        verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
+        return BatchResult(
+            cases=[case], verdicts=[verdict],
+            total_count=1, executed_count=1, breaker_tripped=False,
+            metric_cases=[case], metric_verdicts=[verdict],
+        )
+
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
+    run_batch.main([str(dataset_dir), str(run_output_dir)])
+
+    captured = capsys.readouterr()
+    run_dir = _run_dir(run_output_dir)
+    log = (run_dir / "run.log").read_text(encoding="utf-8")
+    assert log  # run.log exists with content
+    assert captured.out == ""
+    assert captured.err != ""
+
+
+# --- R10: no raw exception text in the log ---
+
+def test_preflight_sentinel_exception_text_never_reaches_run_log(tmp_path, monkeypatch):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+
+    sentinel = "SENTINEL-secret"
+
+    def fake_preflight_raising(env, api_key, *, agent_api_key="", transport=None):
+        raise RuntimeError(sentinel)
+
+    monkeypatch.setattr(run_batch, "preflight_check_models", fake_preflight_raising)
+
+    try:
+        run_batch.main([str(dataset_dir), str(run_output_dir)])
+        assert False, "expected RuntimeError to propagate"
+    except RuntimeError:
+        pass
+
+    run_dir = _run_dir(run_output_dir)
+    log = (run_dir / "run.log").read_text(encoding="utf-8")
+    assert sentinel not in log
+    # The failure is still recorded: the run reached preflight but never passed it.
+    assert "--- preflight ---" in log
+    assert "checking 4 models...  OK" not in log
+
+
+# --- R11: run_id must not leak into report.md ---
+
+def test_run_id_is_absent_from_report_md(tmp_path, monkeypatch):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
+        case = dataset[0]
+        verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
+        return BatchResult(
+            cases=[case], verdicts=[verdict],
+            total_count=1, executed_count=1, breaker_tripped=False,
+            metric_cases=[case], metric_verdicts=[verdict],
+        )
+
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
+    run_batch.main([str(dataset_dir), str(run_output_dir)])
+
+    run_dir = _run_dir(run_output_dir)
+    run_id = run_dir.name
+    report = (run_dir / "report.md").read_text(encoding="utf-8")
+    assert run_id not in report
+
+
+# --- R15: summary line shows cumulative in_tokens ---
+
+def test_summary_shows_cumulative_in_tokens(tmp_path, monkeypatch):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
+        case = dataset[0]
+        verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
+        return BatchResult(
+            cases=[case], verdicts=[verdict],
+            total_count=1, executed_count=1, breaker_tripped=False,
+            metric_cases=[case], metric_verdicts=[verdict],
+            total_in_tokens=12345,
+        )
+
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
+    run_batch.main([str(dataset_dir), str(run_output_dir)])
+
+    run_dir = _run_dir(run_output_dir)
+    log = (run_dir / "run.log").read_text(encoding="utf-8")
+    assert "cumulative in_tokens: 12345" in log
+
+
 # --- runtime guard: refuse to run the wrong checkout's code ---
 
 def _repo_root() -> Path:
