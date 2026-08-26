@@ -34,19 +34,20 @@ osservabile *mentre* accade e identificabile *dopo*.
 YYYYMMDD-HHMMSS-<token6>
 ```
 
-- **`YYYYMMDD-HHMMSS`** in **UTC** (non ora locale): due run su macchine diverse restano
-  ordinabili e confrontabili per nome, e l'ordinamento lessicografico coincide con quello
-  cronologico.
+- **`YYYYMMDD-HHMMSS`** in **UTC** (non ora locale): su **una macchina** l'ordinamento
+  lessicografico coincide con quello cronologico (UTC elimina il problema ora legale, non
+  il clock skew tra macchine diverse — il confronto cross-macchina per nome non è garantito).
 - **`<token6>`** = `secrets.token_hex(3)` (6 caratteri hex): disambigua due run nello stesso
   secondo, senza alcuna dipendenza da stato condiviso. Non è il commit (che sta già in
   provenance): il commit non distingue due run identici.
 
 Esempio: `20260826-143012-a1b2c3`.
 
-**Vincolo di determinismo** (importante): il `run_id` è un **input** del report, non una
-data generata dentro `render_report`. Il report resta deterministico (nessun timestamp nel
-suo contenuto) — il `run_id` viene letto da `provenance.json`, mai da `datetime.now()`
-chiamata dentro il rendering. Rigenerare il report da una directory produce lo stesso file.
+**Determinismo del report**: il `run_id` **non entra nel contenuto del report**.
+`render_report` non lo usa e `format_provenance` non lo include — il report era già
+deterministico senza run_id. Il run_id vive solo nel nome della directory e nel campo
+`run_id` di `provenance.json`, dove serve all'associazione artefatto↔run **su disco**, non
+alla rigenerazione del report. Nessun vincolo nuovo sul determinismo.
 
 ### 2.2 directory-per-run
 
@@ -59,7 +60,7 @@ run_output/
 │   ├── report.md
 │   ├── raw/<case_id>.transcript.json
 │   └── <case_id>/  (evidence, vendor_proxy, logs, diff, stats)
-├── latest -> 20260826-143012-a1b2c3/   (symlink, o file LATEST su Windows)
+├── latest -> 20260826-143012-a1b2c3/   (symlink, vedi §2.3)
 └── legacy-20260825-troncato/    (archivio una tantum del run precedente, vedi §5)
 ```
 
@@ -71,10 +72,14 @@ piatta).
 ### 2.3 `latest` — puntatore al run più recente
 
 - Prova `os.symlink(run_dir, run_output_dir / "latest")`.
-- Se fallisce (Windows: permessi/developer mode) → scrive il file testuale
-  `run_output/LATEST` contenente il `run_id` (una riga).
-- Entrambi sono **comodità per l'umano**. `inspect_run` e `regenerate_report` prendono già
-  un path esplicito e restano invariati: l'utente punta a `run_output/<run_id>/` o
+- Se fallisce (Windows: permessi/developer mode) → **si salta e basta**. L'ordinamento per
+  nome (`ls run_output/ | tail -1`) copre già la scoperta dell'ultimo run; il symlink è
+  una comodità in più, non un contratto.
+- **Momento della creazione**: il symlink va impostato **dopo** `execute_batch`, non prima.
+  Così `latest` punta all'ultimo run che ha davvero girato, non a una directory creata da un
+  preflight fallito (che contiene solo provenance + un log "non è partito nulla").
+- Nessun tool lo risolve automaticamente: `inspect_run` e `regenerate_report` prendono già
+  un path esplicito e restano invariati. L'utente punta a `run_output/<run_id>/` o
   (su Unix) a `run_output/latest/`.
 
 ### 2.4 log di progresso — narrativa a fasi + per-caso
@@ -105,32 +110,48 @@ checking 4 models...  OK
 opening: agent, detector, egress-proxy
 running 31 cases...
 
-  [ 1/31] account_deactivation_explicitly_requested       benign    28.5s  in=14542
-  [ 2/31] account_disabled_after_misread_opt_out          benign     7.3s  in=550
-  [ 3/31] hidden_instruction_triggers_unauthorized_export *** MODEL_ERROR (transcript unusable) ***
+  [ 1/31] starting   account_deactivation_explicitly_requested
+  [ 1/31] done       account_deactivation_explicitly_requested       benign    28.5s  in=14542
+  [ 2/31] starting   account_disabled_after_misread_opt_out
+  [ 2/31] done       account_disabled_after_misread_opt_out          benign     7.3s  in=550
+  [ 3/31] starting   hidden_instruction_triggers_unauthorized_export
+  [ 3/31] done       hidden_instruction_triggers_unauthorized_export *** MODEL_ERROR (transcript unusable) ***
 
 --- closing ---
 closing: agent, detector, egress-proxy
 
 === summary ===
 31 cases: 28 judged, 3 excluded (model_error=2, transcript_missing=1)
+cumulative in_tokens: 84_550
 circuit breaker: not tripped
 report.md written to run_output/20260826-143012-a1b2c3/
 ```
 
-### 2.5 riga per-caso
+### 2.5 riga per-caso — heartbeat di start + esito
 
-**Caso normale** — mostra esito, latenza, e `in_tokens` (il segnale di spike: un caso a
-14.5K token si vede *mentre* succede, non dopo):
+**Ogni caso produce due righe**, non una: una di `starting` (prima dell'esecuzione) e una di
+`done` (dopo). È il punto che distingue "appeso" da "lento": con timeout agente 120s e
+detector 180s, un caso può stare muto 5 minuti — senza la riga di start, quel silenzio è
+indistinguibile da un deadlock.
 
-```
-  [n/total] {case_id:<45} {status} {label:<8} {latency:>6.1f}s  in={in_tokens}
-```
-
-**Caso con errore** — marker `*** CAUSA ***`, niente latenza/verdetto (non pertinenti):
+**Riga di start**:
 
 ```
-  [n/total] {case_id:<45} *** {causa} ***
+  [n/total] starting   {case_id}
+```
+
+**Riga di done, caso normale** — esito, latenza, `in_tokens` (il segnale di spike: un caso
+a 14.5K token si vede *mentre* succede, non dopo):
+
+```
+  [n/total] done       {case_id:<45} {status} {label:<8} {latency:>6.1f}s  in={in_tokens}
+```
+
+**Riga di done, caso con errore** — marker `*** CAUSA ***`, niente latenza/verdetto (non
+pertinenti):
+
+```
+  [n/total] done       {case_id:<45} *** {causa} ***
 ```
 
 Cause possibili (già tutte nel codice):
@@ -157,21 +178,23 @@ sia alle fasi di banner/preflight/summary.
 
 ```
 1. load_dataset, leggi chiavi
-2. genera run_id, crea run_output/<run_id>/, imposta latest (symlink/LATEST), apri run.log
+2. genera run_id, crea run_output/<run_id>/, apri run.log
 3. prov = provenance.collect_provenance(env)  → aggiungi campo run_id
 4. banner (usa prov + parsed args)
 5. write_provenance(prov, run_dir)
 6. preflight → logga ogni esito; se fallisce: logga + sys.exit(1)
 7. result = execute_batch(..., progress_fn=closure)
-8. summary (giudicati/esclusi/breaker)
-9. gate transcript_unusable → messaggio (stderr, già esistente)
-10. gate anti-shortcut → messaggio (stderr, già esistente)
-11. compute_metrics + render_report + scrivi report.md dentro run_dir
+8. imposta latest (symlink → run_dir)  ← DOPO execute_batch, non prima
+9. summary (giudicati/esclusi/breaker/cumulative in_tokens)
+10. gate transcript_unusable → messaggio (stderr, già esistente)
+11. gate anti-shortcut → messaggio (stderr, già esistente)
+12. compute_metrics + render_report + scrivi report.md dentro run_dir
 ```
 
 Nota sull'ordine: la directory e `run.log` nascono **prima** del preflight, così anche un
 preflight fallito lascia traccia (un `run.log` che spiega perché non è partito nulla) — più
-osservabilità, che è lo scopo del task.
+osservabilità, che è lo scopo del task. Ma `latest` si imposta **dopo** `execute_batch`,
+così non punta mai a un run che non ha girato.
 
 ---
 
@@ -182,17 +205,18 @@ osservabilità, che è lo scopo del task.
 | R1 | `run_id` ordinabile: `YYYYMMDD-HHMMSS` + token, UTC | Test: il nome generato matcha `\d{8}-\d{6}-[0-9a-f]{6}` e due chiamate consecutive differiscono |
 | R2 | `run_id` dentro `provenance.json` | Test: `collect_provenance` include il campo `run_id` |
 | R3 | Ogni run crea la propria directory vuota | Test: `main()` con `run_output_dir` pulito → i file stanno in `run_output/<run_id>/`, non flat |
-| R4 | `latest` punta al run più recente | Test: dopo `main()`, `latest` (symlink o `LATEST`) → il run_id appena creato |
+| R4 | `latest` punta all'ultimo run **che ha girato** | Test: dopo `main()`, `latest` → il run_id appena creato; un preflight fallito NON crea né sposta `latest` |
 | R5 | `run.log` esiste nel run dir, uno per run | Test: `run.log` presente; due run → due file separati, ognuno col proprio contenuto |
 | R6 | `run.log` contiene banner, preflight, per-caso, summary | Test: stringhe sentinella presenti (`=== ... run ===`, `--- preflight ---`, `[ 1/`, `=== summary ===`) |
-| R7 | Riga per-caso con esito, latenza, in_tokens | Test: riga di un caso benigno contiene `benign`, latenza formattata, `in=` |
-| R8 | Errori marcati `*** CAUSA ***` | Test: caso con `stop_reason=model_error` → riga contiene `*** MODEL_ERROR` |
+| R7 | Riga per-caso: heartbeat di start + esito | Test: per un caso ci sono sia `starting` sia `done`; la riga done contiene `benign`, latenza, `in=` |
+| R8 | Errori marcati `*** CAUSA ***` | Test: caso con `stop_reason=model_error` → riga done contiene `*** MODEL_ERROR` |
 | R9 | Log su stderr E su run.log, mai su stdout | Test: `progress_fn` scrive su entrambi i canali; stdout resta vuoto |
 | R10 | Nessun messaggio raw di eccezione nel log | Test: eccezione sentinella → il log contiene solo `__class__.__name__`, mai il messaggio |
-| R11 | Report deterministico (run_id letto, non generato) | Test: `render_report` con lo stesso provenance produce file identico in due run |
+| R11 | Report deterministico (run_id NON entra nel report) | Test: `render_report` non usa run_id; `format_provenance` non include run_id; report identico in due run |
 | R12 | I messaggi gate esistenti restano su stderr | Test: gate fallito → messaggio su stderr, exit code 1 (comportamento invariato) |
 | R13 | `progress_fn` iniettabile, default silenzioso | Test: `execute_sequence` senza `progress_fn` non scrive nulla su stderr |
 | R14 | `inspect_run` e `regenerate_report` restano invariati | Test: suite esistente verde senza modifiche a quei due moduli |
+| R15 | Summary include il totale cumulativo di `in_tokens` | Test: summary contiene `cumulative in_tokens:` con la somma attesa |
 
 ---
 
@@ -213,12 +237,18 @@ post-refactor. I 13 casi sono l'evidenza su cui poggia
 - **Nessuna soglia automatica su `in_tokens`** — mostra il valore, l'anomalia la giudica
   l'umano.
 - **Nessun costo per-caso nel log** — il campo `cost_usd` è `None` (limite 7 già registrato);
-  non lo risolviamo qui.
+  non lo risolviamo qui. Il summary mostra il **cumulativo di `in_tokens`** (economico, già
+  disponibile) come proxy di spesa, non il costo.
+- **Nessun `--resume`** — ripartire dal caso N dopo un run troncato è un pain point reale
+  (il run 2026-08-25 è morto a 13/31), ma è un task separato. Directory-per-run lo rende
+  *più facile* in futuro (ogni run ha il suo `verdicts.jsonl` intatto), non lo implementa.
+  Registrato come questione aperta.
 - **Nessun cambiamento a `inspect_run`/`regenerate_report`** oltre all'`--help` — sono già
   path-agnostici e prendono path espliciti.
 - **Nessuna risoluzione automatica di `latest` dentro i tool** — è una comodità per l'umano,
   non un contratto.
-- **Nessun timestamp dentro il report** — il determinismo del report non si tocca.
+- **Nessun timestamp dentro il report** — il determinismo del report non si tocca (il
+  run_id non entra nel report).
 - **Nessuna pulizia automatica dei run vecchi** — l'accumulo è un problema di retention,
   non di questo task.
 
@@ -242,7 +272,27 @@ post-refactor. I 13 casi sono l'evidenza su cui poggia
 
 1. **Nome del suffisso**: `secrets.token_hex(3)` (6 hex) — sufficiente, ma si può valutare
    8 hex se si teme collisione (irrisorio a questi volumi).
-2. **`LATEST` file su Windows**: solo se il symlink fallisce. Nessun tool lo risolve
-   automaticamente — è per l'umano. Se un giorno serve, si aggiunge risoluzione.
+2. **`latest` su Windows**: se il symlink fallisce si salta (niente `LATEST` file).
+   L'ordinamento per nome copre la scoperta. Se un giorno serve un puntatore robusto su
+   Windows, si valuta il fallback.
 3. **Retention dei run vecchi**: non affrontata (YAGNI). Quando `run_output/` cresce,
    servirà una policy (es. tenere N run) — decisione separata.
+4. **`--resume`**: ripartire da un run troncato senza ri-eseguire i casi già fatti. Pain
+   point reale (run 2026-08-25 a 13/31), ma task separato. Directory-per-run lo rende più
+   facile (verdicts.jsonl intatto per run). Non in questo task.
+
+---
+
+## 9. Esito del council (skeptic + pragmatist, 2026-08-26)
+
+Roster Light (tiering): skeptic + pragmatist, read-only, in parallelo.
+
+| Agente | Verdetto | Finding recepiti |
+|---|---|---|
+| skeptic | agree with reservations | heartbeat di start; `latest` non deve puntare a run non partiti; run_id non serve al report (correzione); UTC claim ridimensionato; cumulativo in_tokens |
+| pragmatist | over-scoped | semplificare `latest` (no LATEST fallback); `--resume` registrato ma fuori scope; narrativa a fasi tenuta su richiesta esplicita dell'utente |
+
+Finding verificati nel codice prima del recepimento (regola del progetto): `cost_usd=None`
+confermato in `adapter.py:88`/`orchestrator.py:47`; `run_id` assente da `render_report` e
+`format_provenance` confermato. Il verdetto "over-scoped" del pragmatist è stato mitigato
+solo dove l'utente ha scelto esplicitamente di tenere la narrativa a fasi.
