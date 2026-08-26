@@ -35,6 +35,8 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   dove il preflight costruisce le stringhe di fallimento (già quasi fatto), oppure
   sanitizzare in `main()` prima di passare a `progress()`. Non bloccante, da chiudere
   prima che il preflight possa produrre testo non controllato.
+  **Analisi completa + soluzione strutturale proposta (non implementata, declassata a
+  bassa priorità): `docs/design/2026-08-26-r10-preflight-output-sanitization.md`.**
 
 - **Pubblicazione in `docs/reports/` manuale, senza copia automatica di `run.log`** —
   non esiste un punto di pubblicazione automatica: l'operatore copia `report.md` a mano
