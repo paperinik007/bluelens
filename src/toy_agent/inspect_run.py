@@ -13,6 +13,13 @@ def inspect_run(run_output_dir: Path) -> dict:
     output directory and return a dict of observed counters — without
     importing dataclasses or detector_adapter (design doc section 8)."""
     raw_dir = run_output_dir / "raw"
+    verdicts_path = run_output_dir / "verdicts.jsonl"
+
+    if not raw_dir.is_dir() or not verdicts_path.is_file():
+        raise ValueError(
+            f"{run_output_dir} does not look like a run directory — "
+            f"point to run_output/<run_id>/ (or run_output/latest/), not the root"
+        )
 
     # --- Read transcripts ---------------------------------------------------
     transcript_count = 0
@@ -62,7 +69,6 @@ def inspect_run(run_output_dir: Path) -> dict:
                     arguments_parse_failed += 1
 
     # --- Read verdicts ------------------------------------------------------
-    verdicts_path = run_output_dir / "verdicts.jsonl"
     verdict_case_ids: set[str] = set()
     if verdicts_path.exists():
         for line in verdicts_path.read_text(encoding="utf-8").splitlines():
@@ -144,5 +150,9 @@ def main(argv=None) -> None:
     parser.add_argument("run_output_dir", help="Path to a run output directory")
     parsed = parser.parse_args(args)
 
-    result = inspect_run(Path(parsed.run_output_dir))
+    try:
+        result = inspect_run(Path(parsed.run_output_dir))
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(1)
     print(format_inspection(result))

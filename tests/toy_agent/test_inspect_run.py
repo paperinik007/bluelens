@@ -211,6 +211,13 @@ def test_corrupt_transcript_file_is_reported_not_crashed(tmp_path):
     assert "JSONDecodeError" in output
 
 
+def test_inspect_run_rejects_a_directory_without_raw_and_verdicts(tmp_path):
+    from toy_agent.inspect_run import inspect_run
+
+    with pytest.raises(ValueError, match="does not look like a run directory"):
+        inspect_run(tmp_path)
+
+
 def test_no_corrupt_transcripts_reported_for_clean_run(tmp_path):
     from toy_agent.inspect_run import inspect_run, format_inspection
 
