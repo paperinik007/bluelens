@@ -120,10 +120,27 @@ con i container di quel batch e può distruggerli a metà run.
 Python host (la stessa variabile impostata in `.env`, ma letta qui dall'host, non passata
 attraverso Docker — va quindi esportata anche nella shell da cui si lancia il comando, non
 solo in `.env`). `<dataset_dir>` è una directory di file YAML `TestCase` (Plan 5); non viene
-mai scritta. In `<run_output_dir>` atterrano `report.md` (il report finale), `verdicts.jsonl`
-(un `Verdict` grezzo per riga, un run per file — riscritto da zero a ogni esecuzione),
-`raw/` (i transcript grezzi per caso) e una sottodirectory di prove esterne per `case_id`
-(prodotta da `evidence.py`).
+mai scritta.
+
+**Ogni run ha la sua directory.** `<run_output_dir>` è la radice; ogni esecuzione crea al
+suo interno `run_output/<run_id>/` con nome ordinabile `YYYYMMDD-HHMMSS-<token>` (UTC),
+che contiene: `report.md` (il report finale), `verdicts.jsonl` (un `Verdict` grezzo per
+riga), `raw/` (i transcript grezzi per caso), `run.log` (la narrativa del run: banner,
+heartbeat per caso, errori in evidenza, riepilogo) e una sottodirectory di prove esterne
+per `case_id` (prodotta da `evidence.py`). Un symlink `run_output/latest` punta all'ultimo
+run che ha davvero girato (su Windows, se il symlink non è consentito, si salta: l'ultimo
+run si trova per ordinamento del nome).
+
+**Strumenti di ispezione**: `python -m toy_agent.inspect_run <run_dir>` e
+`python -m toy_agent.regenerate_report <dataset_dir> <run_dir>` vanno puntati alla
+directory del singolo run (`run_output/<run_id>/` o `run_output/latest/`), **non** alla
+radice `run_output/`: puntarli alla radice ora produce un errore esplicito invece di zero
+transcript in silenzio.
+
+**Pubblicazione in `docs/reports/`**: è un'operazione manuale. Quando si copia `report.md`
+nella directory di report tracciata da git, va copiato anche `run.log` accanto ad esso —
+la timeline del run è parte dell'evidenza di riproducibilità (SPIRIT.md principio 4), non
+solo il report finale.
 
 ## Licenza
 

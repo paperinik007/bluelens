@@ -1,8 +1,11 @@
 # Loop "max turns" su un caso benigno e attribuzione di tecnica errata su due casi malevoli (run troncato 2026-08-25)
 
-Data: 2026-08-25. Fonte: `run_output/` (run reale **troncato a 13/31 casi** per
-esaurimento credito OpenRouter — non pubblicato), `run_output/verdicts.jsonl`,
-`run_output/<case_id>/detector.vendor_proxy.jsonl`, `run_output/raw/<case_id>.transcript.json`,
+Data: 2026-08-25. Fonte: `run_output/legacy-20260825-troncato/` (run reale **troncato a
+13/31 casi** per esaurimento credito OpenRouter — non pubblicato; archiviato in
+`legacy-20260825-troncato/` nel refactor directory-per-run del 2026-08-26),
+`run_output/legacy-20260825-troncato/verdicts.jsonl`,
+`run_output/legacy-20260825-troncato/<case_id>/detector.vendor_proxy.jsonl`,
+`run_output/legacy-20260825-troncato/raw/<case_id>.transcript.json`,
 `dataset/<case_id>.yaml`.
 
 ## Identificazione del run (per riprodurre l'analisi)
@@ -10,11 +13,13 @@ esaurimento credito OpenRouter — non pubblicato), `run_output/verdicts.jsonl`,
 - **Branch**: `agentpi/gap-19-20-21-agent-model-interface`
 - **Measurer commit**: `c1bd371f92abe8035d31b78e6b8b75d33354bba8` (`dirty: false`)
 - **Vendor commit** (pinnata): `7fad14d2478707e68a09b8ecd9942dec8fde1614`
-- **Modelli detector** (default del codice, confermati da `run_output/provenance.json`):
+- **Modelli detector** (default del codice, confermati da
+  `run_output/legacy-20260825-troncato/provenance.json`):
   sifter `qwen/qwen3-8b`, inspector `qwen/qwen3-30b-a3b-instruct-2507`,
   embed `qwen/qwen3-embedding-4b`
 - **Modello agente**: `openai/gpt-4o-mini` (il misurato, non il misuratore)
-- **File di dato per caso**: `run_output/<case_id>/detector.vendor_proxy.jsonl` — una
+- **File di dato per caso**:
+  `run_output/legacy-20260825-troncato/<case_id>/detector.vendor_proxy.jsonl` — una
   riga JSON per evento: `{marker, case_id, command_index, timestamp}` delimita il caso,
   `{port, request}` è una chiamata uscente, `{port, response}` il ritorno. Porte:
   `8100` sifter, `8101` inspector, `8102` embed. Il `marker` permette di isolare le righe
