@@ -1,8 +1,8 @@
 # Run osservabile e identificabile — directory-per-run + log di progresso
 
-Data: 2026-08-26. Stato: design proposto, da validare (council leggero / review utente) prima
-dell'implementazione. Tier: **Light** (feature media, tocca l'entrypoint `run_batch.main()`
-e il loop `execute_sequence`, ma nessun contratto tra moduli cambia).
+Data: 2026-08-26. Stato: design proposto, da validare (council leggero + grill-with-docs
+completati; review utente conclusa). Tier: **Light** (feature media, tocca l'entrypoint
+`run_batch.main()` e il loop `execute_sequence`, ma nessun contratto tra moduli cambia).
 
 ---
 
@@ -90,6 +90,11 @@ Mai su stdout: stdout resta pulito (il report va su file, non su stdout).
 **Il run.log è anche l'evidenza forense**: se il run muore a metà, il log mostra fino a dove
 era arrivato — cosa che oggi non lascia alcuna traccia (lo si scopre solo contando i
 transcript).
+
+**Pubblicazione**: quando un run viene pubblicato (`docs/reports/...`), `run.log` va copiato
+insieme a `report.md` e ai transcript. Il principio 4 (riproducibilità) richiede che un
+terzo possa verificare anche la timeline del run, non solo i suoi artefatti finali. Il
+beneficio forense di `run.log` non deve restare confinato alla macchina dell'operatore.
 
 Formato (inglese, coerente col resto dello strumento):
 
@@ -217,6 +222,8 @@ così non punta mai a un run che non ha girato.
 | R13 | `progress_fn` iniettabile, default silenzioso | Test: `execute_sequence` senza `progress_fn` non scrive nulla su stderr |
 | R14 | `inspect_run` e `regenerate_report` restano invariati | Test: suite esistente verde senza modifiche a quei due moduli |
 | R15 | Summary include il totale cumulativo di `in_tokens` | Test: summary contiene `cumulative in_tokens:` con la somma attesa |
+| R16 | Tool puntati al root vecchio falliscono loud, non in silenzio | Test: `inspect_run`/`regenerate` su una directory senza `raw/`+`verdicts.jsonl` → errore esplicito, non zero transcript |
+| R17 | `run.log` viene pubblicato col report | Test: quando il run si pubblica in `docs/reports/`, `run.log` è copiato accanto a `report.md` |
 
 ---
 
@@ -229,6 +236,11 @@ I file flat del run troncato 2026-08-25 vanno spostati in
 Operazione manuale documentata qui, non codice: va fatta una volta, prima del primo run
 post-refactor. I 13 casi sono l'evidenza su cui poggia
 `docs/research/2026-08-25-detector-loop-e-attribuzione-tecnica.md`.
+
+**Attenzione**: dopo il move, il research doc citato punta ancora a path flat
+(`run_output/<case_id>/...`, `run_output/verdicts.jsonl`, `run_output/raw/...`). Le
+citazioni vanno ri-puntate a `run_output/legacy-20260825-troncato/...` subito dopo il move
+— altrimenti il research doc dà per scontato un layout che non esiste più.
 
 ---
 
@@ -243,14 +255,23 @@ post-refactor. I 13 casi sono l'evidenza su cui poggia
   (il run 2026-08-25 è morto a 13/31), ma è un task separato. Directory-per-run lo rende
   *più facile* in futuro (ogni run ha il suo `verdicts.jsonl` intatto), non lo implementa.
   Registrato come questione aperta.
-- **Nessun cambiamento a `inspect_run`/`regenerate_report`** oltre all'`--help` — sono già
-  path-agnostici e prendono path espliciti.
+- **Nessun cambiamento a `inspect_run`/`regenerate_report`** oltre all'`--help` e al check
+  fail-loudly (vedi sotto) — sono già path-agnostici e prendono path espliciti.
 - **Nessuna risoluzione automatica di `latest` dentro i tool** — è una comodità per l'umano,
   non un contratto.
 - **Nessun timestamp dentro il report** — il determinismo del report non si tocca (il
   run_id non entra nel report).
 - **Nessuna pulizia automatica dei run vecchi** — l'accumulo è un problema di retention,
   non di questo task.
+
+**Nota sui tool esistenti**: questo design supersede la decisione 10 del Plan 4
+(`2026-08-17-plan4-batch-orchestrator-design.md`) che assumeva layout flat (`verdicts.jsonl`,
+`raw/`, `report.md` alla root di `run_output_dir`). `inspect_run` e `regenerate_report`
+sono path-agnostici nel codice, ma puntarli alla root di `run_output/` (invece che a
+`run_output/<run_id>/`) oggi restituisce zero transcript/zero verdetti senza alcun errore.
+Quel silent-failure viola il principio "fail loudly" (SPIRIT.md principio 8). Questo design
+aggiunge un check esplicito in entrambi i tool: se la directory non contiene `raw/` e
+`verdicts.jsonl`, segnalano l'errore invece di restituire risultati vuoti.
 
 ---
 
@@ -296,3 +317,17 @@ Finding verificati nel codice prima del recepimento (regola del progetto): `cost
 confermato in `adapter.py:88`/`orchestrator.py:47`; `run_id` assente da `render_report` e
 `format_provenance` confermato. Il verdetto "over-scoped" del pragmatist è stato mitigato
 solo dove l'utente ha scelto esplicitamente di tenere la narrativa a fasi.
+
+## 10. Esito del grill-with-docs (2026-08-26)
+
+Quattro domande one-at-a-time, cross-reference contro i documenti esistenti.
+
+| # | Documento incrociato | Verdetto | Finding recepito |
+|---|---|---|---|
+| 1 | `registro-limiti-aperti.md` (gap raw/ non pulito) | Chiuso per costruzione | Il gap sparisce; resta il caveat dell'archivio legacy manuale (§5) e un gap intra-run distinto, fuori scope |
+| 2 | `SPIRIT.md` (principi 4 e 6) | Mezzo sì | `run.log` va pubblicato col report (R17); citazioni del research doc da ri-puntare (§5) |
+| 3 | Design Gap 19/20/21 (D-H) | Compatibile, anzi più fedele | Catturare provenance prima del preflight non viola D-H |
+| 4 | Design principale (flusso + confine) | Nessun conflitto, ma… | Supersede la decisione 10 del Plan 4 (da dichiarare); tool puntati al root falliscono in silenzio (R16) |
+
+Tutti i finding sono stati verificati prima del recepimento. Il finding 4 (silent-failure dei
+tool) è il più importante: viola SPIRIT.md principio 8, e ha prodotto il requisito R16.
