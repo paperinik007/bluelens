@@ -37,6 +37,12 @@ def regenerate(dataset_dir: Path, run_output_dir: Path) -> str:
     verdicts). Does not write any file itself; the caller decides where the
     returned report string goes.
     """
+    if not (run_output_dir / "raw").is_dir() or not (run_output_dir / "verdicts.jsonl").is_file():
+        raise ValueError(
+            f"{run_output_dir} does not look like a run directory — "
+            f"point to run_output/<run_id>/ (or run_output/latest/), not the root"
+        )
+
     dataset = load_dataset(dataset_dir)
     dataset_by_case_id = {c.case_id: c for c in dataset}
 

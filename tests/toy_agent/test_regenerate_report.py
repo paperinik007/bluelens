@@ -99,6 +99,20 @@ def test_happy_path_reconstructs_a_correct_report(tmp_path):
     assert report.count("| 1 | 0 | 0 | 1 |") == 2  # Primary row and Strict row: tp=1,fp=0,fn=0,tn=1
 
 
+def test_missing_raw_dir_and_verdicts_jsonl_fails_loudly(tmp_path):
+    """Pointing regenerate() at a run_output/ root (or any directory lacking
+    raw/ and verdicts.jsonl) must raise ValueError with a pointer to
+    run_output/<run_id>/, never silently produce an empty/partial report."""
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "run_output"
+
+    _write_dataset(dataset_dir, [_dataset_entry("c1")])
+    # Deliberately no verdicts.jsonl and no raw/ subdirectory in run_output_dir.
+
+    with pytest.raises(ValueError, match=r"run_output/<run_id>"):
+        regenerate_report.regenerate(dataset_dir, run_output_dir)
+
+
 def test_case_count_mismatch_refuses_to_regenerate(tmp_path):
     dataset_dir = tmp_path / "dataset"
     run_output_dir = tmp_path / "run_output"
@@ -150,7 +164,9 @@ def test_missing_transcript_file_is_handled_gracefully_and_not_counted_as_a_conv
     _write_verdicts_jsonl(run_output_dir, [
         _verdict_dict("c1_malicious", label="malicious", technique_detected="T0002"),
     ])
-    # Deliberately no raw/c1_malicious.transcript.json on disk.
+    (run_output_dir / "raw").mkdir(parents=True, exist_ok=True)
+    # Deliberately no raw/c1_malicious.transcript.json on disk (the raw/
+    # directory itself exists, as it does in every real run directory).
 
     report = regenerate_report.regenerate(dataset_dir, run_output_dir)
 
