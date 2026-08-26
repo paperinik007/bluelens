@@ -410,6 +410,154 @@ pattern is general. If no, the method has distinguished two detectors — which 
 4. Decide: if the pattern holds, AgentDoG becomes a third test; if the pattern breaks,
    the method has found a real distinction between detectors
 
+## Expanded search (2026-08-26) — beyond the original keyword
+
+After the Fase 1 run, the search was expanded with a different methodology. The original
+search used the rigid keyword "agentic threat detection" and primary sources only. The
+expanded search used:
+
+1. **GitHub topic pages** (`ai-guardrails`, `llm-guardrails`, `agent-security`)
+2. **Hugging Face** models for trajectory-level safety classification
+3. **arXiv papers** with code (Q1-Q3 2026)
+4. **Market maps from third parties** (Ansa, PipeLab, Black Hat 2026 analyst reports, VC
+   landscape posts) — explicitly excluded by the original search but valuable for discovery
+
+### New candidates discovered
+
+| Candidate | Source | Type | Notes |
+|---|---|---|---|
+| `cisco-ai-defense/mcp-scanner` | GitHub | MCP scanner | Cisco's own MCP tool scanner |
+| `thisisfixer/mcp-scan` | GitHub | MCP scanner | Static+dynamic tool description checks |
+| `snyk/agent-scan` | GitHub | Agent scanner | Snyk's runtime agent analyzer (post-Invariant acquisition) |
+| `msoedov/agentic_security` | GitHub | Red-team framework | NOT a detector — generates attacks, not verdicts |
+| `XSafeAI/XSafeClaw` | GitHub | Interception framework | Hook at framework level, sends trajectory to guard models |
+| `dl-eigenart/agentshield-platform` | GitHub | Detection pipeline | 6-layer pipeline (MiniLM + policy engine), <4ms latency |
+| `MaxwellCalkin/sentinel-ai` | GitHub | MCP proxy | Real-time guardrail with MCP proxy + Claude Code hooks |
+| `CHATS-lab/coding-agent-safety-monitor` | GitHub | Coding-agent monitor | Blocks destructive actions before execution |
+| `xiongyuaay/JANUS` (+ Vanguard) | arXiv + GitHub | Trajectory foresight | Predicts future risks from partial trajectory prefixes |
+| `AdvRahul/Agentic-Safety` | Hugging Face | Dataset | Training dataset for agent safety classifiers |
+| AgentDoG 1.5 (already known, re-evaluated) | Hugging Face | Trajectory classifier | 2B-8B models, 3D taxonomy, OpenAI-compatible API |
+
+### Pre-filtering
+
+Most new candidates are NOT detectors that fit our harness. The pre-filter:
+
+- **MCP scanners** (cisco, fixer, snyk): scan MCP server configurations, not agent
+  transcripts. Useful for MCP security but not for our harness.
+- **Red-team frameworks** (msoedov/agentic_security): generate attacks, don't classify.
+- **MCP proxies** (sentinel-ai): interception layer, not a detector.
+- **Coding-agent monitors** (CHATS-lab): too vertical.
+- **Dataset** (AdvRahul/Agentic-Safety): useful for training, not for evaluation.
+
+### Candidates worth verifying
+
+| Candidate | Why promising | What to verify |
+|---|---|---|
+| **AgentDoG 1.5 Unified** (HF) | 2B-8B models, 3D taxonomy, OpenAI-compatible API possible | Can it be served via OpenRouter or lightweight container? |
+| **dl-eigenart/agentshield-platform** | 6-layer pipeline, <4ms latency, structured detector | Input/output format? Verdict shape? |
+| **snyk/agent-scan** | Snyk's post-Invariant product, could be mature | Detector or scanner? What does it return? |
+| **xiongyuaay/JANUS** | arXiv paper with code, trajectory foresight | Is the code runnable? Input format? |
+
+### Updated assessment: AgentDoG 1.5 is back on the table
+
+AgentDoG was previously dismissed as "GPU required" (4B-8B parameters). The expanded
+search reveals important details:
+
+- **AgentDoG 1.5 Unified** (4B parameters) provides a single classification score —
+  directly mappable to our malicious/benign verdict.
+- **Fine-grained models** (FG-Qwen3.5-2B, FG-Llama3.1-8B) output a structured 3D
+  diagnosis: Risk Source, Failure Mode, Real-world Harm — a taxonomy system that
+  matches our per-technique metric.
+- The "Online Agentic Guardrail" component is tied to OpenClaw, but the **models
+  themselves** are served via an OpenAI-compatible API (see `trajectory_sample.json`
+  and the evaluator code in `guardrail/evaluator.py`).
+- If the model can be served via OpenRouter (or a `vllm` container), it becomes the
+  strongest candidate: it has the most complete taxonomy of any open-source detector.
+
+A focused verification will determine if AgentDoG 1.5 can be integrated without GPU
+infrastructure. See the next section.
+
+## Verification of top candidates (2026-08-26)
+
+Read-only verification of the four candidates flagged as "worth verifying" from the
+expanded search. Source: GitHub READMEs, Hugging Face model cards, arXiv papers.
+
+### AgentDoG 1.5 — the strongest candidate, but still GPU-gated
+
+- **HF model**: `AI45Research/AgentDoG1.5-Unified-Qwen3.5-4B` (4B params), plus
+  `FG-Qwen3.5-2B/4B/8B` and `FG-Llama3.1-8B` for fine-grained diagnosis.
+- **Serving**: requires `vLLM` or `SGLang` — the model card explicitly documents
+  `vllm serve AI45Research/AgentDoG1.5-Qwen3.5-4B` and `sglang.launch_server`.
+  It is **not** available as a pre-built API endpoint on OpenRouter or Together.
+- **API**: the model card mentions "OpenAI-compatible" and "vLLM" — once served, it
+  exposes an OpenAI-compatible endpoint, which our harness can call.
+- **Input**: structured trajectory JSON (user/agent/environment turns). Our
+  transcript format can be mapped.
+- **Output**: Unified model produces a single classification score; FG models
+  produce a 3D diagnosis (Risk Source, Failure Mode, Real-world Harm).
+- **GPU requirement**: confirmed. A 4B-8B model needs GPU inference (4GB+ VRAM
+  for 4B, 8GB+ for 8B). A `vllm` container on a machine with a GPU would work.
+- **Verdict**: best candidate for a third vendor test **after** LlamaFirewall, if
+  GPU infrastructure is available. The 3D taxonomy is the most complete of any
+  open-source detector.
+
+### dl-eigenart/agentshield-platform — single-turn classifier, not a trajectory detector
+
+- **What it is**: a prompt-injection/jailbreak/data-exfiltration classifier for
+  single-turn text inputs. `shield.classify("text")` returns a verdict with
+  `is_injection`, `category`, `confidence`.
+- **API**: managed service at `api.agentshield.pro/v1/classify`. Free tier: 100
+  req/day. Self-hosted container is on the roadmap (Q2 2026, not yet shipped).
+- **Input**: single text string, not a transcript. Multi-turn session defense is
+  on the roadmap ("Q2 2026" — not yet shipped).
+- **Taxonomy**: injection categories (prompt_injection, jailbreak, data_exfiltration,
+  none). Coarser than our 14-technique dataset.
+- **Verdict**: not suitable. It is a prompt-level classifier, not a trajectory-level
+  detector. The self-hosted container is not yet available.
+
+### snyk/agent-scan — MCP server scanner, not a transcript detector
+
+- **What it is**: CLI tool that discovers MCP servers, agent skills, and scans them
+  for prompt injections, vulnerabilities, and malware payloads. Works by starting
+  MCP servers and inspecting their tool descriptions.
+- **Input**: MCP configuration files (JSON), not agent transcripts.
+- **Output**: risk scores per MCP server/skill, with vulnerability categories (not
+  a malicious/benign verdict on a transcript).
+- **License**: source available on GitHub, but usage requires a Snyk API token.
+- **Verdict**: not suitable. It is a static/dynamic scanner for MCP infrastructure,
+  not a trajectory-level detector. Related to Invariant (same parent company Snyk)
+  but different product.
+
+### xiongyuaay/JANUS (+ Vanguard) — research code, not a production detector
+
+- **What it is**: a research framework for training predictive guardrails that
+  anticipate future risks from partial trajectories. Paper + code (July 2026).
+- **Model**: Vanguard (Hugging Face: `yuaay/vanguard`), trained via CoAA-RL.
+- **Input**: partial trajectory prefix (list of turns).
+- **Output**: two-stage prediction: (1) anticipated future summary, (2) safety
+  adjudication (block/allow).
+- **Readiness**: research code, not a production-grade detector. The repo has a
+  single contributor, no releases, no documentation for integration.
+- **Verdict**: not suitable for a quick second-vendor test. The research is
+  interesting and worth following, but the code is not ready for integration.
+
+### Updated recommendation (expanded search)
+
+| Candidate | Suitability | Barrier | Next step |
+|---|---|---|---|
+| **LlamaFirewall** | ✅ Best fit | Together API key for AlignmentCheck | Build adapter (1-2 days) |
+| **AgentDoG 1.5** | ⚠️ Strong if GPU is available | GPU + vLLM/SGLang serving | Try via OpenRouter if available |
+| **AgentShield** | ❌ Single-turn only | No trajectory support | Revisit when multi-turn is released |
+| **Snyk Agent Scan** | ❌ MCP scanner | Not a transcript detector | Not applicable |
+| **JANUS/Vanguard** | ❌ Research code | Not production-ready | Follow for future maturity |
+
+**Conclusion**: the expanded search found no new candidate that is both (a) a genuine
+multi-turn trajectory detector and (b) immediately reachable without GPU or contact-sales.
+LlamaFirewall remains the strongest candidate for a second-vendor test. AgentDoG 1.5 is
+worth verifying on OpenRouter (if the model is available there) as a fallback.
+
+---
+
 ## Recommendation for a future Phase 2 (original, pre-Fase 1 run)
 
 Applying the three stated criteria — (a) architectural distance from `aidr`'s own design
