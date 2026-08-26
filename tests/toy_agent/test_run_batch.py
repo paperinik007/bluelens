@@ -768,6 +768,8 @@ def test_main_writes_the_provenance_file_next_to_the_raw_data(tmp_path, monkeypa
     run_dir = _run_dir(run_output_dir)
     prov = json.loads((run_dir / "provenance.json").read_text(encoding="utf-8"))
     assert prov["agent_model"] == "openai/gpt-4o-mini"
+    assert prov["run_id"] is not None
+    assert prov["run_id"] == run_dir.name
     assert "measurer_commit=" in (run_dir / "report.md").read_text(encoding="utf-8")
 
 

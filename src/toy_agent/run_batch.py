@@ -279,6 +279,7 @@ def main(argv: list[str] | None = None) -> None:
         log_fh.flush()
 
     prov = provenance.collect_provenance(os.environ)
+    prov["run_id"] = run_id
     provenance.write_provenance(prov, run_dir)
 
     progress("=== agentic-security-audits — run ===")
