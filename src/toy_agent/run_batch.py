@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import os
+import secrets
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
@@ -263,6 +265,10 @@ def main(argv: list[str] | None = None) -> None:
     api_key = os.environ.get("DETECTOR_OPENROUTER_API_KEY", "")
     agent_api_key = os.environ.get("AGENT_OPENROUTER_API_KEY", "")
 
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + secrets.token_hex(3)
+    run_dir = run_output_dir / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+
     preflight_failures = preflight_check_models(os.environ, api_key, agent_api_key=agent_api_key)
     if preflight_failures:
         for failure in preflight_failures:
@@ -270,9 +276,19 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(1)
 
     prov = provenance.collect_provenance(os.environ)
-    provenance.write_provenance(prov, run_output_dir)
+    provenance.write_provenance(prov, run_dir)
 
-    result = execute_batch(dataset, run_output_dir, container_lifecycle=parsed.container_lifecycle, api_key=api_key)
+    result = execute_batch(dataset, run_dir, container_lifecycle=parsed.container_lifecycle, api_key=api_key)
+
+    try:
+        latest = run_output_dir / "latest"
+        if latest.is_symlink() or latest.exists():
+            latest.unlink()
+        latest.symlink_to(run_dir.name, target_is_directory=True)
+    except OSError:
+        # Windows senza developer mode / permessi: si salta. L'ordinamento per
+        # nome copre la scoperta dell'ultimo run (design §2.3).
+        pass
 
     unusable_failure = transcript_unusable_gate_failure(result)
     if unusable_failure:
@@ -305,8 +321,8 @@ def main(argv: list[str] | None = None) -> None:
         transcript_unusable=result.transcript_unusable,
         provenance=prov,
     )
-    run_output_dir.mkdir(parents=True, exist_ok=True)
-    (run_output_dir / "report.md").write_text(report, encoding="utf-8")
+    run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "report.md").write_text(report, encoding="utf-8")
 
 
 if __name__ == "__main__":

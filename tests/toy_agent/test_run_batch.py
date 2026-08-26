@@ -11,6 +11,12 @@ from toy_agent.run_batch import BatchResult
 from toy_agent.schema import Transcript, Turn, TestCase, Verdict, Always, ToolCall
 
 
+def _run_dir(run_output_dir):
+    dirs = [d for d in run_output_dir.iterdir() if d.is_dir() and d.name != "latest"]
+    assert len(dirs) == 1, f"expected exactly one run dir, got {[d.name for d in dirs]}"
+    return dirs[0]
+
+
 def _ground_truth(case_id, label="benign", technique_target=None, rationale="r", seed_content="hi"):
     transcript = Transcript(session_id=case_id, turns=[Turn(seq=0, role="user", content=seed_content)])
     criteria = Always() if label == "malicious" else None
@@ -445,7 +451,7 @@ def test_main_writes_a_report_declaring_operational_parameters(tmp_path, monkeyp
     monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
     run_batch.main([str(dataset_dir), str(run_output_dir)])
 
-    report = (run_output_dir / "report.md").read_text(encoding="utf-8")
+    report = (_run_dir(run_output_dir) / "report.md").read_text(encoding="utf-8")
     assert f"agent_timeout_s={run_batch.AGENT_TIMEOUT_S}" in report
     assert f"detector_timeout_s={run_batch.DETECTOR_TIMEOUT_S}" in report
     assert f"circuit_breaker_threshold={run_batch.BREAKER_THRESHOLD}" in report
@@ -469,7 +475,7 @@ def test_main_declares_a_circuit_breaker_trip_in_the_report(tmp_path, monkeypatc
     monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
     run_batch.main([str(dataset_dir), str(run_output_dir)])
 
-    report = (run_output_dir / "report.md").read_text(encoding="utf-8")
+    report = (_run_dir(run_output_dir) / "report.md").read_text(encoding="utf-8")
     assert "1/2" in report
     assert "docker compose exec failed to start the agent invocation" in report
 
@@ -605,7 +611,7 @@ def test_main_stderr_notes_a_truncated_run_when_the_breaker_tripped_and_a_shortc
     captured = capsys.readouterr()
     assert "circuit breaker tripped" in captured.err
     assert "truncated" in captured.err
-    assert not (run_output_dir / "report.md").exists()
+    assert not (_run_dir(run_output_dir) / "report.md").exists()
 
 
 def _result_with_unusable(dataset, unusable_count, executed):
@@ -661,7 +667,7 @@ def test_main_refuses_to_write_the_report_past_the_threshold(tmp_path, monkeypat
         assert False, "expected SystemExit"
     except SystemExit as exc:
         assert exc.code == 1
-    assert not (run_output_dir / "report.md").exists()
+    assert not (_run_dir(run_output_dir) / "report.md").exists()
 
 
 def test_main_refuses_to_write_the_report_when_a_tool_appears_only_in_malicious_cases(tmp_path, monkeypatch):
@@ -690,7 +696,7 @@ def test_main_refuses_to_write_the_report_when_a_tool_appears_only_in_malicious_
         assert False, "expected SystemExit"
     except SystemExit as exc:
         assert exc.code == 1
-    assert not (run_output_dir / "report.md").exists()
+    assert not (_run_dir(run_output_dir) / "report.md").exists()
 
 
 def test_setup_notes_declares_every_experimental_condition_unconditionally():
@@ -759,9 +765,102 @@ def test_main_writes_the_provenance_file_next_to_the_raw_data(tmp_path, monkeypa
     monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
     monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
     run_batch.main([str(dataset_dir), str(run_output_dir)])
-    prov = json.loads((run_output_dir / "provenance.json").read_text(encoding="utf-8"))
+    run_dir = _run_dir(run_output_dir)
+    prov = json.loads((run_dir / "provenance.json").read_text(encoding="utf-8"))
     assert prov["agent_model"] == "openai/gpt-4o-mini"
-    assert "measurer_commit=" in (run_output_dir / "report.md").read_text(encoding="utf-8")
+    assert "measurer_commit=" in (run_dir / "report.md").read_text(encoding="utf-8")
+
+
+def test_run_id_format_matches_expected_pattern(tmp_path, monkeypatch):
+    import re
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+    captured = {}
+
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+        captured["run_dir"] = output_dir
+        case = dataset[0]
+        verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
+        return BatchResult(
+            cases=[case], verdicts=[verdict],
+            total_count=1, executed_count=1, breaker_tripped=False,
+            metric_cases=[case], metric_verdicts=[verdict],
+        )
+
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
+    run_batch.main([str(dataset_dir), str(run_output_dir)])
+
+    run_dir = captured["run_dir"]
+    assert re.fullmatch(r"\d{8}-\d{6}-[0-9a-f]{6}", run_dir.name), run_dir.name
+    assert run_dir.parent == run_output_dir
+
+
+def test_each_run_creates_its_own_directory(tmp_path, monkeypatch):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+        case = dataset[0]
+        verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
+        return BatchResult(
+            cases=[case], verdicts=[verdict],
+            total_count=1, executed_count=1, breaker_tripped=False,
+            metric_cases=[case], metric_verdicts=[verdict],
+        )
+
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
+    run_batch.main([str(dataset_dir), str(run_output_dir)])
+
+    run_dir = _run_dir(run_output_dir)
+    assert (run_dir / "report.md").exists()
+    assert (run_dir / "provenance.json").exists()
+    assert not (run_output_dir / "report.md").exists()
+    assert not (run_output_dir / "provenance.json").exists()
+
+
+def test_latest_points_to_the_run_that_ran(tmp_path, monkeypatch):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+        case = dataset[0]
+        verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
+        return BatchResult(
+            cases=[case], verdicts=[verdict],
+            total_count=1, executed_count=1, breaker_tripped=False,
+            metric_cases=[case], metric_verdicts=[verdict],
+        )
+
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
+    run_batch.main([str(dataset_dir), str(run_output_dir)])
+
+    run_dir = _run_dir(run_output_dir)
+    latest = run_output_dir / "latest"
+    assert latest.is_symlink()
+    assert latest.resolve() == run_dir.resolve()
+
+    # A failed preflight must not create or move latest.
+    previous_target = latest.readlink()
+
+    def fake_preflight_failing(env, api_key, *, agent_api_key="", transport=None):
+        return ["model unavailable"]
+
+    monkeypatch.setattr(run_batch, "preflight_check_models", fake_preflight_failing)
+
+    try:
+        run_batch.main([str(dataset_dir), str(run_output_dir)])
+        assert False, "expected SystemExit"
+    except SystemExit as exc:
+        assert exc.code == 1
+
+    assert latest.is_symlink()
+    assert latest.readlink() == previous_target
 
 
 # --- runtime guard: refuse to run the wrong checkout's code ---
