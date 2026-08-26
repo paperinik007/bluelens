@@ -230,6 +230,24 @@ def test_counts_toward_metric_false_is_excluded_from_the_metric_lists_but_kept_i
     assert proxy_log_collector.calls == ["c1", "c2"]
 
 
+def test_total_in_tokens_accumulates(tmp_path):
+    dataset = {"c1": _ground_truth("c1"), "c2": _ground_truth("c2")}
+    steps = _reused_sequence(["c1", "c2"])
+    r1 = _ok_result("c1")
+    r2 = _ok_result("c2")
+    r1["verdict"]["in_tokens"] = 100
+    r2["verdict"]["in_tokens"] = 200
+    runner = ScriptedRunTestCase([r1, r2])
+
+    result = execute_sequence(
+        steps, dataset, tmp_path,
+        run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
+        collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
+    )
+
+    assert result.total_in_tokens == 300
+
+
 def test_circuit_breaker_trips_after_three_consecutive_infra_failures(tmp_path):
     dataset = {f"c{i}": _ground_truth(f"c{i}") for i in range(1, 5)}
     steps = _reused_sequence([f"c{i}" for i in range(1, 5)])

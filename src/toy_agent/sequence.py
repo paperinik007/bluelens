@@ -108,6 +108,7 @@ class BatchResult:
     metric_cases: list[TestCase] = field(default_factory=list)
     metric_verdicts: list[Verdict] = field(default_factory=list)
     transcript_unusable: dict[str, str] = field(default_factory=dict)
+    total_in_tokens: int = 0
 
 
 def _agent_input(case: TestCase) -> dict:
@@ -175,6 +176,7 @@ def execute_sequence(
     breaker_tripped = False
     transcript_conversion_failure_count = 0
     verdict_conversion_failure_count = 0
+    total_in_tokens = 0
     total_count = sum(1 for step in steps if isinstance(step, CommandStep))
     command_number = 0
 
@@ -215,6 +217,7 @@ def execute_sequence(
             # verdict_from_dict() below raises on it (Plan 4 decision 6,
             # unchanged).
             _append_jsonl(verdicts_path, raw_verdict_dict)
+            total_in_tokens += raw_verdict_dict.get("in_tokens") or 0
             if raw_transcript_dict is not None:
                 (raw_dir / f"{case_id}.transcript.json").write_text(json.dumps(raw_transcript_dict), encoding="utf-8")
 
@@ -335,4 +338,5 @@ def execute_sequence(
         last_infra_rationale=last_infra_rationale,
         transcript_conversion_failure_count=transcript_conversion_failure_count,
         verdict_conversion_failure_count=verdict_conversion_failure_count,
+        total_in_tokens=total_in_tokens,
     )
