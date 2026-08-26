@@ -49,6 +49,7 @@ def collect_provenance(env: Mapping[str, str], repo_root: Path = Path(".")) -> d
         "agent_max_tokens": MAX_TOKENS,
         "agent_request_timeout_s": REQUEST_TIMEOUT_S,
         "agent_max_retries_per_case": MAX_RETRIES_PER_CASE,
+        "run_id": None,
     }
 
 

@@ -40,8 +40,13 @@ def test_collect_provenance_records_every_declared_condition():
         "measurer_commit", "measurer_dirty", "vendor_commit", "agent_model",
         "sifter_model", "inspector_model", "embed_model", "cost_source",
         "agent_max_tokens", "agent_request_timeout_s", "agent_max_retries_per_case",
+        "run_id",
     ):
         assert key in prov, key
+
+
+def test_collect_provenance_run_id_is_none_by_default():
+    assert provenance.collect_provenance({})["run_id"] is None
 
 
 def test_an_unset_model_env_var_is_recorded_as_the_code_default_not_omitted():
