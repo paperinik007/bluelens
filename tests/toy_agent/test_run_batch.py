@@ -2,9 +2,11 @@ import json
 import os
 from pathlib import Path
 
+import httpx
 import pytest
 import yaml
 
+from toy_agent import preflight as preflight_module
 from toy_agent import provenance, run_batch
 from toy_agent.orchestrator import CommandResult
 from toy_agent.run_batch import BatchResult
@@ -942,27 +944,49 @@ def test_main_logs_to_stderr_and_run_log_but_not_stdout(tmp_path, monkeypatch, c
 # --- R10: no raw exception text in the log ---
 
 def test_preflight_sentinel_exception_text_never_reaches_run_log(tmp_path, monkeypatch):
+    """End-to-end: the REAL preflight (not a raising fake) must sanitize an
+    exception message before it reaches run.log. A mock transport raises an
+    httpx error whose message carries the sentinel (simulating an exception
+    that echoes the Authorization header). The sentinel must not appear in
+    run.log — the failure is recorded with only the exception class name.
+
+    The earlier version of this test used a fake that *raised* RuntimeError,
+    bypassing the real sanitization in _probe() entirely (the exception
+    propagated and main() never printed it). That only proved the raised
+    path, not the returned-string path this defect is about."""
     dataset_dir = tmp_path / "dataset"
     run_output_dir = tmp_path / "out"
     _write_dataset(dataset_dir, ["c1"])
 
-    sentinel = "SENTINEL-secret"
+    sentinel = "sk-SENTINEL-not-a-real-key"
+    monkeypatch.setenv("SIFTER_MODEL", "vendor/sifter")
 
-    def fake_preflight_raising(env, api_key, *, agent_api_key="", transport=None):
-        raise RuntimeError(sentinel)
+    class Boom(httpx.HTTPError):
+        pass
 
-    monkeypatch.setattr(run_batch, "preflight_check_models", fake_preflight_raising)
+    def handler(request):
+        raise Boom(f"Authorization: Bearer {sentinel}")
+
+    def real_preflight_with_transport(env, api_key, *, agent_api_key="", transport=None):
+        return preflight_module.preflight_check_models(
+            env, api_key, agent_api_key=agent_api_key,
+            transport=httpx.MockTransport(handler),
+        )
+
+    monkeypatch.setattr(run_batch, "preflight_check_models", real_preflight_with_transport)
 
     try:
         run_batch.main([str(dataset_dir), str(run_output_dir)])
-        assert False, "expected RuntimeError to propagate"
-    except RuntimeError:
-        pass
+        assert False, "expected SystemExit(1) on preflight failure"
+    except SystemExit as exc:
+        assert exc.code == 1
 
     run_dir = _run_dir(run_output_dir)
     log = (run_dir / "run.log").read_text(encoding="utf-8")
     assert sentinel not in log
-    # The failure is still recorded: the run reached preflight but never passed it.
+    # The failure IS recorded, sanitized to the exception class name only.
+    assert "preflight model check failed" in log
+    assert "Boom" in log
     assert "--- preflight ---" in log
     assert "checking 4 models...  OK" not in log
 

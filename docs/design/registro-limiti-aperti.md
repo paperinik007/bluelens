@@ -21,23 +21,6 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
 
 ## Aperti
 
-- **`run_batch.main()` si fida ciecamente dell'output di `preflight_check_models`** —
-  il ciclo di fallimento del preflight (`run_batch.py`) stampa `preflight model check
-  failed: {failure}` passando la stringa tal quale a `progress()` (stderr + run.log),
-  senza alcun filtro. Oggi `preflight_check_models` restituisce solo `exc.__class__.__name__`
-  o uno status code HTTP, quindi il rischio è latente e non attivo — ma se in futuro una
-  causa di fallimento restituisse testo raw (es. il messaggio di un'eccezione), quel
-  testo finirebbe in `run.log` e su stderr, violando la disciplina "nessun messaggio raw
-  di eccezione". Trovato dal test R10 del piano run-observability (2026-08-26): il test
-  ha dovuto aggirare il problema (fake che *solleva* invece di *ritornare*) perché un fake
-  che ritorna una stringa con testo sentinella fallirebbe — il che espone la mancanza di
-  un filtro a monte. Soluzione minima: filtrare l'output del preflight nello stesso punto
-  dove il preflight costruisce le stringhe di fallimento (già quasi fatto), oppure
-  sanitizzare in `main()` prima di passare a `progress()`. Non bloccante, da chiudere
-  prima che il preflight possa produrre testo non controllato.
-  **Analisi completa + soluzione strutturale proposta (non implementata, declassata a
-  bassa priorità): `docs/design/2026-08-26-r10-preflight-output-sanitization.md`.**
-
 - **Pubblicazione in `docs/reports/` manuale, senza copia automatica di `run.log`** —
   non esiste un punto di pubblicazione automatica: l'operatore copia `report.md` a mano
   in `docs/reports/`. Il refactor directory-per-run (2026-08-26) introduce `run.log`
@@ -519,6 +502,15 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   Il report lo dice; un lettore che diffa due run deve saperlo.
 
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
+
+- **R10 — output del preflight non sanitizzato a valle del tipo di ritorno** — il codice
+  sanitizza già correttamente (`_probe()` restituisce solo `exc.__class__.__name__` o
+  status code HTTP), ma il test aggirava il percorso reale (fake che *solleva* invece
+  di *ritornare*), esponendo il fatto che `main()` stampa le stringhe ritornate tal
+  quali — nessuna garanzia strutturale. Risolto (2026-08-26): test end-to-end con il
+  preflight reale + `httpx.MockTransport` che solleva un'eccezione con sentinel, e
+  verifica che il sentinel non raggiunga `run.log`. Fix test-only, zero sorgenti toccati.
+  Analisi completa: `docs/design/2026-08-26-r10-preflight-output-sanitization.md`.
 
 - **T0007 senza uno scenario valido nel catalogo/dataset** — design finalizzato
   2026-08-19 (approvato dall'utente, con due correzioni: i tre `customer_id` vanno

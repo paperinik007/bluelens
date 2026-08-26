@@ -1,9 +1,23 @@
 # R10 — Output del preflight non sanitizzato a valle del tipo di ritorno
 
-Data: 2026-08-26. Stato: **analisi e soluzione proposta, non implementata** (declassata a
-bassa priorità, da riprendere quando si riaprirà il lavoro sul preflight). Riferita da
-`docs/design/registro-limiti-aperti.md`, voce "`run_batch.main()` si fida ciecamente
-dell'output di `preflight_check_models`".
+Data: 2026-08-26. Stato: **risolto nel codice (fix test-only, nessun cambio di contratto)**.
+Riferita da `docs/design/registro-limiti-aperti.md`, voce "`run_batch.main()` si fida
+ciecamente dell'output di `preflight_check_models`".
+
+## 0. Conclusione (letta prima di tutto)
+
+Il codice sorgente sanitizza già correttamente (`_probe()` restituisce solo
+`exc.__class__.__name__` o status code HTTP). Il difetto non era nel codice: era nel
+**test**, che aggirava il percorso reale (fake che *solleva* invece di *ritornare*). Il
+fix è **solo il test**: un test end-to-end che esercita il preflight reale con un
+`httpx.MockTransport` che solleva un'eccezione contenente un sentinel, e verifica che il
+sentinel non raggiunga `run.log` mentre la classe dell'eccezione sì.
+
+L'ipotesi del dataclass `PreflightFailure` (sezione 4 originale) è stata **scartata**: un
+tipo strutturato non obbliga nulla — è una convenzione più esplicita, non un filtro. Chi
+scriverà il prossimo `except` può comunque fare `str(exc)`. L'unico obbligo reale in
+questo progetto è la **suite di test** (verde prima di ogni commit): un test sentinella
+fallisce il commit se il raw text rientra, qualunque sia la forma del tipo di ritorno.
 
 ## 1. Il problema
 
@@ -54,60 +68,51 @@ registro) non è implementabile in modo affidabile: non esiste un modo per disti
 "testo raw da eccezione" da "testo legittimo" operando su una stringa opaca. Qualunque
 filtro per pattern è aggirabile e reintroduce il difetto per omissione.
 
-## 4. La soluzione strutturale: tipizzare il ritorno del preflight
+## 4. La soluzione (corretta): il test sentinella end-to-end, non un nuovo tipo
 
-Il gap si chiude solo cambiando **il contratto** del preflight: non restituire più testo
-libero, ma dati strutturati, e lasciare a un unico formattatore il compito di produrre il
-messaggio usando solo campi tipizzati.
+> **Questa sezione sostituisce la versione originale, che proponeva un dataclass
+> `PreflightFailure`. Quella proposta è stata scartata come falsa sicurezza — vedi
+> sezione 0.**
 
-```python
-@dataclass(frozen=True)
-class PreflightFailure:
-    tier: str        # "sifter" | "inspector" | "embed" | "agent"
-    model: str       # il model id
-    kind: str        # "http" | "exception" | "missing_key"
-    detail: str      # già sanificato: status code | class name | literal
+Il gap si chiude rendendo *verificabile automaticamente* la sanificazione, non cambiando
+il contratto. Il test end-to-end (`tests/toy_agent/test_run_batch.py`,
+`test_preflight_sentinel_exception_text_never_reaches_run_log`) fa questo:
 
-    def as_message(self) -> str:
-        # unico punto che costruisce il testo destinato al log
-        ...
-```
+- imposta `SIFTER_MODEL` così il preflight reale esegue davvero la probe sul tier;
+- inietta un `httpx.MockTransport` il cui handler solleva `Boom("Authorization: Bearer sk-SENTINEL-not-a-real-key")`;
+- invoca `main()` con il **preflight reale** (non un fake che aggira);
+- asserisce che `run.log` **non** contenga il sentinel, ma contenga `Boom` (la classe) e
+  `preflight model check failed` (il fallimento è registrato, non silenziato).
 
-- `preflight_check_models` ritorna `list[PreflightFailure]`.
-- `_probe()` continua a sanificare a monte: `detail` riceve solo `str(exc.response.status_code)`
-  o `exc.__class__.__name__` — mai `str(exc)`.
-- `main()` stampa solo `failure.as_message()`, mai una stringa opaca. Il testo raw non ha
-  alcun campo in cui entrare: il tipo è il filtro.
+Perché questo è l'unico obbligo reale: è l'unica cosa che *esegue e fallisce* — se in
+futuro qualcuno cambia `_probe()` in `return f"...: {str(exc)}"`, la suite fallisce e il
+commit è bloccato. Non dipende dalla memoria né dalla disciplina di chi scrive il
+`except` successivo.
 
-### 4.1 Invariante di verifica (il test che chiude davvero R10)
+### 4.1 Cosa NON fa (limite onesto)
 
-End-to-end, senza fake che aggira: preflight **reale** + `httpx.MockTransport` che solleva
-`Boom("Authorization: Bearer sk-SENTINEL-not-a-real-key")` → eseguire `main()` (con
-`execute_batch` mockato) e asserire che `run.log` **non contenga** `SENTINEL`. Con il tipo
-strutturato, il raw text non ha alcun percorso verso l'output.
+Il test copre il percorso reale *oggi* esistente (l'eccezione in `_probe()`). Se un
+futuro sviluppatore aggiungesse una **nuova** causa di fallimento che ritorna testo raw
+in un ramo non esercitato dal test, il test non lo coglierebbe finché quel ramo non viene
+attraversato. Nessun meccanismo Python può rendere il leak *impossibile* (a differenza del
+confine `agent`/`detector` in Docker, che è fisico). La garanzia ottenuta è: *qualunque
+violazione nel percorso testato blocca il commit*, che è la garanzia più forte che questo
+progetto abbia scelto come standard per il codice.
 
-## 5. Impatto e tier
+## 5. Impatto effettivo (fix test-only)
 
 | File | Modifica |
 |---|---|
-| `src/toy_agent/preflight.py` | `PreflightFailure` dataclass + `_probe`/`preflight_check_models` ritornano il tipo |
-| `src/toy_agent/run_batch.py` | `main()` stampa `failure.as_message()` |
-| `tests/toy_agent/test_preflight.py` | ~10 test: i confronti su stringa diventano su campi del dataclass |
-| `tests/toy_agent/test_run_batch.py` | 2 fake (`["model unavailable"]`) + riscrittura del test R10 end-to-end |
+| `tests/toy_agent/test_run_batch.py` | `import httpx` + `from toy_agent import preflight`; riscrittura del test R10 in end-to-end |
+| *(nessun file sorgente)* | — |
 
-Criteri di tiering (`docs/notes/pi-point-1-tiering.md`): "tocca 3+ file in moduli diversi"
-→ **Light** (design sketch + council skeptic/pragmatist + griller). Non tocca `schema.py`,
-non cambia il confine `toy_agent`/`detector_adapter`, non introduce dipendenze.
+Criteri di tiering (`docs/notes/pi-point-1-tiering.md`): nessun `schema.py`, nessun
+confine, nessun nuovo design doc, nessun cambio di comportamento visibile → **Micro**.
+La modifica è un test che rafforza la copertura, non un cambio di codice di produzione.
 
-## 6. Stato e riattivazione
+## 6. Stato
 
-- **Oggi**: registrata come limite aperto (rischio latente), con questa analisi come
-  punto di partenza per l'implementazione.
-- **Quando riaprirla**: insieme al prossimo lavoro che tocca `preflight.py` o `run_batch.py`
-  (es. una nuova causa di fallimento del preflight, o la pubblicazione automatica
-  `python -m toy_agent.publish` che porta con sé il run.log), o quando si decide che il
-  vincolo "nessun raw text" va garantito per costruzione su tutta la catena di log.
-- **Costo stimato**: basso (un dataclass + adattamento dei test esistenti); il rischio di
-  regressione è basso perché `as_message()` riproduce il formato attuale
-  `"{tier} ({model}): HTTP {code}"` / `"{tier} ({model}): {Class}"`, così i consumatori
-  esistenti non cambiano output.
+- **Risolto** (2026-08-26): test R10 end-to-end committato, suite `459 passed, 2 skipped`.
+- **Riattivazione futura (se serve)**: se emergerà una nuova causa di fallimento del
+  preflight che ritorna testo, il test andrà esteso per esercitare quel nuovo ramo — non
+  serve un refactor del contratto finché il test copre il percorso reale.
