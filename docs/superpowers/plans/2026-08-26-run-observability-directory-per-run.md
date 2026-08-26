@@ -11,13 +11,14 @@ mentre gira (stderr + `run.log`), con heartbeat per caso ed errori in evidenza.
 
 ## Ordine di esecuzione (dipendenze)
 
-1. **T1** — `run_id` + directory-per-run + `latest` (R1-R4)
-2. **T2** — log di progresso: banner + heartbeat + summary + `run.log` (R5-R9, R15)
+1. **T1** — `run_id` + directory-per-run + `latest` (R1-R4) ✅
+2. **T2** — log di progresso: banner + heartbeat + summary + `run.log` (R5-R9, R15) ✅
 3. **T3** — `run_id` in provenance (R2)
-4. **T4** — fail-loudly in `inspect_run`/`regenerate_report` (R16)
-5. **T5** — pubblicazione `run.log` col report (R17)
-6. **T6** — archivio legacy + ri-puntamento citazioni (§5, manuale)
-7. **T7** — README + doc
+4. **T4a** — fail-loudly in `inspect_run` (R16)
+5. **T4b** — fail-loudly in `regenerate_report` (R16)
+6. **T5** — pubblicazione `run.log` via documentazione (R17, opzione A)
+7. **T6** — archivio legacy + ri-puntamento citazioni (§5, manuale)
+8. **T7** — README + doc
 
 ---
 
@@ -54,22 +55,31 @@ mentre gira (stderr + `run.log`), con heartbeat per caso ed errori in evidenza.
   Important): è un plan gap, qui assegnato a T3.
 - **Requisiti**: R2, R11.
 
-### T4 — fail-loudly nei tool
+### T4a — fail-loudly in `inspect_run`
 
-- **File**: `src/toy_agent/inspect_run.py`, `src/toy_agent/regenerate_report.py`
-- **Test**: `tests/toy_agent/test_inspect_run.py`, `tests/toy_agent/test_regenerate_report.py`
+- **File**: `src/toy_agent/inspect_run.py`
+- **Test**: `tests/toy_agent/test_inspect_run.py`
 - **Cosa**: se la directory data non contiene `raw/` e `verdicts.jsonl`, errore
   esplicito con messaggio ("punta a `run_output/<run_id>/`, non al root") invece di
-  zero transcript/verdetti in silenzio.
+  zero transcript in silenzio.
 - **Requisiti**: R16.
 
-### T5 — pubblicazione `run.log`
+### T4b — fail-loudly in `regenerate_report`
 
-- **File**: `src/toy_agent/run_batch.py` (o dove avviene la pubblicazione)
-- **Test**: `tests/toy_agent/test_run_batch.py`
-- **Cosa**: quando il run si pubblica in `docs/reports/`, copiare `run.log` accanto a
-  `report.md`.
-- **Requisiti**: R17.
+- **File**: `src/toy_agent/regenerate_report.py`
+- **Test**: `tests/toy_agent/test_regenerate_report.py`
+- **Cosa**: stessa guardia di T4a, nel percorso di rigenerazione.
+- **Requisiti**: R16.
+
+### T5 — pubblicazione `run.log` (documentazione, opzione A)
+
+- **File**: `README.md` (nessun codice)
+- **Cosa**: documentare che la pubblicazione in `docs/reports/` è manuale e che,
+  quando si copia `report.md`, va copiato anche `run.log` accanto ad esso (R17).
+  Non esiste un punto di pubblicazione automatica nel codice — aggiungere un
+  comando solo per `run.log` sarebbe incoerente; la pubblicazione automatica
+  completa resta questione aperta (vedi §8 del design).
+- **Requisiti**: R17 (via documentazione).
 
 ### T6 — archivio legacy (manuale)
 
