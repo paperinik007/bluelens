@@ -43,10 +43,15 @@ mentre gira (stderr + `run.log`), con heartbeat per caso ed errori in evidenza.
 
 ### T3 — `run_id` in provenance
 
-- **File**: `src/toy_agent/provenance.py`
-- **Test**: `tests/toy_agent/test_provenance.py`
+- **File**: `src/toy_agent/provenance.py`, `src/toy_agent/run_batch.py`
+- **Test**: `tests/toy_agent/test_provenance.py`, `tests/toy_agent/test_run_batch.py`
 - **Cosa**: campo `run_id` in `collect_provenance`. NIENTE cambio a
   `format_provenance` (run_id non entra nel report, R11).
+- **+ Reorder dal review di T1**: spostare `collect_provenance` + `write_provenance`
+  **prima** del preflight (design §3, step 3/5 prima di step 6). Oggi sono dopo il
+  preflight → un run con preflight fallito lascia una directory vuota senza
+  `provenance.json`, contro §2.3. Trovato dal reviewer di T1 (Approved, finding
+  Important): è un plan gap, qui assegnato a T3.
 - **Requisiti**: R2, R11.
 
 ### T4 — fail-loudly nei tool
