@@ -21,6 +21,16 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
 
 ## Aperti
 
+- **Pubblicazione in `docs/reports/` manuale, senza copia automatica di `run.log`** —
+  non esiste un punto di pubblicazione automatica: l'operatore copia `report.md` a mano
+  in `docs/reports/`. Il refactor directory-per-run (2026-08-26) introduce `run.log`
+  come evidenza forense del run, ma la sua copia accanto a `report.md` è affidata alla
+  documentazione (README), non al codice — rischio che un report venga pubblicato senza
+  la timeline del run. Trovato durante l'implementazione del piano run-observability
+  (task T5, opzione A). Soluzione futura: un comando di pubblicazione automatica
+  (`python -m toy_agent.publish <run_dir>`) che copi `report.md` + `run.log` + `raw/` in
+  `docs/reports/<run_id>/`. Non in questo piano.
+
 - **Sequenze composte con `case_id` ripetuto** — un comando ripetuto con lo stesso
   `case_id` nella stessa sceneggiatura sovrascrive silenziosamente transcript grezzo ed
   evidenza raccolta di tutte le esecuzioni tranne l'ultima (`verdicts.jsonl` unico canale
@@ -325,9 +335,11 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   riscritte restano lì con dati obsoleti. Trovato durante il cleanup del run
   troncato (13/31) del 2026-08-25: `raw/` conteneva 18 transcript datati Aug 21
   (run precedente) mescolati ai 13 nuovi. Il cleanup manuale ha ridotto
-  `run_output/` da 118M a 23M. Soluzione minima: svuotare `raw/` e tutte le
-  cartelle `<case_id>/` a inizio run (in `sequence.py` o `run_batch.py`), coerentemente
-  col troncamento già esistente di `verdicts.jsonl`.
+  `run_output/` da 118M a 23M. **Risolto per costruzione, 2026-08-26**: il refactor
+  directory-per-run (`docs/design/2026-08-26-run-observability-directory-per-run-design.md`)
+  fa nascere ogni run in una directory vuota `run_output/<run_id>/` — non c'è più un
+  namespace condiviso da pulire. Il vecchio layout flat è archiviato in
+  `run_output/legacy-20260825-troncato/`.
 
 - **`PYTHONPATH` mai documentato — stesso trabocchetto che ha causato due run sprecati
   in Plan 5d** — `python -m toy_agent.run_batch` (il comando che README, "Come
