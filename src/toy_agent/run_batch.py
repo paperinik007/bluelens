@@ -58,6 +58,7 @@ def execute_batch(
     collect_case_evidence_fn: Callable = evidence.collect_case_evidence,
     collect_thin_proxy_log_fn: Callable = evidence.collect_thin_proxy_log,
     run_command: CommandRunner = default_command_runner,
+    progress_fn: Callable[[str], None] | None = None,
 ) -> BatchResult:
     """Builds the default sequence for a whole-dataset run and delegates to
     execute_sequence (sequence.py) — the sequence-aware core. Kept as a thin
@@ -73,6 +74,7 @@ def execute_batch(
         collect_case_evidence_fn=collect_case_evidence_fn,
         collect_thin_proxy_log_fn=collect_thin_proxy_log_fn,
         run_command=run_command,
+        progress_fn=progress_fn,
     )
 
 
@@ -269,16 +271,61 @@ def main(argv: list[str] | None = None) -> None:
     run_dir = run_output_dir / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
 
+    log_path = run_dir / "run.log"
+    log_fh = log_path.open("a", encoding="utf-8")
+    def progress(line: str) -> None:
+        print(line, file=sys.stderr, flush=True)
+        log_fh.write(line + "\n")
+        log_fh.flush()
+
+    prov = provenance.collect_provenance(os.environ)
+    provenance.write_provenance(prov, run_dir)
+
+    progress("=== agentic-security-audits — run ===")
+    progress(f"run_id: {run_id}")
+    progress(f"dataset: {dataset_dir} ({len(dataset)} cases)")
+    progress(f"output:  {run_dir}")
+    progress(
+        f"measurer: {prov.get('measurer_commit', 'unknown')} "
+        f"({'dirty' if prov.get('measurer_dirty') else 'clean'})   "
+        f"vendor: {prov.get('vendor_commit', 'unknown')}"
+    )
+    progress(f"agent: {prov.get('agent_model', 'unknown')}")
+    progress(
+        f"detector: {prov.get('sifter_model', 'unknown')} / "
+        f"{prov.get('inspector_model', 'unknown')} / {prov.get('embed_model', 'unknown')}"
+    )
+    progress(f"lifecycle: {parsed.container_lifecycle}")
+
+    progress("--- preflight ---")
     preflight_failures = preflight_check_models(os.environ, api_key, agent_api_key=agent_api_key)
     if preflight_failures:
         for failure in preflight_failures:
             print(f"preflight model check failed: {failure}", file=sys.stderr)
         sys.exit(1)
+    progress("checking 4 models...  OK")
+    progress("--- containers ---")
 
-    prov = provenance.collect_provenance(os.environ)
-    provenance.write_provenance(prov, run_dir)
+    result = execute_batch(
+        dataset, run_dir,
+        container_lifecycle=parsed.container_lifecycle,
+        api_key=api_key,
+        progress_fn=progress,
+    )
 
-    result = execute_batch(dataset, run_dir, container_lifecycle=parsed.container_lifecycle, api_key=api_key)
+    by_cause: dict[str, int] = {}
+    for cause in result.transcript_unusable.values():
+        by_cause[cause] = by_cause.get(cause, 0) + 1
+    causes = ", ".join(f"{k}={v}" for k, v in sorted(by_cause.items()))
+    progress("=== summary ===")
+    progress(
+        f"{result.executed_count} cases: {len(result.metric_cases)} judged, "
+        f"{len(result.transcript_unusable)} excluded ({causes})"
+    )
+    progress(f"cumulative in_tokens: {result.total_in_tokens}")
+    progress(f"circuit breaker: {'tripped' if result.breaker_tripped else 'not tripped'}")
+    progress(f"report.md written to {run_dir}")
+    log_fh.close()
 
     try:
         latest = run_output_dir / "latest"

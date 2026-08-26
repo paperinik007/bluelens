@@ -416,7 +416,7 @@ def test_main_never_modifies_the_dataset_dir(tmp_path, monkeypatch):
     _write_dataset(dataset_dir, ["c1"])
     before = (dataset_dir / "c1.yaml").read_text(encoding="utf-8")
 
-    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
         return BatchResult(
@@ -438,7 +438,7 @@ def test_main_writes_a_report_declaring_operational_parameters(tmp_path, monkeyp
     run_output_dir = tmp_path / "out"
     _write_dataset(dataset_dir, ["c1"])
 
-    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
         return BatchResult(
@@ -462,7 +462,7 @@ def test_main_declares_a_circuit_breaker_trip_in_the_report(tmp_path, monkeypatc
     run_output_dir = tmp_path / "out"
     _write_dataset(dataset_dir, ["c1", "c2"])
 
-    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
         case = dataset[0]
         return BatchResult(
             cases=[case], verdicts=[Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="error")],
@@ -488,7 +488,7 @@ def test_main_reads_the_detector_api_key_from_the_environment(tmp_path, monkeypa
 
     captured = {}
 
-    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
         captured["api_key"] = api_key
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
@@ -512,7 +512,7 @@ def test_main_accepts_the_container_lifecycle_flag_and_defaults_to_reused(tmp_pa
 
     captured = {}
 
-    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
         captured["container_lifecycle"] = container_lifecycle
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
@@ -590,7 +590,7 @@ def test_main_stderr_notes_a_truncated_run_when_the_breaker_tripped_and_a_shortc
     run_output_dir = tmp_path / "out"
     _write_dataset(dataset_dir, ["c1"])
 
-    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
         malicious_case = _case_with_tool_call("c1", "malicious", "bulk_export", technique_target="T0012")
         verdict = Verdict(case_id="c1", tool_name="agentic_threat_detection", status="ok", label="malicious", technique_detected="T0012")
         return BatchResult(
@@ -647,7 +647,7 @@ def test_main_refuses_to_write_the_report_past_the_threshold(tmp_path, monkeypat
     run_output_dir = tmp_path / "out"
     _write_dataset(dataset_dir, [f"c{i}" for i in range(1, 11)])
 
-    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
         cases = dataset[:10]
         verdicts = [Verdict(case_id=c.case_id, tool_name="agentic_threat_detection", status="ok", label="benign") for c in cases]
         unusable = {c.case_id: "model_error" for c in cases[:2]}
@@ -679,7 +679,7 @@ def test_main_refuses_to_write_the_report_when_a_tool_appears_only_in_malicious_
     run_output_dir = tmp_path / "out"
     _write_dataset(dataset_dir, ["c1"])
 
-    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
         malicious_case = _case_with_tool_call("c1", "malicious", "bulk_export", technique_target="T0012")
         verdict = Verdict(case_id="c1", tool_name="agentic_threat_detection", status="ok", label="malicious", technique_detected="T0012")
         return BatchResult(
@@ -757,7 +757,7 @@ def test_main_writes_the_provenance_file_next_to_the_raw_data(tmp_path, monkeypa
     dataset_dir = tmp_path / "dataset"
     run_output_dir = tmp_path / "out"
     _write_dataset(dataset_dir, ["c1"])
-    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
         return BatchResult(cases=[case], verdicts=[verdict], total_count=1, executed_count=1,
@@ -778,7 +778,7 @@ def test_run_id_format_matches_expected_pattern(tmp_path, monkeypatch):
     _write_dataset(dataset_dir, ["c1"])
     captured = {}
 
-    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
         captured["run_dir"] = output_dir
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
@@ -802,7 +802,7 @@ def test_each_run_creates_its_own_directory(tmp_path, monkeypatch):
     run_output_dir = tmp_path / "out"
     _write_dataset(dataset_dir, ["c1"])
 
-    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
         return BatchResult(
@@ -827,7 +827,7 @@ def test_latest_points_to_the_run_that_ran(tmp_path, monkeypatch):
     run_output_dir = tmp_path / "out"
     _write_dataset(dataset_dir, ["c1"])
 
-    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key=""):
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
         return BatchResult(
@@ -861,6 +861,31 @@ def test_latest_points_to_the_run_that_ran(tmp_path, monkeypatch):
 
     assert latest.is_symlink()
     assert latest.readlink() == previous_target
+
+
+def test_run_log_contains_banner_and_summary(tmp_path, monkeypatch):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+
+    def fake_execute_batch(dataset, output_dir, *, container_lifecycle="reused", api_key="", progress_fn=None):
+        case = dataset[0]
+        verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
+        return BatchResult(
+            cases=[case], verdicts=[verdict],
+            total_count=1, executed_count=1, breaker_tripped=False,
+            metric_cases=[case], metric_verdicts=[verdict],
+            total_in_tokens=10,
+        )
+
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
+    run_batch.main([str(dataset_dir), str(run_output_dir)])
+
+    run_dir = _run_dir(run_output_dir)
+    log = (run_dir / "run.log").read_text(encoding="utf-8")
+    assert "=== agentic-security-audits — run ===" in log
+    assert "=== summary ===" in log
 
 
 # --- runtime guard: refuse to run the wrong checkout's code ---
