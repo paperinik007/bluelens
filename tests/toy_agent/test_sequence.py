@@ -446,3 +446,62 @@ def test_a_clean_case_still_enters_metric_cases(tmp_path):
     )
     assert [c.case_id for c in result.metric_cases] == ["c1"]
     assert result.transcript_unusable == {}
+
+
+# --- progress_fn heartbeat (T2a) ---
+
+def test_progress_fn_receives_starting_and_done_lines(tmp_path):
+    dataset = {"c1": _ground_truth("c1")}
+    steps = _reused_sequence(["c1"])
+    runner = ScriptedRunTestCase([_ok_result("c1")])
+    lines = []
+
+    execute_sequence(
+        steps, dataset, tmp_path,
+        run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
+        collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
+        progress_fn=lines.append,
+    )
+
+    assert any("[1/1] starting   c1" in line for line in lines)
+    assert any("[1/1] done" in line and "c1" in line for line in lines)
+
+
+def test_progress_fn_receives_infra_marker(tmp_path):
+    dataset = {"c1": _ground_truth("c1")}
+    steps = _reused_sequence(["c1"])
+    raw_result = {
+        "transcript": {"session_id": "c1", "turns": [], "stop_reason": "completed"},
+        "verdict": {
+            "case_id": "c1", "tool_name": "agentic_threat_detection", "status": "error",
+            "error_kind": "infra", "label": None, "confidence": None, "technique_detected": None,
+            "rationale": "docker compose exec failed", "cost_usd": None, "latency_s": None,
+        },
+    }
+    runner = ScriptedRunTestCase([raw_result])
+    lines = []
+
+    execute_sequence(
+        steps, dataset, tmp_path,
+        run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
+        collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
+        progress_fn=lines.append,
+    )
+
+    assert any("*** INFRA ***" in line for line in lines)
+
+
+def test_progress_fn_none_is_silent(tmp_path, capsys):
+    dataset = {"c1": _ground_truth("c1")}
+    steps = _reused_sequence(["c1"])
+    runner = ScriptedRunTestCase([_ok_result("c1")])
+
+    execute_sequence(
+        steps, dataset, tmp_path,
+        run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
+        collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
+    )
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == ""

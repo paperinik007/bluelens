@@ -151,6 +151,7 @@ def execute_sequence(
     collect_case_evidence_fn: Callable = evidence.collect_case_evidence,
     collect_thin_proxy_log_fn: Callable = evidence.collect_thin_proxy_log,
     run_command: CommandRunner = default_command_runner,
+    progress_fn: Callable[[str], None] | None = None,
 ) -> BatchResult:
     """Drive `steps` through open/command/close (design doc, 'Esecuzione') —
     the sequence-aware core that execute_batch (run_batch.py) generates its
@@ -175,23 +176,31 @@ def execute_sequence(
     transcript_conversion_failure_count = 0
     verdict_conversion_failure_count = 0
     total_count = sum(1 for step in steps if isinstance(step, CommandStep))
+    command_number = 0
 
     try:
         for step_index, step in enumerate(steps):
             if isinstance(step, OpenStep):
+                if progress_fn is not None:
+                    progress_fn(f"opening: {', '.join(step.containers)}")
                 for service in step.containers:
                     _open_container(service, run_command)
                     open_containers.add(service)
                 continue
 
             if isinstance(step, CloseStep):
+                if progress_fn is not None:
+                    progress_fn(f"closing: {', '.join(step.containers)}")
                 for service in step.containers:
                     _close_container(service, run_command)
                     open_containers.discard(service)
                 continue
 
+            command_number += 1
             ground_truth = dataset_by_case_id[step.case_id]
             case_id = ground_truth.case_id
+            if progress_fn is not None:
+                progress_fn(f"  [{command_number}/{total_count}] starting   {case_id}")
             result = run_test_case_fn(
                 _agent_input(ground_truth),
                 command_index=step_index,
@@ -257,8 +266,8 @@ def execute_sequence(
             )
             cases.append(case_obj)
             verdicts.append(verdict_obj)
+            unusable_cause = metrics.transcript_unusable_cause(case_obj)
             if step.counts_toward_metric:
-                unusable_cause = metrics.transcript_unusable_cause(case_obj)
                 if unusable_cause is not None:
                     transcript_unusable[case_id] = unusable_cause
                 else:
@@ -266,6 +275,29 @@ def execute_sequence(
                     metric_verdicts.append(verdict_obj)
 
             breaker_kind = "conversion" if conversion_failed else raw_verdict_dict.get("error_kind")
+            if progress_fn is not None:
+                marker = None
+                if unusable_cause == "transcript_missing":
+                    marker = "*** TRANSCRIPT_MISSING ***"
+                elif unusable_cause == "model_error":
+                    marker = "*** MODEL_ERROR (transcript unusable) ***"
+                elif unusable_cause == "max_cost":
+                    marker = "*** MAX_COST (transcript unusable) ***"
+                elif unusable_cause == "arguments_parse_failed":
+                    marker = "*** ARGUMENTS_PARSE_FAILED ***"
+                elif conversion_failed:
+                    marker = "*** VERDICT_CONVERSION_FAILED ***"
+                elif breaker_kind == "infra":
+                    marker = "*** INFRA ***"
+                else:
+                    label = verdict_obj.label or ""
+                    line = f"  [{command_number}/{total_count}] done       {case_id:<45} {verdict_obj.status} {label:<8}"
+                    if verdict_obj.latency_s is not None:
+                        line += f" {verdict_obj.latency_s:.1f}s"
+                    line += f"  in={raw_verdict_dict.get('in_tokens')}"
+                    progress_fn(line)
+                if marker is not None:
+                    progress_fn(f"  [{command_number}/{total_count}] done       {case_id:<45} {marker}")
             if breaker_kind == "infra":
                 consecutive_infra += 1
                 last_infra_rationale = raw_verdict_dict.get("rationale")
