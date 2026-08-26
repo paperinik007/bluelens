@@ -280,7 +280,11 @@ def execute_sequence(
             breaker_kind = "conversion" if conversion_failed else raw_verdict_dict.get("error_kind")
             if progress_fn is not None:
                 marker = None
-                if unusable_cause == "transcript_missing":
+                if conversion_failed:
+                    marker = "*** VERDICT_CONVERSION_FAILED ***"
+                elif breaker_kind == "infra":
+                    marker = "*** INFRA ***"
+                elif unusable_cause == "transcript_missing":
                     marker = "*** TRANSCRIPT_MISSING ***"
                 elif unusable_cause == "model_error":
                     marker = "*** MODEL_ERROR (transcript unusable) ***"
@@ -288,10 +292,6 @@ def execute_sequence(
                     marker = "*** MAX_COST (transcript unusable) ***"
                 elif unusable_cause == "arguments_parse_failed":
                     marker = "*** ARGUMENTS_PARSE_FAILED ***"
-                elif conversion_failed:
-                    marker = "*** VERDICT_CONVERSION_FAILED ***"
-                elif breaker_kind == "infra":
-                    marker = "*** INFRA ***"
                 else:
                     label = verdict_obj.label or ""
                     line = f"  [{command_number}/{total_count}] done       {case_id:<45} {verdict_obj.status} {label:<8}"

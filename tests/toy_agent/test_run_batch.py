@@ -863,6 +863,27 @@ def test_latest_points_to_the_run_that_ran(tmp_path, monkeypatch):
     assert latest.readlink() == previous_target
 
 
+def test_preflight_failure_writes_the_reason_into_run_log(tmp_path, monkeypatch):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+
+    def fake_preflight_failing(env, api_key, *, agent_api_key="", transport=None):
+        return ["model unavailable"]
+
+    monkeypatch.setattr(run_batch, "preflight_check_models", fake_preflight_failing)
+
+    try:
+        run_batch.main([str(dataset_dir), str(run_output_dir)])
+        assert False, "expected SystemExit"
+    except SystemExit as exc:
+        assert exc.code == 1
+
+    run_dir = _run_dir(run_output_dir)
+    log = (run_dir / "run.log").read_text(encoding="utf-8")
+    assert "preflight model check failed: model unavailable" in log
+
+
 def test_run_log_contains_banner_and_summary(tmp_path, monkeypatch):
     dataset_dir = tmp_path / "dataset"
     run_output_dir = tmp_path / "out"

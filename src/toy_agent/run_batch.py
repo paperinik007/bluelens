@@ -301,7 +301,7 @@ def main(argv: list[str] | None = None) -> None:
     preflight_failures = preflight_check_models(os.environ, api_key, agent_api_key=agent_api_key)
     if preflight_failures:
         for failure in preflight_failures:
-            print(f"preflight model check failed: {failure}", file=sys.stderr)
+            progress(f"preflight model check failed: {failure}")
         sys.exit(1)
     progress("checking 4 models...  OK")
     progress("--- containers ---")
@@ -324,8 +324,6 @@ def main(argv: list[str] | None = None) -> None:
     )
     progress(f"cumulative in_tokens: {result.total_in_tokens}")
     progress(f"circuit breaker: {'tripped' if result.breaker_tripped else 'not tripped'}")
-    progress(f"report.md written to {run_dir}")
-    log_fh.close()
 
     try:
         latest = run_output_dir / "latest"
@@ -370,6 +368,8 @@ def main(argv: list[str] | None = None) -> None:
     )
     run_dir.mkdir(parents=True, exist_ok=True)
     (run_dir / "report.md").write_text(report, encoding="utf-8")
+    progress(f"report.md written to {run_dir}")
+    log_fh.close()
 
 
 if __name__ == "__main__":
