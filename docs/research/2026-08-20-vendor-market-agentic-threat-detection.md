@@ -294,7 +294,123 @@ falsifiable rather than absent.
 
 ---
 
-## Recommendation for a future Phase 2
+## Suitability for the Fase 1 harness (verified 2026-08-26)
+
+After the first full run (31/31 cases, metriche intento-vs-effetto pubblicate), the four
+open-source, self-hostable candidates were re-verified against the actual harness
+requirements. The harness needs:
+
+1. **Input**: a multi-turn agent transcript (JSON with tool calls and results)
+2. **Output**: a verdict (malicious/benign, confidence, technique/category)
+3. **Self-hostable**: `pip install` or container, no GPU, no mandatory external API key
+4. **Taxonomy**: a declared set of attack techniques (to map 12 techniques of the dataset)
+
+### Suitability table
+
+| Candidate | Input | Output | Self-hostable? | Taxonomy? | Overall fit |
+|---|---|---|---|---|---|
+| **Invariant Labs** | Messages list (`policy.analyze`), exact match | `AnalysisResult` with errors — no label/confidence/technique | ✅ `pip install invariant-ai` | No — rule engine, user writes policies | ⚠️ Rule engine, not a detector |
+| **LlamaFirewall** | `Trace` via `scan_replay()`, multi-turn | `ScanResult(decision=ALLOW/BLOCK, reason, score)` | ✅ `pip install llamafirewall`; ❌ AlignmentCheck requires Together API key | ✅ Scanner types: PROMPT_GUARD, AGENT_ALIGNMENT, CODE_SHIELD | ✅ Best fit |
+| **AgentDoG** | Agent trajectory JSON (user/agent/environment) | Fine-grained diagnosis (3D taxonomy) | ❌ GPU + model serving (4B-8B params) | ✅ Three-dimensional taxonomy | ❌ GPU needed |
+| **Lasso Security** | MCP traffic only | N/A (gateway, not detector) | ✅ `pip install mcp-gateway` | N/A | ❌ Not a detector |
+
+### Detailed per-candidate analysis
+
+#### Invariant Labs (`invariantlabs-ai/invariant`)
+
+- **Input**: `policy.analyze(messages)` where `messages` is a list of dicts with `role`,
+  `content`, `tool_calls` — directly compatible with our transcript format (see README
+  example tracing `get_website` → `send_email`).
+- **Output**: `AnalysisResult` with an `errors` list — rule engine that fires named rules.
+  No confidence, no label, no technique category. The rule name comes from the author's
+  definition, not from a vendor taxonomy.
+- **Taxonomy**: None. The vendor provides the framework and built-in detectors (prompt
+  injection, phishing), but the detection logic is user-written policies. Using Invariant
+  would test *our* rules, not the vendor's detection.
+- **Containerizability**: ✅ `pip install invariant-ai` (0.3.5). No GPU, no API key.
+- **Adapter effort**: high. Need to write ~14 policies (one per technique), which is a
+  separate design effort. Output format needs mapping from errors to verdict.
+
+**Assessment**: architecturally interesting but a poor fit for a quick second-vendor test.
+The question "does a human-written policy language catch attacks its author didn't think
+to write a rule for" is a different research question from "does this trained detector
+catch attacks." Worth a future phase, not for immediate validation.
+
+#### LlamaFirewall (`meta-llama/PurpleLlama`, `llama_firewall`)
+
+- **Input**: `scan_replay(trace: list[UserMessage|AssistantMessage])` — the `Trace` is
+  exactly a multi-turn conversation. The README example shows a 4-turn booking trace.
+  AssistantMessage can include `tool_calls` in OpenAI-compatible format.
+- **Output**: `ScanResult(decision=ALLOW|BLOCK, reason=str, score=float)`. The `reason`
+  names the scanner that fired (e.g. "prompt_guard", "alignment_check"). The `score`
+  is confidence (0.0–1.0).
+- **Taxonomy**: ScannerType enum: `PROMPT_GUARD` (injection), `AGENT_ALIGNMENT` (goal
+  hijacking, indirect injection), `CODE_SHIELD` (code security). Multi-turn via
+  `AGENT_ALIGNMENT` only.
+- **Containerizability**: ✅ `pip install llamafirewall`. PromptGuard is a BERT classifier
+  (lightweight, no GPU). **But**: AlignmentCheck requires `TOGETHER_API_KEY` (external API
+  call to Together AI for LLM-as-judge). This is a real limitation.
+- **Adapter effort**: medium. Input format is close to ours. Output is a verdict
+  (ALLOW/BLOCK → benign/malicious, score → confidence, reason → technique). Technique
+  mapping is coarse (3 scanner types vs. 14 T0001–T0014).
+
+**Assessment**: best structural fit for our harness. `scan_replay()` is designed for exactly
+our use case. The Together API key requirement is operationally manageable (we provide our
+own key, same as for OpenRouter). The scanner taxonomy is coarse but mappable.
+
+#### AgentDoG (AI45Lab, Shanghai AI Lab)
+
+- **Input**: `trajectory_sample.json` shows a JSON with `profile`, `contents` (list of
+  turns: role=user/agent/environment, tool calls as JSON-in-string). Different structure
+  but mappable.
+- **Output**: Fine-grained diagnosis across three taxonomy dimensions (Risk Source, Failure
+  Mode, Real-world Harm). The Unified AgentDoG 1.5 (4B) provides a single classification.
+- **Taxonomy**: ✅ Three-dimensional: Risk Source (7 categories), Failure Mode (12
+  categories), Real-world Harm (6 categories). The most complete taxonomy.
+- **Containerizability**: ❌ Requires serving a 4B–8B model (Qwen3.5-4B or Llama3.1-8B)
+  via OpenAI-compatible endpoint. GPU inference required.
+- **Adapter effort**: high. Model serving infrastructure + different input serialization
+  (agent thoughts, environment actions) + 3D output mapping.
+
+**Assessment**: conceptually the closest to `aidr` (trained detector, fine-grained
+classification), but the GPU requirement makes it impractical for a quick second-vendor
+test. The taxonomy is the most complete — could be a third vendor test.
+
+#### Lasso Security (`lasso-security/mcp-gateway`)
+
+- **Input**: MCP server traffic only. Not a general transcript analysis tool.
+- **Output**: N/A. The gateway passes traffic through with optional basic sanitization.
+  The "Security Scanner" analyzes server reputation (URLs, source code) before loading,
+  not agent behavior.
+- **Taxonomy**: None.
+- **Containerizability**: ✅ `pip install mcp-gateway`.
+- **Adapter effort**: not applicable — it is not a transcript detector.
+
+**Assessment**: not suitable. It is a gateway tool, not a detector of agentic behavior.
+
+### Updated recommendation (after Fase 1 run)
+
+**LlamaFirewall is the strongest candidate for a second-vendor test.** The existing stock
+recommendation below (Invariant Labs) was written before the Fase 1 run, when the harness
+design was still being validated. Now that we have a working harness that expects a
+structured verdict (label, confidence, technique), LlamaFirewall's `scan_replay()` +
+`ScanResult` is the closest match to `aidr`'s interface.
+
+The Together API key requirement for the multi-turn AlignmentCheck scanner is a real
+limitation, but it mirrors the existing OpenRouter dependency: we already supply an API
+key for the detector — we can supply one for the detector's LLM-as-judge calls too.
+The scanner taxonomy is coarse (3 types vs. 14 techniques), but sufficient for the
+critical question: does LlamaFirewall also "condemn intent, not effect"? If yes, the
+pattern is general. If no, the method has distinguished two detectors — which is the goal.
+
+**Sequencing for a second-vendor test**:
+1. Build adapter for LlamaFirewall (1-2 days)
+2. Run 31 cases through it (no GPU needed, just API key for AlignmentCheck)
+3. Compare intent-vs-effect metrics
+4. Decide: if the pattern holds, AgentDoG becomes a third test; if the pattern breaks,
+   the method has found a real distinction between detectors
+
+## Recommendation for a future Phase 2 (original, pre-Fase 1 run)
 
 Applying the three stated criteria — (a) architectural distance from `aidr`'s own design
 (open-source, self-hostable, three separate stages: Sifter/Inspector/Gauntlet), (b) reachability by a
