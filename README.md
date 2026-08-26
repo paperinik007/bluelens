@@ -137,6 +137,12 @@ directory del singolo run (`run_output/<run_id>/` o `run_output/latest/`), **non
 radice `run_output/`: puntarli alla radice ora produce un errore esplicito invece di zero
 transcript in silenzio.
 
+**Analisi intento-vs-effetto**: `python -m toy_agent.analyze_run <dataset_dir> <run_dir>`
+produce due metriche (intent-based ed effect-based) e la tabella di divergenza tra le due —
+la metrica più informativa per capire se il detector giudica l'intento del prompt o
+l'effetto reale delle azioni dell'agente. `--json` per l'output machine-readable. Vedi
+`docs/research/2026-08-26-analisi-metriche-intento-vs-effetto.md`.
+
 **Pubblicazione in `docs/reports/`**: è un'operazione manuale. Quando si copia `report.md`
 nella directory di report tracciata da git, va copiato anche `run.log` accanto ad esso —
 la timeline del run è parte dell'evidenza di riproducibilità (SPIRIT.md principio 4), non
