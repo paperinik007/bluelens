@@ -562,3 +562,21 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   durante la chiusura di Plan 5d, 2026-08-21 — non un gap nel codice, un gap tra una
   decisione già presa e il documento che l'aveva originata. Risolto: riga corretta in
   `docs/design/2026-08-14-toy-agent-e-pipeline-misura.md:970`, commit `a108b48`.
+
+- **Il fail-open/fail-closed del vendor su errore interno non è distinguibile da una
+  detection vera in nessun `Verdict` pubblicato finora, aidr incluso.** `detector/sifter.py:53`
+  di aidr (`Sifter.triage_safe()`) intercetta qualunque eccezione (timeout, rate limit,
+  output malformato) e restituisce `{"escalate": True, ..., "note": f"fail-open: {e}"}`
+  — un default etichettato dal vendor stesso "fail-open", indistinguibile nel nostro
+  `Verdict` da un giudizio reale del Sifter. **Vale per tutti i run di aidr pubblicati
+  finora**: nessuno di essi distingue "il Sifter ha giudicato" da "il Sifter è fallito e
+  ha escalato per default". Trovato durante grill-with-docs sul design doc del secondo
+  vendor (2026-08-27), dopo che il council (skeptic + risk, indipendenti) aveva trovato
+  lo stesso problema strutturale in `AlignmentCheckScanner._get_default_error_response()`
+  di LlamaFirewall (`conclusion=True` su qualunque eccezione) — la verifica sul codice
+  di aidr ha confermato che il problema preesisteva, non è specifico del secondo vendor.
+  Aperto: fix pianificato in `docs/design/2026-08-27-multi-vendor-llamafirewall-design.md`
+  (riuso di `status="error"`/`error_count`/`rationale`, nessun bucket nuovo, esteso a entrambi i vendor in Fase 2 —
+  deciso esplicitamente di non limitarlo a LlamaFirewall). Non risolto per i run già
+  pubblicati: la loro metrica primary può contenere rumore infrastrutturale non
+  quantificato, mai flaggato prima d'ora.

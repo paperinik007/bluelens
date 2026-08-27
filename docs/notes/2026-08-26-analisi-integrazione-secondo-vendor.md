@@ -13,13 +13,19 @@
 > mercato, Meta-backed, mai acquisito). **Questo intero documento resta come riferimento storico per
 > il livello generale "gestione N vendor" (§1.0 invarianti, §1.2 sezioni C/E-parziale/F/H/I —
 > parametrizzazione harness, provenance, report, tassonomia, test), che vale per qualsiasi secondo
-> vendor.** Le decisioni architetturali specifiche in §4 (Strada A container dedicato, modello
-> co-locato, sottopackage+COPY selettivo, modello baked, daemon residente, hash pesi, costo=0) sono
-> **specifiche di AgentDoG come modello locale embedded e non si applicano a LlamaFirewall**, che
-> passa per API (OpenRouter, come sifter/inspector/embed di aidr oggi) — verosimilmente Strada B
-> (adapter parametrizzato, riuso del pattern `vendor_proxy` esistente), nessun container nuovo, nessun
-> modello da bakare, costo reale non nullo. **Serve un nuovo documento di analisi/design per
-> LlamaFirewall prima di scrivere codice** — questo non va riusato come se fosse già quel documento.
+> vendor.** **Correzione (stesso giorno): Strada A (container dedicato per vendor) NON è specifica di
+> AgentDoG — è la decisione architetturale generale già presa (§1.4 punto 6: il progetto è per natura
+> un ente N-vendor, "un vendor = un package + container fisicamente separato" è architettura di
+> destinazione, non contingente al modello locale). Si applica anche a LlamaFirewall: container
+> proprio, dipendenze proprie (`llamafirewall` via pip, non il clone git pinnato di aidr).** Ciò che è
+> davvero specifico di AgentDoG è solo il livello sotto Strada A: modello co-locato in-process, pesi
+> baked, daemon residente, hash pesi in provenance, costo=0 — questi non si applicano (LlamaFirewall
+> passa per API OpenRouter, costo reale, nessun modello da bakare). Serve comunque un proxy con
+> logging equivalente a `vendor_proxy.py` (stesso principio di osservabilità indipendente, motivo
+> diverso: non serve per far raggiungere OpenRouter a `LLMClient`, che lo fa già direttamente, ma per
+> intercettare e loggare il traffico reale come canale di evidenza — vedi discussione in sessione).
+> **Serve un nuovo documento di analisi/design per LlamaFirewall prima di scrivere codice** — questo
+> non va riusato come se fosse già quel documento.
 
 Data: 2026-08-26. Scritto da pi (sessione corrente) come follow-up del handoff
 `handoff-prossimo-pi-2026-08-26.md`. Scopo: registrare **dove** (file:riga) e
