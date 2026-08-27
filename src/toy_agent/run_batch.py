@@ -68,6 +68,9 @@ def execute_batch(
     steps = _default_sequence(dataset, container_lifecycle)
     return execute_sequence(
         steps, dataset_by_case_id, run_output_dir,
+        vendor="aidr",  # transitory hardcode — execute_batch has no vendor
+                        # parameter of its own yet; removed when a later task
+                        # wires --vendor through this function's own signature
         agent_timeout_s=agent_timeout_s, detector_timeout_s=detector_timeout_s,
         breaker_threshold=breaker_threshold, api_key=api_key,
         run_test_case_fn=run_test_case_fn,

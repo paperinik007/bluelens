@@ -6,14 +6,25 @@ from pathlib import Path
 from typing import Callable, Optional, Union
 
 from . import criteria, evidence, metrics
-from .orchestrator import CommandRunner, default_command_runner, run_test_case
+from .orchestrator import CommandRunner, VENDOR_DETECTOR_CONFIG, default_command_runner, run_test_case
 from .schema import TestCase, Verdict
 from .serialization import transcript_from_dict, verdict_from_dict
 
-# Only agent/detector are part of the sequence vocabulary — egress-proxy is
-# shared infrastructure, never managed by a sequence (design doc, "Meccanica
-# Docker per open/close").
-KNOWN_CONTAINERS = ("agent", "detector")
+AGENT_SERVICE = "agent"
+
+
+def known_containers_for(vendor: str) -> tuple[str, str]:
+    """Replaces the old fixed KNOWN_CONTAINERS = ("agent", "detector") —
+    the detector's service name is vendor-specific (Task 8:
+    docker-compose.yml service names)."""
+    return (AGENT_SERVICE, VENDOR_DETECTOR_CONFIG[vendor].service)
+
+
+KNOWN_CONTAINERS = known_containers_for("aidr")  # alias transitorio, solo per compatibilità
+                                                   # coi chiamanti pre-Task-11 (run_batch.py) —
+                                                   # rimosso in Task 11 quando run_batch.py
+                                                   # chiama known_containers_for(parsed.vendor)
+                                                   # direttamente
 
 
 @dataclass(frozen=True)
@@ -63,7 +74,7 @@ def _close_container(service: str, run_command: CommandRunner) -> None:
     run_command(["docker", "compose", "rm", "-f", "-s", "-v", service], b"", OPEN_CLOSE_TIMEOUT_S)
 
 
-def validate_sequence(steps: list[SequenceStep], known_case_ids: set[str]) -> None:
+def validate_sequence(steps: list[SequenceStep], known_case_ids: set[str], known_containers: tuple[str, ...]) -> None:
     """Fail-fast static validation (design doc, 'Validazione statica') — a
     scan over `steps` tracking which containers are open, before any Docker
     or LLM call is issued. Mirrors CASE_ID_PATTERN/validate_unique_case_ids
@@ -77,7 +88,7 @@ def validate_sequence(steps: list[SequenceStep], known_case_ids: set[str]) -> No
                 raise ValueError(f"open step re-opens already-open containers: {sorted(already_open)}")
             open_containers |= set(step.containers)
         elif isinstance(step, CommandStep):
-            missing = set(KNOWN_CONTAINERS) - open_containers
+            missing = set(known_containers) - open_containers
             if missing:
                 raise ValueError(
                     f"command step {step.case_id!r} requires containers not open: {sorted(missing)}"
@@ -125,10 +136,10 @@ def _agent_input(case: TestCase) -> dict:
     }
 
 
-def _fallback_verdict(case_id: str, exc: Exception) -> Verdict:
+def _fallback_verdict(case_id: str, exc: Exception, tool_name: str) -> Verdict:
     return Verdict(
         case_id=case_id,
-        tool_name="agentic_threat_detection",
+        tool_name=tool_name,
         status="error",
         rationale=f"dict-to-dataclass conversion failed: {type(exc).__name__}",
     )
@@ -144,6 +155,7 @@ def execute_sequence(
     dataset_by_case_id: dict[str, TestCase],
     run_output_dir: Path,
     *,
+    vendor: str,
     agent_timeout_s: float = 120.0,
     detector_timeout_s: float = 180.0,
     breaker_threshold: int = 3,
@@ -157,8 +169,12 @@ def execute_sequence(
     """Drive `steps` through open/command/close (design doc, 'Esecuzione') —
     the sequence-aware core that execute_batch (run_batch.py) generates its
     default whole-dataset sequence on top of. Never imports detector_adapter
-    or aidr, same boundary run_test_case already declares."""
-    validate_sequence(steps, set(dataset_by_case_id.keys()))
+    or aidr, same boundary run_test_case already declares. `vendor` is
+    required (principio 8, SPIRIT.md): every caller must be explicit, never
+    rely on an implicit default."""
+    config = VENDOR_DETECTOR_CONFIG[vendor]
+    known_containers = known_containers_for(vendor)
+    validate_sequence(steps, set(dataset_by_case_id.keys()), known_containers)
 
     raw_dir = run_output_dir / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
@@ -206,6 +222,7 @@ def execute_sequence(
             result = run_test_case_fn(
                 _agent_input(ground_truth),
                 command_index=step_index,
+                vendor=vendor,
                 agent_timeout_s=agent_timeout_s,
                 detector_timeout_s=detector_timeout_s,
             )
@@ -224,8 +241,8 @@ def execute_sequence(
             # External evidence unconditionally, before moving to the next
             # step (Plan 4 decision 5) — evidence.py never raises on an
             # unreachable container.
-            collect_case_evidence_fn(case_id, KNOWN_CONTAINERS, run_output_dir)
-            collect_thin_proxy_log_fn(case_id, run_output_dir, api_key)
+            collect_case_evidence_fn(case_id, known_containers, run_output_dir)
+            collect_thin_proxy_log_fn(case_id, run_output_dir, api_key, service=config.service, log_path=config.proxy_log_path)
 
             conversion_failed = False
             try:
@@ -233,7 +250,7 @@ def execute_sequence(
             except Exception as exc:
                 conversion_failed = True
                 verdict_conversion_failure_count += 1
-                verdict_obj = _fallback_verdict(case_id, exc)
+                verdict_obj = _fallback_verdict(case_id, exc, config.tool_name)
 
             transcript_obj = None
             if raw_transcript_dict is not None:

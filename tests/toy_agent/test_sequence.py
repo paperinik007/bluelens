@@ -22,7 +22,7 @@ def test_valid_reused_sequence_passes():
         CommandStep(case_id="c2", counts_toward_metric=True),
         CloseStep(containers=("agent", "detector")),
     ]
-    validate_sequence(steps, known_case_ids={"c1", "c2"})  # must not raise
+    validate_sequence(steps, known_case_ids={"c1", "c2"}, known_containers=("agent", "detector"))  # must not raise
 
 
 def test_reopening_an_already_open_container_is_rejected():
@@ -31,31 +31,31 @@ def test_reopening_an_already_open_container_is_rejected():
         OpenStep(containers=("agent", "detector")),
     ]
     with pytest.raises(ValueError, match="re-opens already-open"):
-        validate_sequence(steps, known_case_ids=set())
+        validate_sequence(steps, known_case_ids=set(), known_containers=("agent", "detector"))
 
 
 def test_command_on_a_container_that_is_not_open_is_rejected():
     steps = [OpenStep(containers=("agent",)), CommandStep(case_id="c1", counts_toward_metric=True)]
     with pytest.raises(ValueError, match="requires containers not open"):
-        validate_sequence(steps, known_case_ids={"c1"})
+        validate_sequence(steps, known_case_ids={"c1"}, known_containers=("agent", "detector"))
 
 
 def test_closing_a_container_that_is_not_open_is_rejected():
     steps = [OpenStep(containers=("agent",)), CloseStep(containers=("agent", "detector"))]
     with pytest.raises(ValueError, match="closes containers not open"):
-        validate_sequence(steps, known_case_ids=set())
+        validate_sequence(steps, known_case_ids=set(), known_containers=("agent", "detector"))
 
 
 def test_sequence_ending_with_open_containers_is_rejected():
     steps = [OpenStep(containers=("agent", "detector"))]
     with pytest.raises(ValueError, match="still open"):
-        validate_sequence(steps, known_case_ids=set())
+        validate_sequence(steps, known_case_ids=set(), known_containers=("agent", "detector"))
 
 
 def test_command_referencing_an_unknown_case_id_is_rejected():
     steps = [OpenStep(containers=("agent", "detector")), CommandStep(case_id="ghost", counts_toward_metric=True)]
     with pytest.raises(ValueError, match="unknown case_id"):
-        validate_sequence(steps, known_case_ids={"c1"})
+        validate_sequence(steps, known_case_ids={"c1"}, known_containers=("agent", "detector"))
 
 
 class RecordingCommandRunner:
@@ -124,8 +124,8 @@ class ScriptedRunTestCase:
         self._script = list(script)
         self.calls = []
 
-    def __call__(self, test_case, *, command_index, agent_timeout_s, detector_timeout_s):
-        self.calls.append((test_case, command_index))
+    def __call__(self, test_case, *, command_index, vendor, agent_timeout_s, detector_timeout_s):
+        self.calls.append((test_case, command_index, vendor))
         if not self._script:
             raise AssertionError("script exhausted")
         result = self._script.pop(0)
@@ -156,8 +156,8 @@ class RecordingProxyLogCollector:
     def __init__(self):
         self.calls = []
 
-    def __call__(self, case_id, evidence_dir, api_key):
-        self.calls.append(case_id)
+    def __call__(self, case_id, evidence_dir, api_key, *, service, log_path):
+        self.calls.append((case_id, service, log_path))
         return evidence_dir / case_id / "detector.vendor_proxy.jsonl"
 
 
@@ -174,12 +174,12 @@ def test_command_step_reaches_run_test_case_with_its_position_in_the_sequence(tm
     steps = _reused_sequence(["c1"])
     runner = ScriptedRunTestCase([_ok_result("c1")])
 
-    execute_sequence(steps, dataset, tmp_path, run_test_case_fn=runner,
+    execute_sequence(steps, dataset, tmp_path, vendor="aidr", run_test_case_fn=runner,
                       collect_case_evidence_fn=RecordingEvidenceCollector(),
                       collect_thin_proxy_log_fn=RecordingProxyLogCollector(),
                       run_command=NoOpCommandRunner())
 
-    sent_case, command_index = runner.calls[0]
+    sent_case, command_index, _ = runner.calls[0]
     assert sent_case["case_id"] == "c1"
     assert command_index == 1  # steps[0] is the OpenStep, steps[1] is this command
 
@@ -190,7 +190,7 @@ def test_open_and_close_are_issued_around_the_commands(tmp_path):
     runner = ScriptedRunTestCase([_ok_result("c1")])
     command_runner = NoOpCommandRunner()
 
-    execute_sequence(steps, dataset, tmp_path, run_test_case_fn=runner,
+    execute_sequence(steps, dataset, tmp_path, vendor="aidr", run_test_case_fn=runner,
                       collect_case_evidence_fn=RecordingEvidenceCollector(),
                       collect_thin_proxy_log_fn=RecordingProxyLogCollector(),
                       run_command=command_runner)
@@ -211,7 +211,7 @@ def test_counts_toward_metric_false_is_excluded_from_the_metric_lists_but_kept_i
     evidence_collector = RecordingEvidenceCollector()
     proxy_log_collector = RecordingProxyLogCollector()
 
-    result = execute_sequence(steps, dataset, tmp_path, run_test_case_fn=runner,
+    result = execute_sequence(steps, dataset, tmp_path, vendor="aidr", run_test_case_fn=runner,
                                collect_case_evidence_fn=evidence_collector,
                                collect_thin_proxy_log_fn=proxy_log_collector,
                                run_command=NoOpCommandRunner())
@@ -227,7 +227,10 @@ def test_counts_toward_metric_false_is_excluded_from_the_metric_lists_but_kept_i
     assert (tmp_path / "raw" / "c1.transcript.json").exists()
     # both commands trigger evidence collection, regardless of counts_toward_metric
     assert evidence_collector.calls == ["c1", "c2"]
-    assert proxy_log_collector.calls == ["c1", "c2"]
+    assert proxy_log_collector.calls == [
+        ("c1", "detector", "/var/log/vendor_proxy.jsonl"),
+        ("c2", "detector", "/var/log/vendor_proxy.jsonl"),
+    ]
 
 
 def test_total_in_tokens_accumulates(tmp_path):
@@ -240,7 +243,7 @@ def test_total_in_tokens_accumulates(tmp_path):
     runner = ScriptedRunTestCase([r1, r2])
 
     result = execute_sequence(
-        steps, dataset, tmp_path,
+        steps, dataset, tmp_path, vendor="aidr",
         run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
         collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
     )
@@ -253,7 +256,7 @@ def test_circuit_breaker_trips_after_three_consecutive_infra_failures(tmp_path):
     steps = _reused_sequence([f"c{i}" for i in range(1, 5)])
     runner = ScriptedRunTestCase([_infra_result("c1"), _infra_result("c2"), _infra_result("c3")])
 
-    result = execute_sequence(steps, dataset, tmp_path, run_test_case_fn=runner,
+    result = execute_sequence(steps, dataset, tmp_path, vendor="aidr", run_test_case_fn=runner,
                                collect_case_evidence_fn=RecordingEvidenceCollector(),
                                collect_thin_proxy_log_fn=RecordingProxyLogCollector(),
                                run_command=NoOpCommandRunner())
@@ -270,7 +273,7 @@ def test_breaker_trip_closes_every_still_open_container_before_returning(tmp_pat
     runner = ScriptedRunTestCase([_infra_result("c1"), _infra_result("c2"), _infra_result("c3")])
     command_runner = NoOpCommandRunner()
 
-    result = execute_sequence(steps, dataset, tmp_path, run_test_case_fn=runner,
+    result = execute_sequence(steps, dataset, tmp_path, vendor="aidr", run_test_case_fn=runner,
                                collect_case_evidence_fn=RecordingEvidenceCollector(),
                                collect_thin_proxy_log_fn=RecordingProxyLogCollector(),
                                run_command=command_runner)
@@ -291,7 +294,7 @@ def test_an_uncaught_exception_from_run_test_case_still_closes_every_open_contai
     command_runner = NoOpCommandRunner()
 
     try:
-        execute_sequence(steps, dataset, tmp_path, run_test_case_fn=runner,
+        execute_sequence(steps, dataset, tmp_path, vendor="aidr", run_test_case_fn=runner,
                           collect_case_evidence_fn=RecordingEvidenceCollector(),
                           collect_thin_proxy_log_fn=RecordingProxyLogCollector(),
                           run_command=command_runner)
@@ -332,7 +335,7 @@ def test_execute_sequence_computes_attack_succeeded_true_when_criterion_matches(
     steps = _reused_sequence(["c1"])
     runner = ScriptedRunTestCase([_ok_result_with_tool_call("c1", "send_email", {"to": "evil@example.com"})])
     result = execute_sequence(
-        steps, dataset, tmp_path,
+        steps, dataset, tmp_path, vendor="aidr",
         run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
         collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
     )
@@ -345,7 +348,7 @@ def test_execute_sequence_computes_attack_succeeded_false_when_criterion_does_no
     steps = _reused_sequence(["c1"])
     runner = ScriptedRunTestCase([_ok_result("c1", label="benign")])  # no tool call at all
     result = execute_sequence(
-        steps, dataset, tmp_path,
+        steps, dataset, tmp_path, vendor="aidr",
         run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
         collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
     )
@@ -358,7 +361,7 @@ def test_execute_sequence_leaves_attack_succeeded_none_when_transcript_is_missin
     steps = _reused_sequence(["c1"])
     runner = ScriptedRunTestCase([_infra_result("c1")])
     result = execute_sequence(
-        steps, dataset, tmp_path,
+        steps, dataset, tmp_path, vendor="aidr",
         run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
         collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
     )
@@ -378,7 +381,7 @@ def test_execute_sequence_leaves_attack_succeeded_none_when_criterion_cannot_be_
         _ok_result_with_tool_call("c1", "query_customer_db", {"fields": {"include": ["address"]}}),
     ])
     result = execute_sequence(
-        steps, dataset, tmp_path,
+        steps, dataset, tmp_path, vendor="aidr",
         run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
         collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
     )
@@ -390,7 +393,7 @@ def test_execute_sequence_leaves_attack_succeeded_none_for_benign_cases(tmp_path
     steps = _reused_sequence(["c1"])
     runner = ScriptedRunTestCase([_ok_result("c1")])
     result = execute_sequence(
-        steps, dataset, tmp_path,
+        steps, dataset, tmp_path, vendor="aidr",
         run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
         collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
     )
@@ -404,7 +407,7 @@ def test_a_case_whose_transcript_is_missing_stays_out_of_metric_cases(tmp_path):
     steps = _reused_sequence(["c1", "c2"])
     runner = ScriptedRunTestCase([_infra_result("c1"), _ok_result("c2")])
     result = execute_sequence(
-        steps, dataset, tmp_path,
+        steps, dataset, tmp_path, vendor="aidr",
         run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
         collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
     )
@@ -444,7 +447,7 @@ def test_a_case_with_unreadable_tool_arguments_stays_out_of_metric_cases(tmp_pat
     }
     runner = ScriptedRunTestCase([raw_result])
     result = execute_sequence(
-        steps, dataset, tmp_path,
+        steps, dataset, tmp_path, vendor="aidr",
         run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
         collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
     )
@@ -458,7 +461,7 @@ def test_a_clean_case_still_enters_metric_cases(tmp_path):
     steps = _reused_sequence(["c1"])
     runner = ScriptedRunTestCase([_ok_result("c1")])
     result = execute_sequence(
-        steps, dataset, tmp_path,
+        steps, dataset, tmp_path, vendor="aidr",
         run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
         collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
     )
@@ -475,7 +478,7 @@ def test_progress_fn_receives_starting_and_done_lines(tmp_path):
     lines = []
 
     execute_sequence(
-        steps, dataset, tmp_path,
+        steps, dataset, tmp_path, vendor="aidr",
         run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
         collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
         progress_fn=lines.append,
@@ -495,7 +498,7 @@ def test_progress_fn_receives_infra_marker(tmp_path):
     lines = []
 
     execute_sequence(
-        steps, dataset, tmp_path,
+        steps, dataset, tmp_path, vendor="aidr",
         run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
         collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
         progress_fn=lines.append,
@@ -511,7 +514,7 @@ def test_progress_fn_none_is_silent(tmp_path, capsys):
     runner = ScriptedRunTestCase([_ok_result("c1")])
 
     execute_sequence(
-        steps, dataset, tmp_path,
+        steps, dataset, tmp_path, vendor="aidr",
         run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
         collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
     )
@@ -533,7 +536,7 @@ def test_done_line_contains_label_latency_and_in_tokens(tmp_path):
     lines = []
 
     execute_sequence(
-        steps, dataset, tmp_path,
+        steps, dataset, tmp_path, vendor="aidr",
         run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
         collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
         progress_fn=lines.append,
@@ -615,7 +618,7 @@ def test_done_line_error_markers(tmp_path, marker, raw_result):
     lines = []
 
     execute_sequence(
-        steps, dataset, tmp_path,
+        steps, dataset, tmp_path, vendor="aidr",
         run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
         collect_thin_proxy_log_fn=RecordingProxyLogCollector(), run_command=NoOpCommandRunner(),
         progress_fn=lines.append,
@@ -624,3 +627,59 @@ def test_done_line_error_markers(tmp_path, marker, raw_result):
     done_lines = [l for l in lines if "done" in l and "c1" in l]
     assert len(done_lines) == 1
     assert marker in done_lines[0]
+
+
+def test_known_containers_for_resolves_the_detector_service_per_vendor():
+    from toy_agent.sequence import known_containers_for
+    assert known_containers_for("aidr") == ("agent", "detector")
+    assert known_containers_for("llamafirewall") == ("agent", "detector-llamafirewall")
+
+
+def _reused_sequence_llamafirewall(case_ids):
+    # Same shape as _reused_sequence, but opens/closes "detector-llamafirewall"
+    # instead of "detector" — known_containers_for("llamafirewall") requires
+    # that exact service name (Task 8: docker-compose.yml service names).
+    return (
+        [OpenStep(containers=("agent", "detector-llamafirewall"))]
+        + [CommandStep(case_id=cid, counts_toward_metric=True) for cid in case_ids]
+        + [CloseStep(containers=("agent", "detector-llamafirewall"))]
+    )
+
+
+def test_execute_sequence_passes_the_active_vendor_to_run_test_case(tmp_path):
+    dataset = {"c1": _ground_truth("c1")}
+    steps = _reused_sequence_llamafirewall(["c1"])
+    runner = ScriptedRunTestCase([_ok_result("c1")])
+    execute_sequence(steps, dataset, tmp_path, vendor="llamafirewall", run_test_case_fn=runner,
+                      collect_case_evidence_fn=RecordingEvidenceCollector(),
+                      collect_thin_proxy_log_fn=RecordingProxyLogCollector(),
+                      run_command=NoOpCommandRunner())
+    _, _, vendor_seen = runner.calls[0]
+    assert vendor_seen == "llamafirewall"
+
+
+def test_execute_sequence_passes_the_resolved_service_and_log_path_for_llamafirewall(tmp_path):
+    dataset = {"c1": _ground_truth("c1")}
+    steps = _reused_sequence_llamafirewall(["c1"])
+    runner = ScriptedRunTestCase([_ok_result("c1")])
+    proxy_collector = RecordingProxyLogCollector()
+    execute_sequence(steps, dataset, tmp_path, vendor="llamafirewall", run_test_case_fn=runner,
+                      collect_case_evidence_fn=RecordingEvidenceCollector(),
+                      collect_thin_proxy_log_fn=proxy_collector,
+                      run_command=NoOpCommandRunner())
+    _, service, log_path = proxy_collector.calls[0]
+    assert service == "detector-llamafirewall"
+    assert log_path == "/var/log/llamafirewall_proxy.jsonl"
+
+
+def test_a_conversion_failure_uses_the_active_vendors_tool_name(tmp_path):
+    dataset = {"c1": _ground_truth("c1")}
+    steps = _reused_sequence_llamafirewall(["c1"])
+    bad_result = _ok_result("c1")
+    del bad_result["verdict"]["case_id"]  # verdict_from_dict() will raise
+    runner = ScriptedRunTestCase([bad_result])
+    result = execute_sequence(steps, dataset, tmp_path, vendor="llamafirewall", run_test_case_fn=runner,
+                               collect_case_evidence_fn=RecordingEvidenceCollector(),
+                               collect_thin_proxy_log_fn=RecordingProxyLogCollector(),
+                               run_command=NoOpCommandRunner())
+    assert result.verdicts[0].tool_name == "llamafirewall-alignmentcheck"

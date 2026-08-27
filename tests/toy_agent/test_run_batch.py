@@ -56,7 +56,7 @@ class ScriptedRunTestCase:
         self._script = list(script)
         self.calls = []
 
-    def __call__(self, test_case, *, command_index, agent_timeout_s, detector_timeout_s):
+    def __call__(self, test_case, *, command_index, vendor, agent_timeout_s, detector_timeout_s):
         self.calls.append(test_case)
         if not self._script:
             raise AssertionError("script exhausted")
@@ -88,7 +88,7 @@ class RecordingProxyLogCollector:
     def __init__(self):
         self.calls = []
 
-    def __call__(self, case_id, evidence_dir, api_key):
+    def __call__(self, case_id, evidence_dir, api_key, *, service, log_path):
         self.calls.append(case_id)
         return evidence_dir / case_id / "detector.vendor_proxy.jsonl"
 
