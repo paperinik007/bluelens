@@ -522,6 +522,61 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   risolvibile per costruzione (è la natura di un fix che cambia una
   definizione di misura); da dichiarare, non da eliminare.
 
+- **Copertura delle categorie native di LlamaFirewall contro il dataset
+  scritto nel linguaggio aidr (T0001-T0014) non garantita** — AlignmentCheck
+  emette solo ALLOW/HUMAN_IN_THE_LOOP_REQUIRED (nessuna tassonomia 3D come
+  aidr's T-code); il dataset è stato scritto e classificato secondo le 14
+  tecniche del vendor aidr, non validato indipendentemente contro cosa
+  LlamaFirewall considera "misalignment". Stesso principio già applicato ad
+  AgentDoG in fase di analisi (docs/notes/2026-08-26-analisi-integrazione-secondo-vendor.md):
+  si riporta cosa il vendor rileva, non si forza una tassonomia condivisa.
+  Design doc: `docs/design/2026-08-27-multi-vendor-llamafirewall-design.md`,
+  "Limiti dichiarati". Non risolvibile senza un secondo dataset scritto nel
+  linguaggio nativo del vendor — fuori scope di questo piano.
+
+- **La metrica strict (attribuzione della tecnica) resta definita solo per
+  aidr** — per LlamaFirewall si pubblica solo la primary (label-only), già
+  deciso nell'analisi precedente (§H) e confermato nel design doc di questo
+  piano. AlignmentCheck non produce un `technique_detected` (CONTEXT.md:
+  nessun suffisso di tecnica, solo ALLOW/HUMAN_IN_THE_LOOP_REQUIRED) — la
+  colonna strict per LlamaFirewall nel report resta strutturalmente vuota
+  (n/a), non un difetto del codice di misura.
+
+- **Affidabilità del modello LLM-giudice non uniforme tra candidati**
+  (falsificazione bidirezionale, design doc): `llama-4-maverick` ha fallito
+  la validazione dello schema strutturato su un caso reale (omette il campo
+  `conclusion`, silenziosamente convertito in `conclusion=True` dal
+  fallback del vendor), `llama-3.3-70b-instruct` no. Il default scelto in
+  Task 4 è il secondo, riverificato dal vivo al momento dell'implementazione
+  (non solo a memoria della falsificazione di pre-design) — ma anche col
+  modello più affidabile il meccanismo `status="error"`/`rationale` (Task
+  5) resta necessario come rete di sicurezza, non solo come rimedio a un
+  modello sbagliato: un modello oggi affidabile può smettere di esserlo
+  (stesso principio già vero per `SIFTER_MODEL`/`INSPECTOR_MODEL`, Gap 10).
+
+- **Copertura test di entrambi i vendor nel tempo, dopo il merge, non
+  garantita a livello di processo** (review council, pragmatist — reso più
+  specifico in questo piano, v3, convergenza skeptic Claude + pragmatist
+  Claude + skeptic Pi/minimax): l'architettura abilita l'isolamento
+  (vendor parametrico, container isolati, test parametrizzati sul ramo
+  `llamafirewall`) ma nessun meccanismo garantisce che la suite gated di
+  LlamaFirewall (Task 15, `docker/detector-llamafirewall/run_adapter_tests.sh`)
+  continui a girare a ogni commit futuro dopo il merge, né che un
+  fallimento in un vendor blocchi il merge di modifiche che toccano solo
+  l'altro — rischio concreto che tra sei mesi la copertura LlamaFirewall
+  smetta silenziosamente di essere verificata mentre la suite pytest
+  continua a dare verde (la suite gated non è parte di `pytest tests/ -q`
+  per costruzione, Task 15). Da definire in un futuro piano operativo/CI,
+  non in questo.
+
+- **Costo per chiamata LlamaFirewall non ancora misurato su un run reale**
+  (a differenza della AgentDoG-ipotesi ereditata, che assumeva costo zero) —
+  la soglia del circuit breaker di costo (Task 13, `MAX_COST_USD_DEFAULT =
+  5.00`) è dichiarata esplicitamente provvisoria, nessun dato reale ancora
+  disponibile al momento di questo task. Task 17 misura il costo reale sul
+  primo run e aggiunge qui una quinta voce col numero effettivo (non una
+  riscrittura di questa).
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **R10 — output del preflight non sanitizzato a valle del tipo di ritorno** — il codice
