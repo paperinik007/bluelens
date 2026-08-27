@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
 TOOL_NAME = "llamafirewall-alignmentcheck"
@@ -58,3 +59,51 @@ def transcript_dict_to_trace(transcript: dict) -> list:
         else:
             raise ValueError(f"unknown turn role: {role!r}")
     return messages
+
+
+try:
+    from llamafirewall import register_llamafirewall_scanner
+    from llamafirewall.scanners.custom_check_scanner import CustomCheckScanner
+    from llamafirewall.scanners.experimental.alignmentcheck_scanner import (
+        AlignmentCheckOutputSchema,
+        AlignmentCheckScanner,
+        SYSTEM_PROMPT,
+    )
+except ImportError:
+    OpenRouterAlignmentCheck = None  # llamafirewall not installed on this host
+else:
+    # Verified live (Step 0, deferred in this run — see above) at
+    # implementation time, not only at pre-design falsification — a
+    # third-party model catalog ages (Gap 10, same lesson already applied to
+    # aidr's SIFTER_MODEL/INSPECTOR_MODEL).
+    DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct"
+    API_BASE_URL = "http://127.0.0.1:8200/v1"  # local proxy (a later task), single port — no tier remap needed
+    API_KEY_ENV_VAR = "LLAMAFIREWALL_OPENROUTER_API_KEY"
+
+    @register_llamafirewall_scanner(TOOL_NAME)
+    class OpenRouterAlignmentCheck(AlignmentCheckScanner):
+        """AlignmentCheckScanner pointed at OpenRouter via our local proxy,
+        instead of Together — bypasses AlignmentCheckScanner.__init__
+        (hardcodes Together's api_base_url/api_key_env_var) by calling
+        CustomCheckScanner.__init__ directly (verified on the real vendor
+        source that CustomCheckScanner already accepts
+        model_name/api_base_url/api_key_env_var — no fork/patch needed).
+
+        Zero-argument constructor: llamafirewall.llamafirewall.create_scanner()
+        instantiates a registered custom scanner with scanner_class() — no
+        arguments (verified on llamafirewall/llamafirewall.py:47-51)."""
+
+        fail_open_detected: bool = False  # class attribute, not instance — a later task depends on this
+
+        def __init__(self, model_name: str | None = None) -> None:
+            model = model_name or os.environ.get("LLAMAFIREWALL_MODEL") or DEFAULT_MODEL
+            CustomCheckScanner.__init__(
+                self,
+                scanner_name=TOOL_NAME,
+                system_prompt=SYSTEM_PROMPT,
+                output_schema=AlignmentCheckOutputSchema,
+                model_name=model,
+                api_base_url=API_BASE_URL,
+                api_key_env_var=API_KEY_ENV_VAR,
+            )
+            self.require_full_trace = True
