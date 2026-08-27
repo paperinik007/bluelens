@@ -21,6 +21,9 @@ AGENT_TIMEOUT_S = 120.0
 DETECTOR_TIMEOUT_S = 180.0
 BREAKER_THRESHOLD = 3
 MAX_TRANSCRIPT_UNUSABLE_FRACTION = 0.10
+MAX_COST_USD_DEFAULT = 5.00  # PROVVISORIO — nessun costo reale ancora
+                              # misurato per LlamaFirewall (Task 17 lo
+                              # misura e rivede questo default, v3 fix)
 
 # Vendor -> host env var holding that vendor's OpenRouter key. run_batch.py
 # runs on the host, not inside a container — the active vendor's key must
@@ -64,6 +67,7 @@ def execute_batch(
     agent_timeout_s: float = AGENT_TIMEOUT_S,
     detector_timeout_s: float = DETECTOR_TIMEOUT_S,
     breaker_threshold: int = BREAKER_THRESHOLD,
+    max_cost_usd: float | None = None,
     api_key: str = "",
     run_test_case_fn: Callable[..., dict] = run_test_case,
     collect_case_evidence_fn: Callable = evidence.collect_case_evidence,
@@ -81,7 +85,7 @@ def execute_batch(
         steps, dataset_by_case_id, run_output_dir,
         vendor=vendor,
         agent_timeout_s=agent_timeout_s, detector_timeout_s=detector_timeout_s,
-        breaker_threshold=breaker_threshold, api_key=api_key,
+        breaker_threshold=breaker_threshold, max_cost_usd=max_cost_usd, api_key=api_key,
         run_test_case_fn=run_test_case_fn,
         collect_case_evidence_fn=collect_case_evidence_fn,
         collect_thin_proxy_log_fn=collect_thin_proxy_log_fn,
@@ -170,6 +174,12 @@ def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s
             0,
             f"circuit breaker tripped after {result.executed_count}/{result.total_count} cases executed; "
             f"last infra failure: {result.last_infra_rationale}",
+        )
+    if result.cost_breaker_tripped:
+        notes.insert(
+            0,
+            f"cost circuit breaker tripped after {result.executed_count}/{result.total_count} cases "
+            f"executed; cumulative cost ${result.cumulative_cost_usd:.4f} exceeded the --max-cost-usd threshold",
         )
     shortcut_tools = find_malicious_only_tools(result.metric_cases)
     if not shortcut_tools:
@@ -274,6 +284,11 @@ def main(argv: list[str] | None = None) -> None:
              "small but nonzero added time), no residual state between cases by "
              "construction. See docs/design/2026-08-19-container-lifecycle-e-sequenze-design.md.",
     )
+    parser.add_argument(
+        "--max-cost-usd", type=float, default=MAX_COST_USD_DEFAULT,
+        help="cumulative proxy cost (USD) above which the batch is interrupted (not the single case) — "
+             "PROVVISORIO, da rivedere sul primo costo reale misurato (Task 17)",
+    )
     parsed = parser.parse_args(args)
 
     vendor = parsed.vendor
@@ -332,6 +347,7 @@ def main(argv: list[str] | None = None) -> None:
         dataset, run_dir,
         vendor=vendor,
         container_lifecycle=parsed.container_lifecycle,
+        max_cost_usd=parsed.max_cost_usd,
         api_key=api_key,
         progress_fn=progress,
     )

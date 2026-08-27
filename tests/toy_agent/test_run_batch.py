@@ -419,7 +419,7 @@ def test_main_never_modifies_the_dataset_dir(tmp_path, monkeypatch):
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
     before = (dataset_dir / "c1.yaml").read_text(encoding="utf-8")
 
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
         return BatchResult(
@@ -442,7 +442,7 @@ def test_main_writes_a_report_declaring_operational_parameters(tmp_path, monkeyp
     _write_dataset(dataset_dir, ["c1"])
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
 
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
         return BatchResult(
@@ -467,7 +467,7 @@ def test_main_declares_a_circuit_breaker_trip_in_the_report(tmp_path, monkeypatc
     _write_dataset(dataset_dir, ["c1", "c2"])
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
 
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         case = dataset[0]
         return BatchResult(
             cases=[case], verdicts=[Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="error")],
@@ -493,7 +493,7 @@ def test_main_reads_the_detector_api_key_from_the_environment(tmp_path, monkeypa
 
     captured = {}
 
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         captured["api_key"] = api_key
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
@@ -518,7 +518,7 @@ def test_main_accepts_the_container_lifecycle_flag_and_defaults_to_reused(tmp_pa
 
     captured = {}
 
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         captured["container_lifecycle"] = container_lifecycle
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
@@ -597,7 +597,7 @@ def test_main_stderr_notes_a_truncated_run_when_the_breaker_tripped_and_a_shortc
     _write_dataset(dataset_dir, ["c1"])
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
 
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         malicious_case = _case_with_tool_call("c1", "malicious", "bulk_export", technique_target="T0012")
         verdict = Verdict(case_id="c1", tool_name="agentic_threat_detection", status="ok", label="malicious", technique_detected="T0012")
         return BatchResult(
@@ -655,7 +655,7 @@ def test_main_refuses_to_write_the_report_past_the_threshold(tmp_path, monkeypat
     _write_dataset(dataset_dir, [f"c{i}" for i in range(1, 11)])
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
 
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         cases = dataset[:10]
         verdicts = [Verdict(case_id=c.case_id, tool_name="agentic_threat_detection", status="ok", label="benign") for c in cases]
         unusable = {c.case_id: "model_error" for c in cases[:2]}
@@ -688,7 +688,7 @@ def test_main_refuses_to_write_the_report_when_a_tool_appears_only_in_malicious_
     _write_dataset(dataset_dir, ["c1"])
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
 
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         malicious_case = _case_with_tool_call("c1", "malicious", "bulk_export", technique_target="T0012")
         verdict = Verdict(case_id="c1", tool_name="agentic_threat_detection", status="ok", label="malicious", technique_detected="T0012")
         return BatchResult(
@@ -768,7 +768,7 @@ def test_main_writes_the_provenance_file_next_to_the_raw_data(tmp_path, monkeypa
     run_output_dir = tmp_path / "out"
     _write_dataset(dataset_dir, ["c1"])
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
         return BatchResult(cases=[case], verdicts=[verdict], total_count=1, executed_count=1,
@@ -792,7 +792,7 @@ def test_run_id_format_matches_expected_pattern(tmp_path, monkeypatch):
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
     captured = {}
 
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         captured["run_dir"] = output_dir
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
@@ -817,7 +817,7 @@ def test_each_run_creates_its_own_directory(tmp_path, monkeypatch):
     _write_dataset(dataset_dir, ["c1"])
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
 
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
         return BatchResult(
@@ -843,7 +843,7 @@ def test_latest_points_to_the_run_that_ran(tmp_path, monkeypatch):
     _write_dataset(dataset_dir, ["c1"])
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
 
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
         return BatchResult(
@@ -907,7 +907,7 @@ def test_run_log_contains_banner_and_summary(tmp_path, monkeypatch):
     _write_dataset(dataset_dir, ["c1"])
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
 
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
         return BatchResult(
@@ -935,7 +935,7 @@ def test_main_logs_to_stderr_and_run_log_but_not_stdout(tmp_path, monkeypatch, c
     _write_dataset(dataset_dir, ["c1"])
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
 
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
         return BatchResult(
@@ -1015,7 +1015,7 @@ def test_run_id_is_absent_from_report_md(tmp_path, monkeypatch):
     _write_dataset(dataset_dir, ["c1"])
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
 
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
         return BatchResult(
@@ -1042,7 +1042,7 @@ def test_summary_shows_cumulative_in_tokens(tmp_path, monkeypatch):
     _write_dataset(dataset_dir, ["c1"])
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
 
-    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor: str = "", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="agentic_threat_detection", status="ok", label="benign")
         return BatchResult(
@@ -1137,7 +1137,7 @@ def test_llamafirewall_vendor_selects_its_own_api_key(tmp_path, monkeypatch):
     monkeypatch.delenv("DETECTOR_OPENROUTER_API_KEY", raising=False)
     captured = {}
 
-    def fake_execute_batch(dataset, output_dir, *, vendor="", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor="", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         captured["vendor"] = vendor
         captured["api_key"] = api_key
         case = dataset[0]
@@ -1180,7 +1180,7 @@ def test_aidr_vendor_still_uses_its_own_key_unaffected_by_the_new_guard(tmp_path
     _write_dataset(dataset_dir, ["c1"])
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-aidr-test")
 
-    def fake_execute_batch(dataset, output_dir, *, vendor="", container_lifecycle="reused", api_key="", progress_fn=None):
+    def fake_execute_batch(dataset, output_dir, *, vendor="", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
         case = dataset[0]
         verdict = Verdict(case_id=case.case_id, tool_name="aidr", status="ok", label="benign")
         return BatchResult(cases=[case], verdicts=[verdict], total_count=1, executed_count=1,
@@ -1189,3 +1189,38 @@ def test_aidr_vendor_still_uses_its_own_key_unaffected_by_the_new_guard(tmp_path
     monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
     monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
     run_batch.main([str(dataset_dir), str(run_output_dir), "--vendor", "aidr"])  # must not raise
+
+
+def test_setup_notes_declares_a_cost_breaker_trip():
+    from toy_agent.run_batch import BatchResult, _setup_notes
+    result = BatchResult(
+        cases=[], verdicts=[], total_count=10, executed_count=3, breaker_tripped=False,
+        cost_breaker_tripped=True, cumulative_cost_usd=5.1234,
+    )
+    notes = _setup_notes(result, 120.0, 180.0, 3)
+    assert "cost circuit breaker tripped after 3/10" in notes
+    assert "5.1234" in notes
+
+
+def test_main_accepts_max_cost_usd_flag_and_propagates_it(tmp_path, monkeypatch):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "out"
+    _write_dataset(dataset_dir, ["c1"])
+    captured = {}
+
+    def fake_execute_batch(dataset, output_dir, *, vendor="", container_lifecycle="reused", max_cost_usd=None, api_key="", progress_fn=None):
+        captured["max_cost_usd"] = max_cost_usd
+        case = dataset[0]
+        verdict = Verdict(case_id=case.case_id, tool_name="aidr", status="ok", label="benign")
+        return BatchResult(cases=[case], verdicts=[verdict], total_count=1, executed_count=1,
+                            breaker_tripped=False, metric_cases=[case], metric_verdicts=[verdict])
+
+    monkeypatch.setattr(run_batch, "execute_batch", fake_execute_batch)
+    monkeypatch.setattr(run_batch, "preflight_check_models", lambda *a, **kw: [])
+    monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test")
+
+    run_batch.main([str(dataset_dir), str(run_output_dir), "--vendor", "aidr", "--max-cost-usd", "2.5"])
+    assert captured["max_cost_usd"] == 2.5
+
+    run_batch.main([str(dataset_dir), str(run_output_dir), "--vendor", "aidr"])
+    assert captured["max_cost_usd"] == run_batch.MAX_COST_USD_DEFAULT

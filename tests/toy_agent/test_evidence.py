@@ -1,3 +1,5 @@
+import pytest
+
 from toy_agent.evidence import collect_case_evidence, collect_thin_proxy_log
 
 
@@ -118,3 +120,35 @@ def test_collect_thin_proxy_log_names_the_output_file_after_the_service(tmp_path
         log_path="/var/log/llamafirewall_proxy.jsonl", run_command=runner,
     )
     assert path.name == "detector-llamafirewall.vendor_proxy.jsonl"
+
+
+import json as _json
+
+from toy_agent.evidence import sum_proxy_log_cost
+
+
+def test_sum_proxy_log_cost_adds_every_response_cost():
+    log = "\n".join([
+        _json.dumps({"response": {"usage": {"cost": 0.01}}}),
+        _json.dumps({"response": {"usage": {"cost": 0.02}}}),
+    ]).encode()
+    assert sum_proxy_log_cost(log) == pytest.approx(0.03)
+
+
+def test_sum_proxy_log_cost_ignores_lines_without_a_numeric_cost():
+    log = "\n".join([
+        _json.dumps({"marker": True, "case_id": "c1"}),  # the per-case marker line, no response
+        _json.dumps({"response": {"usage": {}}}),  # no cost key
+        _json.dumps({"error": "ConnectError"}),  # a failed request, logged without a response
+        _json.dumps({"response": {"usage": {"cost": 0.05}}}),
+    ]).encode()
+    assert sum_proxy_log_cost(log) == pytest.approx(0.05)
+
+
+def test_sum_proxy_log_cost_skips_malformed_lines_without_raising():
+    log = b'{"response": {"usage": {"cost": 0.01}}}\nnot valid json\n{"response": {"usage": {"cost": 0.02}}}\n'
+    assert sum_proxy_log_cost(log) == pytest.approx(0.03)
+
+
+def test_sum_proxy_log_cost_of_an_empty_log_is_zero():
+    assert sum_proxy_log_cost(b"") == 0.0

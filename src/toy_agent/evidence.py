@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 from typing import Callable, Optional
@@ -80,3 +81,25 @@ def collect_thin_proxy_log(
     path = case_dir / f"{service}.vendor_proxy.jsonl"
     path.write_bytes(scrubbed)
     return path
+
+
+def sum_proxy_log_cost(log_bytes: bytes) -> float:
+    """Sum every response.usage.cost found in a thin-proxy log (JSON lines,
+    vendor_proxy.py's/openrouter_proxy.py's own format) — the only place a
+    real per-call OpenRouter cost is observable (design doc, 'Tetto di
+    spesa'). A line without a numeric cost contributes 0.0; a malformed
+    line (partial write mid-request) is skipped, never raises — this reads
+    forensic data that must not be able to crash the batch it's protecting."""
+    total = 0.0
+    for line in log_bytes.decode("utf-8", errors="replace").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        cost = entry.get("response", {}).get("usage", {}).get("cost")
+        if isinstance(cost, (int, float)):
+            total += float(cost)
+    return total

@@ -115,6 +115,8 @@ class BatchResult:
     metric_verdicts: list[Verdict] = field(default_factory=list)
     transcript_unusable: dict[str, str] = field(default_factory=dict)
     total_in_tokens: int = 0
+    cost_breaker_tripped: bool = False
+    cumulative_cost_usd: float = 0.0
 
 
 def _agent_input(case: TestCase) -> dict:
@@ -154,6 +156,7 @@ def execute_sequence(
     agent_timeout_s: float = 120.0,
     detector_timeout_s: float = 180.0,
     breaker_threshold: int = 3,
+    max_cost_usd: float | None = None,
     api_key: str = "",
     run_test_case_fn: Callable[..., dict] = run_test_case,
     collect_case_evidence_fn: Callable = evidence.collect_case_evidence,
@@ -185,6 +188,8 @@ def execute_sequence(
     consecutive_infra = 0
     last_infra_rationale: Optional[str] = None
     breaker_tripped = False
+    cost_breaker_tripped = False
+    cumulative_cost_usd = 0.0
     transcript_conversion_failure_count = 0
     verdict_conversion_failure_count = 0
     total_in_tokens = 0
@@ -237,7 +242,9 @@ def execute_sequence(
             # step (Plan 4 decision 5) — evidence.py never raises on an
             # unreachable container.
             collect_case_evidence_fn(case_id, known_containers, run_output_dir)
-            collect_thin_proxy_log_fn(case_id, run_output_dir, api_key, service=config.service, log_path=config.proxy_log_path)
+            proxy_log_path = collect_thin_proxy_log_fn(case_id, run_output_dir, api_key, service=config.service, log_path=config.proxy_log_path)
+            if max_cost_usd is not None:
+                cumulative_cost_usd = evidence.sum_proxy_log_cost(proxy_log_path.read_bytes())
 
             conversion_failed = False
             try:
@@ -322,6 +329,15 @@ def execute_sequence(
             if consecutive_infra >= breaker_threshold:
                 breaker_tripped = True
                 break
+
+            if max_cost_usd is not None and cumulative_cost_usd > max_cost_usd:
+                cost_breaker_tripped = True
+                if progress_fn is not None:
+                    progress_fn(
+                        f"*** COST BREAKER TRIPPED: cumulative ${cumulative_cost_usd:.4f} "
+                        f"exceeded --max-cost-usd ${max_cost_usd:.4f} ***"
+                    )
+                break
     finally:
         # Whatever ends the loop early — a circuit-breaker trip or an
         # uncaught exception from run_test_case_fn/evidence collection —
@@ -351,4 +367,6 @@ def execute_sequence(
         transcript_conversion_failure_count=transcript_conversion_failure_count,
         verdict_conversion_failure_count=verdict_conversion_failure_count,
         total_in_tokens=total_in_tokens,
+        cost_breaker_tripped=cost_breaker_tripped,
+        cumulative_cost_usd=cumulative_cost_usd,
     )

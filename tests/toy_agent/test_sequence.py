@@ -683,3 +683,77 @@ def test_a_conversion_failure_uses_the_active_vendors_tool_name(tmp_path):
                                collect_thin_proxy_log_fn=RecordingProxyLogCollector(),
                                run_command=NoOpCommandRunner())
     assert result.verdicts[0].tool_name == "llamafirewall-alignmentcheck"
+
+
+import json as _json
+
+
+class WritingProxyLogCollector:
+    """A more faithful fake than RecordingProxyLogCollector for cost-breaker
+    tests: writes a real cumulative log file each call — mirrors the real
+    container, where `cat` always returns the FULL log since the proxy is
+    one long-lived process (Task 6/9c), not just this case's slice."""
+    def __init__(self, cost_per_case: float):
+        self._cost_per_case = cost_per_case
+        self._entries_written = 0
+        self.calls = []
+
+    def __call__(self, case_id, evidence_dir, api_key, *, service, log_path):
+        self.calls.append((case_id, service, log_path))
+        self._entries_written += 1
+        case_dir = evidence_dir / case_id
+        case_dir.mkdir(parents=True, exist_ok=True)
+        path = case_dir / f"{service}.vendor_proxy.jsonl"
+        lines = [_json.dumps({"response": {"usage": {"cost": self._cost_per_case}}}) for _ in range(self._entries_written)]
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return path
+
+
+def test_cost_breaker_trips_when_cumulative_cost_exceeds_the_threshold(tmp_path):
+    dataset = {f"c{i}": _ground_truth(f"c{i}") for i in range(1, 5)}
+    steps = _reused_sequence_llamafirewall([f"c{i}" for i in range(1, 5)])
+    runner = ScriptedRunTestCase([_ok_result(f"c{i}") for i in range(1, 5)])
+    proxy_collector = WritingProxyLogCollector(cost_per_case=0.05)
+
+    result = execute_sequence(
+        steps, dataset, tmp_path, vendor="llamafirewall", max_cost_usd=0.10,
+        run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
+        collect_thin_proxy_log_fn=proxy_collector, run_command=NoOpCommandRunner(),
+    )
+    # cumulative after c1=0.05 (ok), c2=0.10 (ok, not strictly greater),
+    # c3=0.15 (exceeds 0.10) -> trips after 3 cases, c4 never attempted.
+    assert result.cost_breaker_tripped is True
+    assert result.executed_count == 3
+    assert result.cumulative_cost_usd == pytest.approx(0.15)
+
+
+def test_no_max_cost_usd_means_the_cost_breaker_never_checks(tmp_path):
+    dataset = {"c1": _ground_truth("c1")}
+    steps = _reused_sequence_llamafirewall(["c1"])
+    runner = ScriptedRunTestCase([_ok_result("c1")])
+    proxy_collector = WritingProxyLogCollector(cost_per_case=1000.0)  # would trip any real threshold
+
+    result = execute_sequence(
+        steps, dataset, tmp_path, vendor="llamafirewall",  # max_cost_usd omitted (None default)
+        run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
+        collect_thin_proxy_log_fn=proxy_collector, run_command=NoOpCommandRunner(),
+    )
+    assert result.cost_breaker_tripped is False
+    assert result.executed_count == 1
+
+
+def test_cost_breaker_trip_closes_every_still_open_container(tmp_path):
+    dataset = {f"c{i}": _ground_truth(f"c{i}") for i in range(1, 3)}
+    steps = _reused_sequence_llamafirewall([f"c{i}" for i in range(1, 3)])
+    runner = ScriptedRunTestCase([_ok_result("c1"), _ok_result("c2")])
+    proxy_collector = WritingProxyLogCollector(cost_per_case=1.0)
+    command_runner = NoOpCommandRunner()
+
+    result = execute_sequence(
+        steps, dataset, tmp_path, vendor="llamafirewall", max_cost_usd=0.5,
+        run_test_case_fn=runner, collect_case_evidence_fn=RecordingEvidenceCollector(),
+        collect_thin_proxy_log_fn=proxy_collector, run_command=command_runner,
+    )
+    assert result.cost_breaker_tripped is True
+    rm_calls = [c for c in command_runner.calls if c[:6] == ["docker", "compose", "rm", "-f", "-s", "-v"]]
+    assert {c[6] for c in rm_calls[2:]} == {"agent", "detector-llamafirewall"}
