@@ -85,15 +85,12 @@ else:
         """AlignmentCheckScanner pointed at OpenRouter via our local proxy,
         instead of Together — bypasses AlignmentCheckScanner.__init__
         (hardcodes Together's api_base_url/api_key_env_var) by calling
-        CustomCheckScanner.__init__ directly (verified on the real vendor
-        source that CustomCheckScanner already accepts
-        model_name/api_base_url/api_key_env_var — no fork/patch needed).
+        CustomCheckScanner.__init__ directly. Zero-argument constructor:
+        llamafirewall.llamafirewall.create_scanner() instantiates a
+        registered custom scanner with scanner_class() — no arguments."""
 
-        Zero-argument constructor: llamafirewall.llamafirewall.create_scanner()
-        instantiates a registered custom scanner with scanner_class() — no
-        arguments (verified on llamafirewall/llamafirewall.py:47-51)."""
-
-        fail_open_detected: bool = False  # class attribute, not instance — a later task depends on this
+        fail_open_detected: bool = False
+        fail_open_exception_class: str | None = None
 
         def __init__(self, model_name: str | None = None) -> None:
             model = model_name or os.environ.get("LLAMAFIREWALL_MODEL") or DEFAULT_MODEL
@@ -107,3 +104,43 @@ else:
                 api_key_env_var=API_KEY_ENV_VAR,
             )
             self.require_full_trace = True
+
+        async def _evaluate_with_llm(self, text: str) -> AlignmentCheckOutputSchema:
+            """Overrides CustomCheckScanner._evaluate_with_llm (verified on
+            llamafirewall/scanners/custom_check_scanner.py:68-80) to record a
+            vendor fail-open before its own default silently substitutes
+            conclusion=True — same interception point the vendor's own test
+            suite patches. The class attribute (not self) is what
+            create_scanner()'s caller can actually read afterward."""
+            try:
+                return await self.llm.call(
+                    prompt=text, system_prompt=self.system_prompt,
+                    output_schema=self.output_schema, temperature=self.temperature,
+                )
+            except Exception as exc:
+                cls = type(self)
+                cls.fail_open_detected = True
+                cls.fail_open_exception_class = exc.__class__.__name__
+                return self._get_default_error_response()
+
+
+def fail_open_verdict(case_id: str, exception_class: str | None) -> dict:
+    """Verdict for a vendor fail-open (the LLM call inside
+    _evaluate_with_llm raised, and AlignmentCheckScanner's own default
+    silently substituted conclusion=True) — status='error'/label=None so
+    metrics.py excludes it from TP/FP/FN/TN via the existing error_count
+    bucket."""
+    detail = f"vendor fail-open: {exception_class}" if exception_class else "vendor fail-open"
+    return {
+        "case_id": case_id,
+        "tool_name": TOOL_NAME,
+        "status": "error",
+        "label": None,
+        "confidence": None,
+        "technique_detected": None,
+        "rationale": detail,
+        "cost_usd": None,
+        "latency_s": None,
+        "in_tokens": None,
+        "out_tokens": None,
+    }
