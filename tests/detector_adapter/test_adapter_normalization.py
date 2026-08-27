@@ -99,3 +99,95 @@ def test_terminate_subprocesses_never_raises_when_router_has_no_clients():
     fake_pipeline = SimpleNamespace(inspector=SimpleNamespace(router=SimpleNamespace()))
     adapter = AgenticThreatDetectionAdapter(pipeline=fake_pipeline)
     adapter.terminate_subprocesses()  # must not raise
+
+
+# --- Task 7: retrofit fail-open aidr + rename DETECTOR_TOOL_NAME ---
+
+
+class _FakeDetectionResult:
+    def __init__(self, is_malicious, confidence=0.0, latency_s=0.1, in_tokens=1, out_tokens=1):
+        self.is_malicious = is_malicious
+        self.confidence = confidence
+        self.technique = "N/A"
+        self.explanation = ""
+        self.latency_s = latency_s
+        self.in_tokens = in_tokens
+        self.out_tokens = out_tokens
+
+
+class _FailingSifter:
+    """Mirrors aidr.detector.sifter.Sifter's real shape (verified on the
+    pinned vendor source): triage() raises, triage_safe() catches and
+    defaults — exercising the wrapper installed on self._pipeline.sifter.triage."""
+    def triage(self, transcript):
+        raise RuntimeError("boom")
+
+    def triage_safe(self, transcript):
+        try:
+            return self.triage(transcript)
+        except Exception as e:
+            return {"escalate": True, "tactic": "N/A", "in_tokens": 0, "out_tokens": 0, "note": f"fail-open: {e}"}
+
+
+class _CleanSifter:
+    def triage(self, transcript):
+        return {"escalate": False, "tactic": "N/A", "in_tokens": 5, "out_tokens": 2}
+
+    def triage_safe(self, transcript):
+        return self.triage(transcript)
+
+
+class _FakePipeline:
+    def __init__(self, sifter, downstream_result):
+        self.sifter = sifter
+        self._downstream_result = downstream_result
+
+    def analyze(self, ev):
+        self.sifter.triage_safe("dummy transcript")  # mirrors pipeline.py:20
+        return self._downstream_result
+
+
+def test_sifter_fail_open_produces_an_error_verdict_never_a_label():
+    # Even though the downstream result claims malicious (what Inspector
+    # would conclude given tactic="N/A" after the fail-open), the recorded
+    # exception must override it.
+    downstream = _FakeDetectionResult(is_malicious=True, confidence=0.9)
+    pipeline = _FakePipeline(_FailingSifter(), downstream)
+    adapter = AgenticThreatDetectionAdapter(pipeline=pipeline)
+    verdict = adapter._analyze_and_normalize("c1", ev=object())
+    assert verdict["status"] == "error"
+    assert verdict["label"] is None
+    assert verdict["rationale"] == "vendor fail-open: RuntimeError"
+    assert verdict["tool_name"] == "aidr"
+
+
+def test_a_clean_sifter_result_is_unaffected():
+    downstream = _FakeDetectionResult(is_malicious=False)
+    pipeline = _FakePipeline(_CleanSifter(), downstream)
+    adapter = AgenticThreatDetectionAdapter(pipeline=pipeline)
+    verdict = adapter._analyze_and_normalize("c1", ev=object())
+    assert verdict["status"] == "ok"
+    assert verdict["label"] == "benign"
+
+
+def test_the_flag_resets_between_cases_a_prior_fail_open_does_not_leak():
+    downstream = _FakeDetectionResult(is_malicious=False)
+    pipeline = _FakePipeline(_CleanSifter(), downstream)
+    adapter = AgenticThreatDetectionAdapter(pipeline=pipeline)
+    adapter._last_sifter_fail_open_exception_class = "StaleException"  # simulates leftover state
+    verdict = adapter._analyze_and_normalize("c1", ev=object())
+    assert verdict["status"] == "ok"
+
+
+def test_no_sifter_attribute_degrades_to_a_no_op_wrapper():
+    # A partially-constructed/malformed pipeline (same discipline as
+    # terminate_subprocesses's existing degrade-to-no-op tests below).
+    adapter = AgenticThreatDetectionAdapter(pipeline=SimpleNamespace())  # no .sifter at all
+    downstream = _FakeDetectionResult(is_malicious=False)
+    adapter._pipeline.analyze = lambda ev: downstream
+    verdict = adapter._analyze_and_normalize("c1", ev=object())
+    assert verdict["status"] == "ok"
+
+
+def test_detector_tool_name_is_now_aidr_not_the_old_repo_name():
+    assert DETECTOR_TOOL_NAME == "aidr"

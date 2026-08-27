@@ -501,6 +501,27 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   `error_count` tra un report pre-fix e uno post-fix è confrontare due quantità diverse.
   Il report lo dice; un lettore che diffa due run deve saperlo.
 
+- **Il retrofit fail-open di aidr (Task 7,
+  `docs/superpowers/plans/2026-08-27-multi-vendor-llamafirewall-implementation.md`)
+  cambia retroattivamente il comportamento di scoring di aidr sui casi
+  fail-open** — `metrics.py:209-264` esclude ogni `Verdict` con
+  `status="error"` da TP/FP/FN/TN, contandolo solo in `error_count`. Prima
+  di questo retrofit, un fail-open del Sifter produceva un `DetectionResult`
+  indistinguibile da una detection reale (Inspector veniva comunque
+  invocato con `tactic="N/A"`, e il suo verdetto — vero o falsato dal
+  tactic sbagliato — entrava in TP/FP/FN/TN). Dopo questo retrofit, lo
+  stesso caso produce `status="error", label=None` — **esce** dal calcolo.
+  Rilanciare un qualunque benchmark aidr già pubblicato dopo questo commit
+  produrrebbe numeri P/R diversi da quelli pubblicati, non per un cambio di
+  modello o dataset ma per un cambio nel codice di misura stesso — evento
+  di riproducibilità (SPIRIT.md, principi 4/7), da dichiarare esplicitamente
+  quando si confrontano run pre- e post-Task-7. I run già pubblicati in
+  `docs/reports/` non vengono ricalcolati da questo piano — restano
+  numericamente corretti secondo il codice di misura del loro tempo, ma non
+  più direttamente comparabili a un run post-Task-7 senza questa nota. Non
+  risolvibile per costruzione (è la natura di un fix che cambia una
+  definizione di misura); da dichiarare, non da eliminare.
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **R10 — output del preflight non sanitizzato a valle del tipo di ritorno** — il codice
@@ -575,8 +596,7 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   lo stesso problema strutturale in `AlignmentCheckScanner._get_default_error_response()`
   di LlamaFirewall (`conclusion=True` su qualunque eccezione) — la verifica sul codice
   di aidr ha confermato che il problema preesisteva, non è specifico del secondo vendor.
-  Aperto: fix pianificato in `docs/design/2026-08-27-multi-vendor-llamafirewall-design.md`
-  (riuso di `status="error"`/`error_count`/`rationale`, nessun bucket nuovo, esteso a entrambi i vendor in Fase 2 —
-  deciso esplicitamente di non limitarlo a LlamaFirewall). Non risolto per i run già
-  pubblicati: la loro metrica primary può contenere rumore infrastrutturale non
-  quantificato, mai flaggato prima d'ora.
+  Risolto nel codice per aidr da questo task (retrofit fail-open,
+  commit da compilare al momento del commit reale — vedi
+  `detector_adapter/vendors/aidr/adapter.py`, `_wrap_sifter_triage`);
+  per LlamaFirewall, in un task precedente di questo stesso piano.

@@ -9,7 +9,7 @@ SERVER_NAME = "toy_support"
 # — a constant today (one detector active per audit, design doc, "Limiti
 # dichiarati"), populated so a future second-vendor Verdict is distinguishable
 # without a schema change.
-DETECTOR_TOOL_NAME = "agentic_threat_detection"
+DETECTOR_TOOL_NAME = "aidr"  # era "agentic_threat_detection" (CONTEXT.md: nome del repo vendor, non del prodotto)
 
 
 def _build_messages(turns: list[dict]) -> list[Any]:
@@ -92,6 +92,28 @@ def detection_result_to_verdict(case_id: str, result: Any) -> dict:
     }
 
 
+def _fail_open_verdict(case_id: str, exception_class: str, result: Any) -> dict:
+    """Verdict for a Sifter fail-open: status='error'/label=None, riusa
+    error_count (metrics.py, zero modifiche). result è ancora il
+    DetectionResult che Pipeline.analyze() ha comunque prodotto (via
+    Inspector con tactic='N/A') — se ne prendono solo latency/token per
+    provenance, mai is_malicious/confidence (indistinguibile da una
+    detection vera, per definizione di questo bug)."""
+    return {
+        "case_id": case_id,
+        "tool_name": DETECTOR_TOOL_NAME,
+        "status": "error",
+        "label": None,
+        "confidence": None,
+        "technique_detected": None,
+        "rationale": f"vendor fail-open: {exception_class}",
+        "cost_usd": None,
+        "latency_s": result.latency_s,
+        "in_tokens": result.in_tokens,
+        "out_tokens": result.out_tokens,
+    }
+
+
 class AgenticThreatDetectionAdapter:
     """TargetAdapter for agentic-threat-detection (aidr), pinned commit
     7fad14d2478707e68a09b8ecd9942dec8fde1614. Bypasses Dredge — builds an
@@ -104,11 +126,42 @@ class AgenticThreatDetectionAdapter:
         else:
             from aidr.detector.pipeline import Pipeline
             self._pipeline = Pipeline()
+        self._last_sifter_fail_open_exception_class: str | None = None
+        self._wrap_sifter_triage()
+
+    def _wrap_sifter_triage(self) -> None:
+        """Pipeline.analyze() (aidr/detector/pipeline.py:15-47, pinned
+        vendor source) never exposes the Sifter's fail-open note to its own
+        caller. Wraps Sifter.triage (the raising method), not triage_safe
+        (which already catches and formats the exception into a string) —
+        forwarding str(e) into our rationale would risk the same secret leak
+        R10 found in preflight.py (Global Constraints: only
+        __class__.__name__, never raw exception text). Wrapping triage
+        leaves triage_safe's own fallback untouched; we independently
+        record only the exception class."""
+        sifter = getattr(self._pipeline, "sifter", None)
+        if sifter is None:
+            return
+        original_triage = sifter.triage
+
+        def _recording_triage(transcript: str) -> dict:
+            try:
+                return original_triage(transcript)
+            except Exception as exc:
+                self._last_sifter_fail_open_exception_class = exc.__class__.__name__
+                raise
+        sifter.triage = _recording_triage
 
     def evaluate(self, transcript: dict) -> dict:
         case_id = transcript["session_id"]
         ev = transcript_dict_to_agent_event(transcript)
+        return self._analyze_and_normalize(case_id, ev)
+
+    def _analyze_and_normalize(self, case_id: str, ev: Any) -> dict:
+        self._last_sifter_fail_open_exception_class = None
         result = self._pipeline.analyze(ev)
+        if self._last_sifter_fail_open_exception_class is not None:
+            return _fail_open_verdict(case_id, self._last_sifter_fail_open_exception_class, result)
         return detection_result_to_verdict(case_id, result)
 
     def terminate_subprocesses(self) -> None:
