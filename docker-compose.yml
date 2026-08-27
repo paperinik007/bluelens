@@ -5,6 +5,7 @@ services:
     networks:
       agent_net:
       detector_net:
+      detector_llamafirewall_net:
       default:
     expose:
       - "3128"
@@ -46,8 +47,28 @@ services:
     networks:
       detector_net:
 
+  detector-llamafirewall:
+    build:
+      context: .
+      dockerfile: docker/detector-llamafirewall/Dockerfile
+    depends_on:
+      - egress-proxy
+    env_file:
+      - .env.llamafirewall
+    environment:
+      HTTPS_PROXY: http://egress-proxy:3128
+      LLAMAFIREWALL_PROXY_LOG_PATH: /var/log/llamafirewall_proxy.jsonl
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    networks:
+      detector_llamafirewall_net:
+
 networks:
   agent_net:
     internal: true
   detector_net:
+    internal: true
+  detector_llamafirewall_net:
     internal: true
