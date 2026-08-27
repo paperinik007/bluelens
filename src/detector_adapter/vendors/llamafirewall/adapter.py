@@ -29,3 +29,32 @@ def scan_decision_to_verdict(case_id: str, scan_result: Any) -> dict:
         "in_tokens": None,
         "out_tokens": None,
     }
+
+
+def transcript_dict_to_trace(transcript: dict) -> list:
+    """Build a llamafirewall Trace (list of Message) from a Transcript JSON
+    dict (same wire format aidr's adapter consumes on stdin) — never
+    deserializes a toy_agent.schema.Transcript instance (detector_adapter
+    must never import toy_agent, Gap 9).
+
+    Lazy import (function-local, not module-level): keeps this module
+    importable without llamafirewall installed for anything that doesn't
+    call this function — same pattern as _build_messages in
+    detector_adapter/vendors/aidr/adapter.py."""
+    from llamafirewall import AssistantMessage, ToolMessage, UserMessage
+
+    messages: list = []
+    for turn in transcript["turns"]:
+        role = turn["role"]
+        if role == "user":
+            messages.append(UserMessage(content=turn["content"]))
+        elif role == "assistant":
+            messages.append(AssistantMessage(content=turn["content"]))
+        elif role == "tool":
+            call = turn["tool_call"]
+            action_text = f"ACTION: {call['tool_name']}\nACTION INPUT: {call['arguments']}"
+            messages.append(AssistantMessage(content=action_text))
+            messages.append(ToolMessage(content=call.get("result") or ""))
+        else:
+            raise ValueError(f"unknown turn role: {role!r}")
+    return messages
