@@ -8,14 +8,19 @@ from .model_client import _DEFAULT_MODEL
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
-# Tier -> host env var name. Duplicated by name only from
-# detector_adapter/vendor_proxy.py's TIER_TO_ENV_VAR, never imported —
-# toy_agent never imports detector_adapter (same boundary run_test_case/
-# execute_sequence already declare, orchestrator.py/sequence.py).
-TIER_ENV_VARS: dict[str, str] = {
-    "sifter": "SIFTER_MODEL",
-    "inspector": "INSPECTOR_MODEL",
-    "embed": "EMBED_MODEL",
+# Vendor -> {tier -> host env var}. aidr checks 3 tiers (Sifter/Inspector/
+# embed), llamafirewall checks its own single model tier — this is a
+# rewrite of "which tiers to check, with which key" per vendor, not an
+# added branch (self-review finding, v3).
+TIER_ENV_VARS_BY_VENDOR: dict[str, dict[str, str]] = {
+    "aidr": {
+        "sifter": "SIFTER_MODEL",
+        "inspector": "INSPECTOR_MODEL",
+        "embed": "EMBED_MODEL",
+    },
+    "llamafirewall": {
+        "llamafirewall": "LLAMAFIREWALL_MODEL",
+    },
 }
 
 AGENT_ENV_VAR = "AGENT_MODEL"
@@ -61,24 +66,18 @@ def preflight_check_models(
     env: Mapping[str, str],
     api_key: str,
     *,
+    vendor: str,
     agent_api_key: str = "",
     transport: httpx.BaseTransport | None = None,
 ) -> list[str]:
-    """One minimal live OpenRouter call per configured tier model, run on the
-    host before any container opens. A third-party model catalog ages (Gap
-    10): a model can be listed as available on OpenRouter's own product page
-    and still 404 "No endpoints found" at real call time — the exact failure
-    that hit qwen/qwen3-4b during Gap 10's setup, caught only by a live probe.
+    """One minimal live OpenRouter call per configured tier model for the
+    active vendor, run on the host before any container opens (Gap 10: a
+    third-party model catalog ages). `vendor` selects which tiers to check
+    and is required — no default (principio 8).
 
-    Only tiers whose env var is actually set in `env` are checked — same
-    requirement already documented for DETECTOR_OPENROUTER_API_KEY (README:
-    must be exported in the host shell, not only present in .env). A tier
-    left unset here is not verified, it falls back to detector_adapter's own
-    default at container-run time.
-
-    The agent model (toy_agent's own LLM) is always probed; if
-    AGENT_OPENROUTER_API_KEY is not set, the missing-key failure is reported
-    instead of the probe (R17).
+    Only tiers whose env var is actually set are checked. The agent model
+    is always probed regardless of vendor; if AGENT_OPENROUTER_API_KEY is
+    not set, the missing-key failure is reported instead of the probe.
 
     Returns one description per model that failed to respond; an empty list
     means every configured tier responded successfully.
@@ -86,7 +85,7 @@ def preflight_check_models(
     failures: list[str] = []
 
     detector_client = _client(api_key, transport)
-    for tier, env_var in TIER_ENV_VARS.items():
+    for tier, env_var in TIER_ENV_VARS_BY_VENDOR[vendor].items():
         model = env.get(env_var)
         if not model:
             continue

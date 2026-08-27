@@ -320,7 +320,7 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(1)
 
     progress("--- preflight ---")
-    preflight_failures = preflight_check_models(os.environ, api_key, agent_api_key=agent_api_key)
+    preflight_failures = preflight_check_models(os.environ, api_key, vendor=vendor, agent_api_key=agent_api_key)
     if preflight_failures:
         for failure in preflight_failures:
             progress(f"preflight model check failed: {failure}")

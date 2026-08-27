@@ -752,14 +752,15 @@ def test_main_passes_both_keys_to_the_preflight(tmp_path, monkeypatch):
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-detector")
     monkeypatch.setenv("AGENT_OPENROUTER_API_KEY", "sk-agent")
     captured = {}
-    def fake_preflight(env, api_key, *, agent_api_key="", transport=None):
+    def fake_preflight(env, api_key, *, vendor="", agent_api_key="", transport=None):
         captured["api_key"] = api_key
         captured["agent_api_key"] = agent_api_key
+        captured["vendor"] = vendor
         return []
     monkeypatch.setattr(run_batch, "preflight_check_models", fake_preflight)
     monkeypatch.setattr(run_batch, "execute_batch", lambda dataset, output_dir, **kw: BatchResult(cases=[], verdicts=[], total_count=0, executed_count=0, breaker_tripped=False))
     run_batch.main([str(dataset_dir), str(tmp_path / "out"), "--vendor", "aidr"])
-    assert captured == {"api_key": "sk-detector", "agent_api_key": "sk-agent"}
+    assert captured == {"api_key": "sk-detector", "agent_api_key": "sk-agent", "vendor": "aidr"}
 
 
 def test_main_writes_the_provenance_file_next_to_the_raw_data(tmp_path, monkeypatch):
@@ -863,7 +864,7 @@ def test_latest_points_to_the_run_that_ran(tmp_path, monkeypatch):
     # A failed preflight must not create or move latest.
     previous_target = latest.readlink()
 
-    def fake_preflight_failing(env, api_key, *, agent_api_key="", transport=None):
+    def fake_preflight_failing(env, api_key, *, vendor="", agent_api_key="", transport=None):
         return ["model unavailable"]
 
     monkeypatch.setattr(run_batch, "preflight_check_models", fake_preflight_failing)
@@ -884,7 +885,7 @@ def test_preflight_failure_writes_the_reason_into_run_log(tmp_path, monkeypatch)
     _write_dataset(dataset_dir, ["c1"])
     monkeypatch.setenv("DETECTOR_OPENROUTER_API_KEY", "sk-test-key")
 
-    def fake_preflight_failing(env, api_key, *, agent_api_key="", transport=None):
+    def fake_preflight_failing(env, api_key, *, vendor="", agent_api_key="", transport=None):
         return ["model unavailable"]
 
     monkeypatch.setattr(run_batch, "preflight_check_models", fake_preflight_failing)
@@ -982,9 +983,9 @@ def test_preflight_sentinel_exception_text_never_reaches_run_log(tmp_path, monke
     def handler(request):
         raise Boom(f"Authorization: Bearer {sentinel}")
 
-    def real_preflight_with_transport(env, api_key, *, agent_api_key="", transport=None):
+    def real_preflight_with_transport(env, api_key, *, vendor="", agent_api_key="", transport=None):
         return preflight_module.preflight_check_models(
-            env, api_key, agent_api_key=agent_api_key,
+            env, api_key, vendor=vendor, agent_api_key=agent_api_key,
             transport=httpx.MockTransport(handler),
         )
 
