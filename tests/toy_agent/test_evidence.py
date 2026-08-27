@@ -87,8 +87,34 @@ def test_collect_thin_proxy_log_scrubs_the_api_key(tmp_path):
         ("docker", "compose", "exec", "-T", "detector", "cat", "/var/log/vendor_proxy.jsonl"):
             b'{"port": 8100, "request": {}, "response": {}}\nsecret-key-value-embedded-here\n',
     })
-    path = collect_thin_proxy_log("case_003", tmp_path, "secret-key-value-embedded-here", run_command=runner)
+    path = collect_thin_proxy_log(
+        "case_003", tmp_path, "secret-key-value-embedded-here",
+        service="detector", log_path="/var/log/vendor_proxy.jsonl", run_command=runner,
+    )
     content = path.read_text(encoding="utf-8")
     assert "secret-key-value-embedded-here" not in content
     assert "[REDACTED]" in content
     assert path == tmp_path / "case_003" / "detector.vendor_proxy.jsonl"
+
+
+def test_collect_thin_proxy_log_uses_the_given_service_and_container_path(tmp_path):
+    runner = FakeRunner({
+        ("docker", "compose", "exec", "-T", "detector-llamafirewall", "cat", "/var/log/llamafirewall_proxy.jsonl"):
+            b'{"request": {}, "response": {}}\n',
+    })
+    path = collect_thin_proxy_log(
+        "case_005", tmp_path, "sk-test",
+        service="detector-llamafirewall", log_path="/var/log/llamafirewall_proxy.jsonl", run_command=runner,
+    )
+    assert path == tmp_path / "case_005" / "detector-llamafirewall.vendor_proxy.jsonl"
+
+
+def test_collect_thin_proxy_log_names_the_output_file_after_the_service(tmp_path):
+    runner = FakeRunner({
+        ("docker", "compose", "exec", "-T", "detector-llamafirewall", "cat", "/var/log/llamafirewall_proxy.jsonl"): b"",
+    })
+    path = collect_thin_proxy_log(
+        "case_006", tmp_path, "", service="detector-llamafirewall",
+        log_path="/var/log/llamafirewall_proxy.jsonl", run_command=runner,
+    )
+    assert path.name == "detector-llamafirewall.vendor_proxy.jsonl"

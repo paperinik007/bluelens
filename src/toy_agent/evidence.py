@@ -62,17 +62,21 @@ def collect_thin_proxy_log(
     evidence_dir: Path,
     api_key: str,
     *,
+    service: str,
+    log_path: str,
     run_command: CommandRunner = default_command_runner,
 ) -> Path:
-    """Retrieve the thin proxy's request/response log from inside `detector`
-    (already scrubbed at write time, Task 1 — this is defense in depth, not
-    the only scrub point) and persist it under this case_id's evidence dir.
-    Vendor-specific (not one of the four generic channels above) — design
-    doc, 'Contratto riusabile del container detector'."""
+    """Retrieve the thin proxy's request/response log from inside `service`
+    (already scrubbed at write time — this is defense in depth, not the
+    only scrub point) and persist it under this case_id's evidence dir.
+    `service`/`log_path` are resolved by the caller from the active vendor
+    (sequence.py, via orchestrator.VENDOR_DETECTOR_CONFIG) — this function
+    has no vendor knowledge of its own (design doc, 'Contratto riusabile
+    del container detector', generalizzato oltre aidr in Fase 2)."""
     case_dir = evidence_dir / case_id
     case_dir.mkdir(parents=True, exist_ok=True)
-    raw = run_command(["docker", "compose", "exec", "-T", "detector", "cat", "/var/log/vendor_proxy.jsonl"])
+    raw = run_command(["docker", "compose", "exec", "-T", service, "cat", log_path])
     scrubbed = raw.replace(api_key.encode("utf-8"), b"[REDACTED]") if api_key else raw
-    path = case_dir / "detector.vendor_proxy.jsonl"
+    path = case_dir / f"{service}.vendor_proxy.jsonl"
     path.write_bytes(scrubbed)
     return path
