@@ -365,8 +365,10 @@ own key, same as for OpenRouter). The scanner taxonomy is coarse but mappable.
   but mappable.
 - **Output**: Fine-grained diagnosis across three taxonomy dimensions (Risk Source, Failure
   Mode, Real-world Harm). The Unified AgentDoG 1.5 (4B) provides a single classification.
-- **Taxonomy**: ✅ Three-dimensional: Risk Source (7 categories), Failure Mode (12
-  categories), Real-world Harm (6 categories). The most complete taxonomy.
+- **Taxonomy**: ✅ Three-dimensional: Risk Source, Failure Mode, Real-world Harm (the third
+  dimension is also called "Risk Consequence" in the model configs). Exact category counts
+  are **unverified** — sources differ (7/12/6 vs 8/14/10); confirm from the model card
+  before writing the output parser.
 - **Containerizability**: ❌ Requires serving a 4B–8B model (Qwen3.5-4B or Llama3.1-8B)
   via OpenAI-compatible endpoint. GPU inference required.
 - **Adapter effort**: high. Model serving infrastructure + different input serialization
@@ -563,30 +565,44 @@ found two important updates that change the feasibility assessment.
 
 ### AgentDoG 1.5 lightweight models (0.8B, 2B)
 
-AgentDoG 1.5 released smaller variants that were not previously evaluated:
+> **CORRECTED 2026-08-26 — verificato direttamente su Hugging Face** (API catalogo
+> modelli + `config.json` reali, non da fonti secondarie). Le varianti 0.8B di AgentDoG 1.5
+> sono **due** (Base e FG), non tre. **"Unified" esiste solo a 4B**
+> (`AgentDoG1.5-Unified-Qwen3.5-4B`). Inoltre l'architettura è **generativa**
+> (`Qwen3_5ForConditionalGeneration`, senza `id2label`/`label2id`/`num_labels`): il
+> `pipeline_tag: text-classification` è solo metadata HF — il modello NON è un
+> classificatore con testa dedicata e NON va caricato con `pipeline("text-classification")`.
 
-- **AgentDoG1.5-Qwen3.5-0.8B** (0.8B parameters, coarse-grained moderation): predicts
-  `safe` or `unsafe` for a full trajectory. Uses `AutoModelForCausalLM` from standard
-  `transformers` — no GPU required. `pipeline_tag: text-classification`.
-- **AgentDoG1.5-Qwen3.5-2B** (2B parameters, same task).
-- **AgentDoG1.5-FG-Qwen3.5-0.8B** (0.8B, fine-grained diagnosis): produces 3D taxonomy
-  (Failure Mode, Risk Consequence, Risk Source) when the trajectory is unsafe.
+AgentDoG 1.5 released smaller variants that were not previously evaluated. Per il taglio
+0.8B esistono **due** varianti:
+
+- **AgentDoG1.5-Qwen3.5-0.8B** (Base/coarse-grained): sola moderazione binaria — emette
+  `safe` oppure `unsafe`.
+- **AgentDoG1.5-FG-Qwen3.5-0.8B** (fine-grained): diagnosi della sola traiettoria non
+  sicura — emette la tassonomia 3D.
+
+La variante **Unified** esiste solo a **4B** (`AgentDoG1.5-Unified-Qwen3.5-4B`): binario +
+3D in un unico flusso, ma richiede GPU.
+
+Architettura (verificata da `config.json`, 2026-08-26): `Qwen3_5ForConditionalGeneration`,
+`vocab_size=248320`, nessuna testa di classificazione. È un LLM generativo: l'output va
+estratto con regex, e lo score (se serve) va calcolato dai logit dei token `safe`/`unsafe`,
+non da una pipeline di classificazione.
 
 Key implications for our harness:
 - **0.8B runs on CPU** via standard transformers. A container with `pip install transformers`
   is sufficient. No GPU, no vLLM, no SGLang.
 - **Input**: serialized multi-turn trajectory (JSON turns formatted as text following the
   model's chat template). Our transcript format is mappable.
-- **Output**: structured text with `safe`/`unsafe` label (coarse) or 3D diagnosis (FG).
-  The output follows a fixed pattern — parseable via regex.
-- **Adapter effort**: low. Serialize our transcript → call model → parse structured output.
-- **Caveat**: the 0.8B model is "coarse-grained moderation" (binary safe/unsafe), not
-  "unified classification" (which is the 4B model). The FG model (0.8B FG) adds 3D
-  diagnosis. The binary model is sufficient for the intent-vs-effect metric.
+- **Output**: testo generativo — `safe`, oppure `unsafe` (+ tassonomia 3D solo col modello
+  FG, in una chiamata separata). Da estrarre con regex, non da parsare come JSON puro.
+- **Adapter effort**: medium. Serialize transcript → generate → regex-parse. Il modello
+  Base basta per la metrica primary (l'unica che pubblichiamo); la 3D richiede il passaggio
+  FG separato.
 
-**Assessment**: the 0.8B model changes AgentDoG from "GPU required" to "CPU-compatible".
-It becomes a viable second candidate alongside LlamaFirewall, especially for the 3D
-fine-grained diagnosis (which LlamaFirewall doesn't provide).
+**Assessment**: the 0.8B Base model changes AgentDoG from "GPU required" to "CPU-compatible"
+for the label-only metric. The 3D diagnosis (FG) is also CPU-only, but as a separate pass —
+an optional descriptive add-on, not part of the measurement.
 
 ### LlamaFirewall on OpenRouter — confirmed feasible
 
