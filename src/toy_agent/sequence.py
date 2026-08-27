@@ -20,11 +20,6 @@ def known_containers_for(vendor: str) -> tuple[str, str]:
     return (AGENT_SERVICE, VENDOR_DETECTOR_CONFIG[vendor].service)
 
 
-KNOWN_CONTAINERS = known_containers_for("aidr")  # alias transitorio, solo per compatibilità
-                                                   # coi chiamanti pre-Task-11 (run_batch.py) —
-                                                   # rimosso in Task 11 quando run_batch.py
-                                                   # chiama known_containers_for(parsed.vendor)
-                                                   # direttamente
 
 
 @dataclass(frozen=True)

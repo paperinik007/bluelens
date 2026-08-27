@@ -15,32 +15,42 @@ from .orchestrator import CommandRunner, VENDOR_DETECTOR_CONFIG, default_command
 from .preflight import preflight_check_models
 from .report import render_report
 from .schema import TestCase
-from .sequence import BatchResult, CloseStep, CommandStep, KNOWN_CONTAINERS, OpenStep, execute_sequence
+from .sequence import BatchResult, CloseStep, CommandStep, OpenStep, execute_sequence, known_containers_for
 
 AGENT_TIMEOUT_S = 120.0
 DETECTOR_TIMEOUT_S = 180.0
 BREAKER_THRESHOLD = 3
 MAX_TRANSCRIPT_UNUSABLE_FRACTION = 0.10
 
+# Vendor -> host env var holding that vendor's OpenRouter key. run_batch.py
+# runs on the host, not inside a container — the active vendor's key must
+# be exported here too (same convention already documented for
+# DETECTOR_OPENROUTER_API_KEY, now extended).
+API_KEY_ENV_VAR_BY_VENDOR: dict[str, str] = {
+    "aidr": "DETECTOR_OPENROUTER_API_KEY",
+    "llamafirewall": "LLAMAFIREWALL_OPENROUTER_API_KEY",
+}
 
-def _default_sequence(dataset: list[TestCase], container_lifecycle: str) -> list:
+
+def _default_sequence(dataset: list[TestCase], container_lifecycle: str, vendor: str) -> list:
     """The whole-dataset sequence is never hand-written (design doc, 'Il
     caso comune non si scrive a mano') — generated here from the dataset and
     the chosen lifecycle. 'reused' and 'per-case' are the two mechanical
     extremes of the same open/command/close spectrum a hand-written script
     (Gap 15 mode 2) also uses, not a third category."""
+    containers = known_containers_for(vendor)
     if container_lifecycle == "reused":
         return (
-            [OpenStep(containers=KNOWN_CONTAINERS)]
+            [OpenStep(containers=containers)]
             + [CommandStep(case_id=c.case_id, counts_toward_metric=True) for c in dataset]
-            + [CloseStep(containers=KNOWN_CONTAINERS)]
+            + [CloseStep(containers=containers)]
         )
     if container_lifecycle == "per-case":
         steps: list = []
         for c in dataset:
-            steps.append(OpenStep(containers=KNOWN_CONTAINERS))
+            steps.append(OpenStep(containers=containers))
             steps.append(CommandStep(case_id=c.case_id, counts_toward_metric=True))
-            steps.append(CloseStep(containers=KNOWN_CONTAINERS))
+            steps.append(CloseStep(containers=containers))
         return steps
     raise ValueError(f"unknown container_lifecycle: {container_lifecycle!r}")
 
@@ -49,6 +59,7 @@ def execute_batch(
     dataset: list[TestCase],
     run_output_dir: Path,
     *,
+    vendor: str,
     container_lifecycle: str = "reused",
     agent_timeout_s: float = AGENT_TIMEOUT_S,
     detector_timeout_s: float = DETECTOR_TIMEOUT_S,
@@ -65,12 +76,10 @@ def execute_batch(
     wrapper so run_batch.py's public signature does not break (design doc,
     touch point 2)."""
     dataset_by_case_id = {c.case_id: c for c in dataset}
-    steps = _default_sequence(dataset, container_lifecycle)
+    steps = _default_sequence(dataset, container_lifecycle, vendor)
     return execute_sequence(
         steps, dataset_by_case_id, run_output_dir,
-        vendor="aidr",  # transitory hardcode — execute_batch has no vendor
-                        # parameter of its own yet; removed when a later task
-                        # wires --vendor through this function's own signature
+        vendor=vendor,
         agent_timeout_s=agent_timeout_s, detector_timeout_s=detector_timeout_s,
         breaker_threshold=breaker_threshold, api_key=api_key,
         run_test_case_fn=run_test_case_fn,
@@ -251,6 +260,10 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("dataset_dir")
     parser.add_argument("run_output_dir")
     parser.add_argument(
+        "--vendor", choices=list(VENDOR_DETECTOR_CONFIG), required=True,
+        help="which detector vendor to audit — always explicit, never persisted in .env (principio 8, SPIRIT.md)",
+    )
+    parser.add_argument(
         "--container-lifecycle", choices=["reused", "per-case"], default="reused",
         help="'reused' (default): one agent/detector container for the whole batch, cheap "
              "(no per-case rebuild) and faithful to the vendor's own declared measurement "
@@ -263,13 +276,15 @@ def main(argv: list[str] | None = None) -> None:
     )
     parsed = parser.parse_args(args)
 
+    vendor = parsed.vendor
+    detector_config = VENDOR_DETECTOR_CONFIG[vendor]
+
     dataset_dir = Path(parsed.dataset_dir)
     run_output_dir = Path(parsed.run_output_dir)
 
     dataset = load_dataset(dataset_dir)
-    vendor = "aidr"  # TODO Task 11: sostituire con parsed.vendor (--vendor CLI)
-    detector_config = VENDOR_DETECTOR_CONFIG[vendor]
-    api_key = os.environ.get("DETECTOR_OPENROUTER_API_KEY", "")
+    api_key_env_var = API_KEY_ENV_VAR_BY_VENDOR[vendor]
+    api_key = os.environ.get(api_key_env_var, "")
     agent_api_key = os.environ.get("AGENT_OPENROUTER_API_KEY", "")
 
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + secrets.token_hex(3)
@@ -289,19 +304,20 @@ def main(argv: list[str] | None = None) -> None:
 
     progress("=== agentic-security-audits — run ===")
     progress(f"run_id: {run_id}")
+    progress(f"vendor: {vendor}")
     progress(f"dataset: {dataset_dir} ({len(dataset)} cases)")
     progress(f"output:  {run_dir}")
     progress(
         f"measurer: {prov.get('measurer_commit', 'unknown')} "
         f"({'dirty' if prov.get('measurer_dirty') else 'clean'})   "
-        f"vendor: {prov.get('vendor_commit', 'unknown')}"
+        f"vendor_commit: {prov.get('vendor_commit') or prov.get('vendor_pip_version') or 'unknown'}"
     )
     progress(f"agent: {prov.get('agent_model', 'unknown')}")
-    progress(
-        f"detector: {prov.get('sifter_model', 'unknown')} / "
-        f"{prov.get('inspector_model', 'unknown')} / {prov.get('embed_model', 'unknown')}"
-    )
     progress(f"lifecycle: {parsed.container_lifecycle}")
+
+    if not api_key:
+        progress(f"refusing to run: {api_key_env_var} is not set in the host shell for --vendor {vendor}")
+        sys.exit(1)
 
     progress("--- preflight ---")
     preflight_failures = preflight_check_models(os.environ, api_key, agent_api_key=agent_api_key)
@@ -309,11 +325,12 @@ def main(argv: list[str] | None = None) -> None:
         for failure in preflight_failures:
             progress(f"preflight model check failed: {failure}")
         sys.exit(1)
-    progress("checking 4 models...  OK")
+    progress("checking models...  OK")
     progress("--- containers ---")
 
     result = execute_batch(
         dataset, run_dir,
+        vendor=vendor,
         container_lifecycle=parsed.container_lifecycle,
         api_key=api_key,
         progress_fn=progress,
