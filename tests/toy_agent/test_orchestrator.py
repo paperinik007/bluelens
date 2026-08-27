@@ -116,7 +116,7 @@ def test_detector_timeout_is_classified_as_infra_and_triggers_both_cleanup_calls
     assert result["verdict"]["status"] == "error"
     assert result["verdict"]["error_kind"] == "infra"
     assert len(runner.calls) == 5
-    assert "detector_adapter.evaluate_case" in runner.calls[3][0]
+    assert "detector_adapter.vendors.aidr.evaluate_case" in runner.calls[3][0]
     assert "aidr/providers" in runner.calls[4][0]
 
 
@@ -125,7 +125,7 @@ def test_detector_nonzero_exit_with_internal_timeout_in_stderr_triggers_both_cle
         CommandResult(returncode=0, stdout=_TRANSCRIPT_JSON, stderr=b""),
         _MARKER_OK,
         CommandResult(returncode=1, stdout=b"", stderr=b"evaluate_case failed: TimeoutError"),
-        CommandResult(returncode=0, stdout=b"", stderr=b""),  # pkill detector_adapter.evaluate_case — fallback for a hang during adapter construction
+        CommandResult(returncode=0, stdout=b"", stderr=b""),  # pkill detector_adapter.vendors.aidr.evaluate_case — fallback for a hang during adapter construction
         CommandResult(returncode=0, stdout=b"", stderr=b""),  # pkill aidr/providers — same fallback
     ])
     result = run_test_case(_TEST_CASE, command_index=0, run_command=runner)
@@ -133,7 +133,7 @@ def test_detector_nonzero_exit_with_internal_timeout_in_stderr_triggers_both_cle
     assert result["verdict"]["status"] == "error"
     assert result["verdict"]["error_kind"] == "application"  # process exited cleanly — only the cleanup calls fire, no reclassification to infra
     assert len(runner.calls) == 5
-    assert "detector_adapter.evaluate_case" in runner.calls[3][0]
+    assert "detector_adapter.vendors.aidr.evaluate_case" in runner.calls[3][0]
     assert "aidr/providers" in runner.calls[4][0]
 
 

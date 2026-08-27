@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from detector_adapter.adapter import (
+from detector_adapter.vendors.aidr.adapter import (
     DETECTOR_TOOL_NAME,
     AgenticThreatDetectionAdapter,
     detection_result_to_verdict,

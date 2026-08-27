@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
-python -m detector_adapter.vendor_proxy &
+python -m detector_adapter.vendors.aidr.vendor_proxy &
 proxy_pid=$!
 
 for port in 8100 8101 8102; do

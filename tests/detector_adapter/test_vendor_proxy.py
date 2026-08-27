@@ -6,7 +6,7 @@ from http.client import HTTPConnection
 import httpx
 import pytest
 
-from detector_adapter.vendor_proxy import (
+from detector_adapter.vendors.aidr.vendor_proxy import (
     DEFAULT_TIER_TO_MODEL,
     TIER_TO_MODEL,
     build_forwarder,

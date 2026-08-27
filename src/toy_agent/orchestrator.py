@@ -110,7 +110,7 @@ def run_test_case(
         10.0,
     )
 
-    detector_cmd = ["docker", "compose", "exec", "-T", "detector", "python", "-m", "detector_adapter.evaluate_case"]
+    detector_cmd = ["docker", "compose", "exec", "-T", "detector", "python", "-m", "detector_adapter.vendors.aidr.evaluate_case"]
     detector_result = run_command(detector_cmd, transcript_bytes, detector_timeout_s)
 
     if detector_result.failed_to_start:
@@ -132,7 +132,7 @@ def run_test_case(
         # non-fatal — a risk of degradation for the rest of the sequential
         # batch, not of total blockage, per the design doc.
         run_command(
-            ["docker", "compose", "exec", "-T", "detector", "pkill", "-f", "detector_adapter.evaluate_case"],
+            ["docker", "compose", "exec", "-T", "detector", "pkill", "-f", "detector_adapter.vendors.aidr.evaluate_case"],
             b"",
             10.0,
         )
@@ -158,7 +158,7 @@ def run_test_case(
         # provider children left behind by the unfinished construction.
         if b"TimeoutError" in detector_result.stderr:
             run_command(
-                ["docker", "compose", "exec", "-T", "detector", "pkill", "-f", "detector_adapter.evaluate_case"],
+                ["docker", "compose", "exec", "-T", "detector", "pkill", "-f", "detector_adapter.vendors.aidr.evaluate_case"],
                 b"",
                 10.0,
             )

@@ -4,7 +4,7 @@ import pytest
 
 aidr = pytest.importorskip("aidr", reason="aidr is only installed inside the detector container (docker/detector/Dockerfile)")
 
-from detector_adapter.adapter import transcript_dict_to_agent_event
+from detector_adapter.vendors.aidr.adapter import transcript_dict_to_agent_event
 
 _TRANSCRIPT = {
     "session_id": "case_007",

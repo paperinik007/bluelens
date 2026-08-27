@@ -52,7 +52,9 @@ RUN pip install --no-cache-dir pytest
 # A separate, dedicated pyproject.toml (docker/detector/detector_adapter.pyproject.toml)
 # — never the repo-root one, which stays toy_agent's alone.
 COPY docker/detector/detector_adapter.pyproject.toml /opt/detector_adapter/pyproject.toml
-COPY src/detector_adapter /opt/detector_adapter/src/detector_adapter
+COPY src/detector_adapter/__init__.py /opt/detector_adapter/src/detector_adapter/__init__.py
+COPY src/detector_adapter/vendors/__init__.py /opt/detector_adapter/src/detector_adapter/vendors/__init__.py
+COPY src/detector_adapter/vendors/aidr /opt/detector_adapter/src/detector_adapter/vendors/aidr
 WORKDIR /opt/detector_adapter
 RUN pip install --no-cache-dir -e .
 

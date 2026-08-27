@@ -5,8 +5,8 @@ import time
 
 import pytest
 
-import detector_adapter.evaluate_case as evaluate_case_module
-from detector_adapter.evaluate_case import run_evaluate_case
+import detector_adapter.vendors.aidr.evaluate_case as evaluate_case_module
+from detector_adapter.vendors.aidr.evaluate_case import run_evaluate_case
 
 
 class FakeAdapter:
