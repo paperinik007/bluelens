@@ -17,6 +17,15 @@ Dates below are as of 2026-08-20. Many products in this space have been acquired
 larger security vendors (Check Point, F5, Palo Alto Networks, Cisco/Splunk, SentinelOne, Snyk) — this
 consolidation is itself a market-structure finding, noted per candidate.
 
+> **Verifica successiva e decisione presa (2026-08-27)**: `docs/research/2026-08-27-agentdog-verification.md`
+> riverifica su fonti primarie fresche i fatti su AgentDoG, LlamaFirewall e Invariant Labs/Snyk citati
+> nella sezione "Updated recommendation (after external research)" più sotto, e corregge un dato
+> riportato acriticamente qui sotto (il claim "pushed 2026-08-19" per AgentDoG — al 27 agosto il repo
+> risulta fermo dall'8 giugno 2026). **Con l'utente si è deciso il secondo vendor: LlamaFirewall**
+> (Meta, MIT, mai acquisito), coerente con la "net recommendation" di questo stesso documento
+> (LlamaFirewall come fallback più forte dopo Invariant Labs) e con la riverifica del 27 agosto.
+> AgentDoG resta scartato per ora.
+
 ## Summary
 
 Fourteen vendor candidates verified as genuinely in-focus (real multi-step tool-call trajectory
@@ -704,6 +713,14 @@ Within that second, actually-reachable group:
   (Snyk, an established, publicly-recognized security company) backing continued maintenance — a
   stronger (c) signal than AgentDoG's academic-lab backing, if a weaker one than LlamaFirewall's Meta
   backing.
+
+> **Riverificato 2026-08-27** (vedi `docs/research/2026-08-27-agentdog-verification.md`): questa
+> classifica non è superata da un dettaglio successivo (AgentDoG 1.5) — la sezione appena sopra
+> ("External research update", riga 561) è già scritta con piena conoscenza di AgentDoG 1.5 0.8B, e la
+> riverifica del 27 agosto la conferma e la rafforza con dati freschi (adozione GitHub/HF, citazioni,
+> nessuna valutazione indipendente). Nota anche: `invariantlabs-ai/mcp-scan` è stato rinominato/trasferito
+> a `snyk/agent-scan` in seguito all'acquisizione (stesso repository ID, storia/stelle preservate), ora
+> con attività più recente di quanto risultasse qui.
 
 **Net recommendation, stated as a genuine tradeoff rather than a forced winner: Invariant Labs
 (Guardrails + MCP-Scan) is the strongest overall next candidate** — it is the only one of the four

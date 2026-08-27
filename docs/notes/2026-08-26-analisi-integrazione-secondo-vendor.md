@@ -5,6 +5,22 @@
 > corretto è la variante **Base 0.8B** (`AgentDoG1.5-Qwen3.5-0.8B`), non "Unified-0.8B" (che
 > non esiste — Unified è solo 4B), e l'architettura è **generativa** (non `pipeline("text-classification")`).
 
+> **⚠️ VENDOR CAMBIATO (2026-08-27, deciso con l'utente): secondo vendor = LlamaFirewall, non
+> AgentDoG.** `docs/research/2026-08-27-agentdog-verification.md` ha riverificato la scelta di
+> AgentDoG e l'ha trovata non sostenuta (repo GitHub fermo da ~3 mesi, nessun veicolo commerciale,
+> nessuna valutazione indipendente, 3 citazioni sul paper 1.5) — confermando invece la classifica
+> originaria del documento di ricerca vendor del 20 agosto (LlamaFirewall più forte su rilevanza di
+> mercato, Meta-backed, mai acquisito). **Questo intero documento resta come riferimento storico per
+> il livello generale "gestione N vendor" (§1.0 invarianti, §1.2 sezioni C/E-parziale/F/H/I —
+> parametrizzazione harness, provenance, report, tassonomia, test), che vale per qualsiasi secondo
+> vendor.** Le decisioni architetturali specifiche in §4 (Strada A container dedicato, modello
+> co-locato, sottopackage+COPY selettivo, modello baked, daemon residente, hash pesi, costo=0) sono
+> **specifiche di AgentDoG come modello locale embedded e non si applicano a LlamaFirewall**, che
+> passa per API (OpenRouter, come sifter/inspector/embed di aidr oggi) — verosimilmente Strada B
+> (adapter parametrizzato, riuso del pattern `vendor_proxy` esistente), nessun container nuovo, nessun
+> modello da bakare, costo reale non nullo. **Serve un nuovo documento di analisi/design per
+> LlamaFirewall prima di scrivere codice** — questo non va riusato come se fosse già quel documento.
+
 Data: 2026-08-26. Scritto da pi (sessione corrente) come follow-up del handoff
 `handoff-prossimo-pi-2026-08-26.md`. Scopo: registrare **dove** (file:riga) e
 **perché** va toccato il codice per integrare AgentDoG come secondo vendor, poi
