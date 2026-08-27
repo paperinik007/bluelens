@@ -35,36 +35,36 @@ def test_the_real_dockerfile_pin_is_unambiguous():
 
 
 def test_collect_provenance_records_every_declared_condition():
-    prov = provenance.collect_provenance({})
+    prov = provenance.collect_provenance({}, vendor="aidr")
     for key in (
-        "measurer_commit", "measurer_dirty", "vendor_commit", "agent_model",
-        "sifter_model", "inspector_model", "embed_model", "cost_source",
-        "agent_max_tokens", "agent_request_timeout_s", "agent_max_retries_per_case",
+        "vendor", "measurer_commit", "measurer_dirty", "vendor_commit", "vendor_pip_version",
+        "agent_model", "sifter_model", "inspector_model", "embed_model", "llamafirewall_model",
+        "cost_source", "agent_max_tokens", "agent_request_timeout_s", "agent_max_retries_per_case",
         "run_id",
     ):
         assert key in prov, key
 
 
 def test_collect_provenance_run_id_is_none_by_default():
-    assert provenance.collect_provenance({})["run_id"] is None
+    assert provenance.collect_provenance({}, vendor="aidr")["run_id"] is None
 
 
 def test_an_unset_model_env_var_is_recorded_as_the_code_default_not_omitted():
-    prov = provenance.collect_provenance({})
+    prov = provenance.collect_provenance({}, vendor="aidr")
     assert prov["agent_model"] == "openai/gpt-4o-mini"
     assert prov["sifter_model"] == "(default in detector_adapter)"
 
 
 def test_an_explicit_model_env_var_wins():
-    prov = provenance.collect_provenance({"AGENT_MODEL": "vendor/other", "SIFTER_MODEL": "vendor/sifter"})
+    prov = provenance.collect_provenance({"AGENT_MODEL": "vendor/other", "SIFTER_MODEL": "vendor/sifter"}, vendor="aidr")
     assert prov["agent_model"] == "vendor/other"
     assert prov["sifter_model"] == "vendor/sifter"
 
 
 def test_format_provenance_names_every_condition():
-    text = provenance.format_provenance(provenance.collect_provenance({}))
-    for token in ("measurer_commit=", "vendor_commit=", "agent_model=", "sifter_model=",
-                  "inspector_model=", "embed_model=", "cost_source="):
+    text = provenance.format_provenance(provenance.collect_provenance({}, vendor="aidr"))
+    for token in ("vendor=", "measurer_commit=", "vendor_commit=", "vendor_pip_version=", "agent_model=",
+                  "sifter_model=", "inspector_model=", "embed_model=", "llamafirewall_model=", "cost_source="):
         assert token in text
 
 
@@ -75,7 +75,7 @@ def test_format_provenance_declares_an_unrecorded_run_instead_of_guessing():
 
 
 def test_provenance_round_trips_through_disk(tmp_path):
-    prov = provenance.collect_provenance({"AGENT_MODEL": "vendor/other"})
+    prov = provenance.collect_provenance({"AGENT_MODEL": "vendor/other"}, vendor="aidr")
     provenance.write_provenance(prov, tmp_path)
     assert json.loads((tmp_path / "provenance.json").read_text(encoding="utf-8")) == prov
     assert provenance.read_provenance(tmp_path) == prov
@@ -86,6 +86,36 @@ def test_read_provenance_returns_none_for_a_directory_without_one(tmp_path):
 
 
 def test_collect_provenance_never_raises_outside_a_git_repo(tmp_path):
-    prov = provenance.collect_provenance({}, repo_root=tmp_path)
+    prov = provenance.collect_provenance({}, vendor="aidr", repo_root=tmp_path)
     assert prov["measurer_commit"] is None
     assert prov["vendor_commit"] is None
+
+
+def test_collect_provenance_records_the_active_vendor():
+    assert provenance.collect_provenance({}, vendor="aidr")["vendor"] == "aidr"
+    assert provenance.collect_provenance({}, vendor="llamafirewall")["vendor"] == "llamafirewall"
+
+
+def test_llamafirewall_pip_version_is_read_from_the_pinned_dockerfile(tmp_path):
+    dockerfile = tmp_path / "docker" / "detector-llamafirewall" / "Dockerfile"
+    dockerfile.parent.mkdir(parents=True)
+    dockerfile.write_text(
+        "RUN pip install --no-cache-dir --no-deps llamafirewall==1.0.3\n",
+        encoding="utf-8",
+    )
+    assert provenance.llamafirewall_pip_version(tmp_path) == "1.0.3"
+
+
+def test_llamafirewall_pip_version_is_none_when_the_pin_cannot_be_read(tmp_path):
+    assert provenance.llamafirewall_pip_version(tmp_path) is None
+
+
+def test_the_real_llamafirewall_dockerfile_pin_is_unambiguous():
+    assert provenance.llamafirewall_pip_version(Path(".")) == "1.0.3"
+
+
+def test_format_provenance_names_the_vendor_and_pip_version():
+    text = provenance.format_provenance(provenance.collect_provenance({}, vendor="llamafirewall"))
+    assert "vendor=llamafirewall" in text
+    assert "vendor_pip_version=" in text
+    assert "llamafirewall_model=" in text

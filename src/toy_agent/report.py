@@ -5,6 +5,16 @@ from typing import Optional
 from .metrics import MetricsResult, MetricScores, ConfidenceInterval, TechniqueBreakdown, effective_ground_truth, is_reclassified
 from .schema import TestCase, Verdict, Transcript
 
+_VENDOR_RATIONALE: dict[str, str] = {
+    "llamafirewall": (
+        "LlamaFirewall/AlignmentCheck e' stato scelto come secondo vendor dopo aver "
+        "riverificato e scartato AgentDoG (docs/research/2026-08-27-agentdog-verification.md) "
+        "- e' un prodotto Meta pubblicamente disponibile, con un meccanismo di detection "
+        "(alignment checking via LLM-giudice) strutturalmente diverso dalla pipeline "
+        "Sifter/Inspector di aidr."
+    ),
+}
+
 
 def _fmt_ci(ci: ConfidenceInterval) -> str:
     return f"[{ci.lower:.3f}, {ci.upper:.3f}]"
@@ -90,6 +100,7 @@ def render_report(
     verdicts: list[Verdict],
     metrics: MetricsResult,
     tool_name: str = "agentic-threat-detection",
+    vendor: str = "aidr",
     setup_notes: str = "",
     transcript_unusable: dict[str, str] | None = None,
     provenance: dict | None = None,
@@ -132,6 +143,16 @@ def render_report(
             "declared commit — a third party cannot reconstruct the exact measurer code "
             "behind these numbers (SPIRIT.md, principles 4 and 7)."
         )
+    if vendor != "aidr":
+        lines.append(
+            "**MULTI-VENDOR CAVEAT:** i vendor auditati misurano tassonomie diverse "
+            "(T-code aidr vs ALLOW/HUMAN_IN_THE_LOOP_REQUIRED LlamaFirewall) - i numeri "
+            "primary sono comparabili solo sul label malicious/benign contro il ground "
+            "truth, mai vendor-contro-vendor sulla tecnica."
+        )
+        rationale = _VENDOR_RATIONALE.get(vendor)
+        if rationale:
+            lines.append(rationale)
     if metrics.transcript_unusable_count:
         lines.append(
             f"**MEASURER WARNING:** {metrics.transcript_unusable_count} unjudgeable case(s) "
@@ -153,7 +174,10 @@ def render_report(
     lines.append("")
     lines.append("### Vendor-declared numbers (for comparison)")
     lines.append("")
-    lines.append("- **Vendor P=1.0, R=0.667** (300 sessions, 42 malicious)")
+    if vendor == "aidr":
+        lines.append("- **Vendor P=1.0, R=0.667** (300 sessions, 42 malicious)")
+    else:
+        lines.append(f"- *(no vendor-declared benchmark number recorded for {tool_name})*")
     lines.append("")
 
     # --- Part 2: Findings Table ---

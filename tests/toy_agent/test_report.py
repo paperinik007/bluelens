@@ -332,3 +332,51 @@ def test_a_leaked_exclusion_raises_an_alarm_in_the_report():
     report = render_report([case], [verdict], metrics, transcript_unusable={"c1": "model_error"})
     assert "MEASURER WARNING" in report
     assert "reached the metric computation" in report
+
+def test_report_includes_multi_vendor_caveat_when_vendor_is_not_aidr():
+    cases = [_make_case("c1", "benign")]
+    verdicts = [_make_verdict("c1", "benign")]
+    metrics = compute_metrics(cases, verdicts)
+    report = render_report(cases, verdicts, metrics, tool_name="llamafirewall-alignmentcheck", vendor="llamafirewall")
+    assert "MULTI-VENDOR CAVEAT" in report
+    assert "tassonomie diverse" in report or "different taxonomies" in report.lower()
+
+
+def test_report_omits_the_multi_vendor_caveat_for_aidr():
+    cases = [_make_case("c1", "benign")]
+    verdicts = [_make_verdict("c1", "benign")]
+    metrics = compute_metrics(cases, verdicts)
+    report = render_report(cases, verdicts, metrics)  # default vendor="aidr"
+    assert "MULTI-VENDOR CAVEAT" not in report
+
+
+def test_vendor_declared_numbers_line_is_omitted_for_a_non_aidr_vendor():
+    cases = [_make_case("c1", "benign")]
+    verdicts = [_make_verdict("c1", "benign")]
+    metrics = compute_metrics(cases, verdicts)
+    report = render_report(cases, verdicts, metrics, tool_name="llamafirewall-alignmentcheck", vendor="llamafirewall")
+    assert "P=1.0, R=0.667" not in report
+
+
+def test_vendor_declared_numbers_line_is_present_for_aidr():
+    cases = [_make_case("c1", "benign")]
+    verdicts = [_make_verdict("c1", "benign")]
+    metrics = compute_metrics(cases, verdicts)
+    report = render_report(cases, verdicts, metrics)
+    assert "P=1.0, R=0.667" in report
+
+
+def test_the_report_title_reflects_the_tool_name_passed_in():
+    cases = [_make_case("c1", "benign")]
+    verdicts = [_make_verdict("c1", "benign")]
+    metrics = compute_metrics(cases, verdicts)
+    report = render_report(cases, verdicts, metrics, tool_name="llamafirewall-alignmentcheck", vendor="llamafirewall")
+    assert report.startswith("# Audit Report: llamafirewall-alignmentcheck")
+
+
+def test_multi_vendor_caveat_includes_the_llamafirewall_choice_rationale():
+    cases = [_make_case("c1", "benign")]
+    verdicts = [_make_verdict("c1", "benign")]
+    metrics = compute_metrics(cases, verdicts)
+    report = render_report(cases, verdicts, metrics, tool_name="llamafirewall-alignmentcheck", vendor="llamafirewall")
+    assert "AgentDoG" in report  # motivazione della scelta, non solo "come funziona"

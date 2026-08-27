@@ -11,7 +11,7 @@ from typing import Callable
 from . import evidence, provenance
 from .dataset import load_dataset
 from .metrics import compute_metrics, is_reclassified, is_ground_truth_unknown
-from .orchestrator import CommandRunner, default_command_runner, run_test_case
+from .orchestrator import CommandRunner, VENDOR_DETECTOR_CONFIG, default_command_runner, run_test_case
 from .preflight import preflight_check_models
 from .report import render_report
 from .schema import TestCase
@@ -267,6 +267,8 @@ def main(argv: list[str] | None = None) -> None:
     run_output_dir = Path(parsed.run_output_dir)
 
     dataset = load_dataset(dataset_dir)
+    vendor = "aidr"  # TODO Task 11: sostituire con parsed.vendor (--vendor CLI)
+    detector_config = VENDOR_DETECTOR_CONFIG[vendor]
     api_key = os.environ.get("DETECTOR_OPENROUTER_API_KEY", "")
     agent_api_key = os.environ.get("AGENT_OPENROUTER_API_KEY", "")
 
@@ -281,7 +283,7 @@ def main(argv: list[str] | None = None) -> None:
         log_fh.write(line + "\n")
         log_fh.flush()
 
-    prov = provenance.collect_provenance(os.environ)
+    prov = provenance.collect_provenance(os.environ, vendor=vendor)
     prov["run_id"] = run_id
     provenance.write_provenance(prov, run_dir)
 
@@ -366,6 +368,8 @@ def main(argv: list[str] | None = None) -> None:
         result.cases,
         result.verdicts,
         metrics,
+        tool_name=detector_config.tool_name,
+        vendor=vendor,
         setup_notes=setup_notes,
         transcript_unusable=result.transcript_unusable,
         provenance=prov,

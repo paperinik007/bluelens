@@ -702,7 +702,7 @@ def test_main_refuses_to_write_the_report_when_a_tool_appears_only_in_malicious_
 
 
 def test_setup_notes_declares_every_experimental_condition_unconditionally():
-    prov = provenance.collect_provenance({})
+    prov = provenance.collect_provenance({}, vendor="aidr")
     notes = run_batch._setup_notes(
         BatchResult(cases=[], verdicts=[], total_count=0, executed_count=0, breaker_tripped=False),
         120.0, 180.0, 3, prov,
@@ -715,7 +715,7 @@ def test_setup_notes_declares_every_experimental_condition_unconditionally():
 def test_setup_notes_declares_the_unusable_threshold_even_when_nothing_was_excluded():
     notes = run_batch._setup_notes(
         BatchResult(cases=[], verdicts=[], total_count=0, executed_count=0, breaker_tripped=False),
-        120.0, 180.0, 3, provenance.collect_provenance({}),
+        120.0, 180.0, 3, provenance.collect_provenance({}, vendor="aidr"),
     )
     assert "transcript_unusable_threshold=" in notes
 
@@ -725,7 +725,7 @@ def test_setup_notes_reports_unusable_cases_by_cause():
         cases=[], verdicts=[], total_count=3, executed_count=3, breaker_tripped=False,
         transcript_unusable={"c1": "transcript_missing", "c2": "model_error", "c3": "arguments_parse_failed"},
     )
-    notes = run_batch._setup_notes(result, 120.0, 180.0, 3, provenance.collect_provenance({}))
+    notes = run_batch._setup_notes(result, 120.0, 180.0, 3, provenance.collect_provenance({}, vendor="aidr"))
     assert "transcript_unusable=3/3" in notes
     for cause in ("transcript_missing=1", "model_error=1", "arguments_parse_failed=1"):
         assert cause in notes
