@@ -119,3 +119,38 @@ def test_format_provenance_names_the_vendor_and_pip_version():
     assert "vendor=llamafirewall" in text
     assert "vendor_pip_version=" in text
     assert "llamafirewall_model=" in text
+
+
+def test_a_llamafirewall_run_does_not_carry_aidrs_pinned_commit_or_tier_models():
+    # I3 (final review): a llamafirewall run's provenance must never show
+    # aidr's git-pinned vendor_commit or aidr's per-tier models as if they
+    # had been used for this run.
+    prov = provenance.collect_provenance({}, vendor="llamafirewall")
+    assert prov["vendor_commit"] == provenance.NOT_APPLICABLE_FOR_VENDOR
+    assert prov["sifter_model"] == provenance.NOT_APPLICABLE_FOR_VENDOR
+    assert prov["inspector_model"] == provenance.NOT_APPLICABLE_FOR_VENDOR
+    assert prov["embed_model"] == provenance.NOT_APPLICABLE_FOR_VENDOR
+    # llamafirewall's own fields ARE populated.
+    assert prov["vendor_pip_version"] == "1.0.3"
+    assert prov["llamafirewall_model"] == "(default in detector_adapter)"
+
+
+def test_an_aidr_run_does_not_carry_llamafirewalls_pip_version_or_model():
+    # Symmetric case: an aidr run must not show llamafirewall's pip version
+    # or model as if it had been used.
+    prov = provenance.collect_provenance({}, vendor="aidr")
+    assert prov["vendor_pip_version"] == provenance.NOT_APPLICABLE_FOR_VENDOR
+    assert prov["llamafirewall_model"] == provenance.NOT_APPLICABLE_FOR_VENDOR
+    # aidr's own fields ARE populated.
+    assert prov["vendor_commit"] == "7fad14d2478707e68a09b8ecd9942dec8fde1614"
+    assert prov["sifter_model"] == "(default in detector_adapter)"
+
+
+def test_the_not_applicable_marker_is_distinguishable_from_a_genuinely_failed_read():
+    # The marker must never collapse into format_provenance's existing
+    # "unknown" wording for a value it could not read at all — those are two
+    # different situations (structurally irrelevant vs. a failed read).
+    prov = provenance.collect_provenance({}, vendor="llamafirewall")
+    text = provenance.format_provenance(prov)
+    assert f"vendor_commit={provenance.NOT_APPLICABLE_FOR_VENDOR}" in text
+    assert "vendor_commit=unknown" not in text
