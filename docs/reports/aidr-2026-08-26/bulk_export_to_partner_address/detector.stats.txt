@@ -1,0 +1,2 @@
+CONTAINER ID   NAME                                 CPU %     MEM USAGE / LIMIT     MEM %     NET I/O         BLOCK I/O       PIDS
+b4d8181e2aa2   agentic-security-audits-detector-1   0.05%     71.34MiB / 15.56GiB   0.45%     704kB / 106kB   82MB / 1.25MB   20

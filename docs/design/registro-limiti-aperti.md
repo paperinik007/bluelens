@@ -423,17 +423,14 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   sempre un secondo passaggio di revisione, indipendentemente da quanto la modifica
   sembri una semplice sincronizzazione.
 
-- **Secondo run reale completo (`run_output/`, 2026-08-21, 31/31 casi) prodotto ma non
-  pubblicato** — deliberatamente parcheggiato in attesa della chiusura di Gap 19: non è
-  possibile verificare a posteriori se questo run contiene già una corruzione mascherata
-  da Gap 19 (parsing di argomenti fallito su `bulk_export` assorbito silenziosamente come
-  chiamata pulita), perché il codice che la renderebbe visibile non esiste ancora.
-  Confrontato con `docs/reports/agentic-threat-detection-2026-08-19/report.md`: solo
-  differenze numeriche coerenti con la normale variabilità di campionamento del modello
-  (non un errore). Non tracciato in git (`run_output/` non in `.gitignore`, vedi voce
-  dedicata sopra). Decisione presa con l'utente, 2026-08-21: risolvere Gap 19 prima di
-  decidere se/come ripubblicare. Dettaglio completo:
-  `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 19.
+- ~~**Secondo run reale completo (`run_output/`, 2026-08-21, 31/31 casi) prodotto ma non
+  pubblicato**~~ — **risolto, 2026-08-28**: quel run specifico (pre-Gap19) non è stato
+  recuperato — reso superfluo da un run successivo, eseguito il 2026-08-26 con codice
+  già corretto post-Gap19/20/21 (`measurer_commit=da886e0`), pubblicato in
+  `docs/reports/aidr-2026-08-26/` (confronto numerico col report del 19/08 in `NOTE.md`
+  di quella cartella — differenze dentro la normale variabilità di campionamento, non un
+  effetto del fix). Il report del 19/08 resta pubblicato accanto, non sostituito
+  (principio 4/7 SPIRIT.md: nessun run scompare dalla storia).
 
 - **`run_output/` non tracciato e non in `.gitignore`** — `git check-ignore -q
   run_output` ritornava non-zero (non ignorato); ogni esecuzione di `run_batch.py`/
@@ -665,9 +662,9 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
 - **Piccole imprecisioni di documentazione emerse dalla final whole-branch review del
   piano multi-vendor LlamaFirewall (M1-M6, 2026-08-28)**, nessuna bloccante:
   README chiama "vendor_proxy.py" il file `openrouter_proxy.py` di llamafirewall (M1,
-  che non rimappa nulla per scelta esplicita); la sezione "Stato" del README non
-  riflette il secondo vendor né il secondo report pubblicato, e `--max-cost-usd` non è
-  documentato (M2); un commento in `orchestrator.py` sul deadline interno del
+  che non rimappa nulla per scelta esplicita); **(M2, prima metà risolta 2026-08-28)** la
+  sezione "Stato" del README ora riflette entrambi i vendor e i due report aidr — resta
+  aperta solo la seconda metà: `--max-cost-usd` non è documentato; un commento in `orchestrator.py` sul deadline interno del
   sottoprocesso non riflette che per llamafirewall il `pkill` esterno è l'unico
   meccanismo, non un fallback (M3, llamafirewall non ha un deadline interno come aidr);
   il report limita a 3 le misclassificazioni mostrate senza dichiararlo esplicitamente

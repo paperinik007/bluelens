@@ -1,0 +1,341 @@
+egress-proxy-1  | 2026/08/21 08:45:12| Processing Configuration File: /etc/squid/squid.conf (depth 0)
+egress-proxy-1  | 2026/08/21 08:45:12| Created PID file (/run/squid.pid)
+egress-proxy-1  | 2026/08/21 08:45:12| Current Directory is /
+egress-proxy-1  | 2026/08/21 08:45:12| Starting Squid Cache version 6.14 for x86_64-pc-linux-gnu...
+egress-proxy-1  | 2026/08/21 08:45:12| Service Name: squid
+egress-proxy-1  | 2026/08/21 08:45:12| Process ID 1
+egress-proxy-1  | 2026/08/21 08:45:12| Process Roles: master worker
+egress-proxy-1  | 2026/08/21 08:45:12| With 1048576 file descriptors available
+egress-proxy-1  | 2026/08/21 08:45:12| Initializing IP Cache...
+egress-proxy-1  | 2026/08/21 08:45:12| DNS IPv6 socket created at [::], FD 10
+egress-proxy-1  | 2026/08/21 08:45:12| DNS IPv4 socket created at 0.0.0.0, FD 11
+egress-proxy-1  | 2026/08/21 08:45:12| Adding nameserver 127.0.0.11 from /etc/resolv.conf
+egress-proxy-1  | 2026/08/21 08:45:12| Adding ndots 1 from /etc/resolv.conf
+egress-proxy-1  | 2026/08/21 08:45:12| Logfile: opening log daemon:/var/log/squid/access.log
+egress-proxy-1  | 2026/08/21 08:45:12| Logfile Daemon: opening log /var/log/squid/access.log
+egress-proxy-1  | 2026/08/21 08:45:12| Local cache digest enabled; rebuild/rewrite every 3600/3600 sec
+egress-proxy-1  | 2026/08/21 08:45:12| Store logging disabled
+egress-proxy-1  | 2026/08/21 08:45:12| Swap maxSize 0 + 262144 KB, estimated 20164 objects
+egress-proxy-1  | 2026/08/21 08:45:12| Target number of buckets: 1008
+egress-proxy-1  | 2026/08/21 08:45:12| Using 8192 Store buckets
+egress-proxy-1  | 2026/08/21 08:45:12| Max Mem  size: 262144 KB
+egress-proxy-1  | 2026/08/21 08:45:12| Max Swap size: 0 KB
+egress-proxy-1  | 2026/08/21 08:45:12| Using Least Load store dir selection
+egress-proxy-1  | 2026/08/21 08:45:12| Current Directory is /
+egress-proxy-1  | 2026/08/21 08:45:12| Finished loading MIME types and icons.
+egress-proxy-1  | 2026/08/21 08:45:12| HTCP Disabled.
+egress-proxy-1  | 2026/08/21 08:45:12| Pinger socket opened on FD 16
+egress-proxy-1  | 2026/08/21 08:45:12| Squid plugin modules loaded: 0
+egress-proxy-1  | 2026/08/21 08:45:12| Adaptation support is off.
+egress-proxy-1  | 2026/08/21 08:45:12| Accepting SSL bumped HTTP Socket connections at conn3 local=[::]:3128 remote=[::] FD 14 flags=9
+egress-proxy-1  |     listening port: 3128
+egress-proxy-1  | 2026/08/21 08:45:13| storeLateRelease: released 0 objects
+egress-proxy-1  | 2026/08/21 09:51:07| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 09:51:07| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 09:51:07| NETDB state saved; 2 entries, 11 msec
+egress-proxy-1  | 2026/08/21 10:43:29| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 10:43:29| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 10:43:29| NETDB state saved; 2 entries, 11 msec
+egress-proxy-1  | 2026/08/21 11:39:57| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 11:39:57| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 11:39:57| NETDB state saved; 2 entries, 7 msec
+egress-proxy-1  | 2026/08/21 12:28:04| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 12:28:04| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 12:28:04| NETDB state saved; 2 entries, 6 msec
+egress-proxy-1  | 2026/08/21 13:36:48| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 13:36:48| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 13:36:48| NETDB state saved; 2 entries, 10 msec
+egress-proxy-1  | 2026/08/21 14:34:37| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 14:34:37| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 14:34:37| NETDB state saved; 2 entries, 5 msec
+egress-proxy-1  | 2026/08/21 15:44:34| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 15:44:34| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 15:44:34| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/21 16:29:38| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 16:29:38| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 16:29:38| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/21 17:18:56| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 17:18:56| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 17:18:56| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/21 18:26:30| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 18:26:30| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 18:26:30| NETDB state saved; 2 entries, 5 msec
+egress-proxy-1  | 2026/08/21 19:43:51| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 19:43:51| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 19:43:51| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/21 20:43:09| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 20:43:09| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 20:43:09| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/21 21:35:00| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 21:35:00| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 21:35:00| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/21 22:28:35| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 22:28:35| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 22:28:35| NETDB state saved; 2 entries, 1 msec
+egress-proxy-1  | 2026/08/21 23:27:24| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 23:27:24| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/21 23:27:24| NETDB state saved; 2 entries, 4 msec
+egress-proxy-1  | 2026/08/22 18:14:11| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/22 18:14:11| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/22 18:14:11| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/22 18:55:23| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/22 18:55:23| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/22 18:55:23| NETDB state saved; 2 entries, 2 msec
+egress-proxy-1  | 2026/08/22 19:59:15| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/22 19:59:15| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/22 19:59:15| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/22 21:07:25| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/22 21:07:25| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/22 21:07:25| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/22 22:23:17| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/22 22:23:17| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/22 22:23:17| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/22 23:35:38| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/22 23:35:38| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/22 23:35:38| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 00:38:31| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 00:38:31| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 00:38:31| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 01:18:36| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 01:18:36| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 01:18:36| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 02:34:20| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 02:34:20| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 02:34:20| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 03:22:35| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 03:22:35| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 03:22:35| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 04:37:39| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 04:37:39| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 04:37:39| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 05:41:19| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 05:41:19| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 05:41:19| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 06:38:42| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 06:38:42| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 06:38:42| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 07:26:16| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 07:26:16| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 07:26:16| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 08:29:20| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 08:29:20| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 08:29:20| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 09:45:56| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 09:45:56| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 09:45:56| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 10:39:29| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 10:39:29| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 10:39:29| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 11:25:36| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 11:25:36| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 11:25:36| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 12:24:04| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 12:24:04| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 12:24:04| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 13:36:59| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 13:36:59| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 13:36:59| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 14:47:05| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 14:47:05| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 14:47:05| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 16:06:08| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 16:06:08| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 16:06:08| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 17:26:07| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 17:26:07| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 17:26:07| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 18:16:09| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 18:16:09| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 18:16:09| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 19:09:12| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 19:09:12| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 19:09:12| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 20:18:54| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 20:18:54| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 20:18:54| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 21:17:03| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 21:17:03| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 21:17:03| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 22:14:48| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 22:14:48| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 22:14:48| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 23:09:01| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 23:09:01| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 23:09:01| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/23 23:50:45| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 23:50:45| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/23 23:50:45| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 01:06:48| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 01:06:48| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 01:06:48| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 02:20:39| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 02:20:39| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 02:20:39| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 03:32:27| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 03:32:27| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 03:32:27| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 04:16:52| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 04:16:52| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 04:16:52| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 05:18:19| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 05:18:19| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 05:18:19| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 06:17:14| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 06:17:14| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 06:17:14| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 07:35:25| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 07:35:25| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 07:35:25| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 08:26:46| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 08:26:46| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 08:26:46| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 09:30:01| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 09:30:01| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 09:30:01| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 10:39:06| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 10:39:06| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 10:39:06| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 11:40:15| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 11:40:15| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 11:40:15| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 12:54:07| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 12:54:07| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 12:54:07| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 13:49:31| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 13:49:31| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 13:49:31| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 14:56:12| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 14:56:12| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 14:56:12| NETDB state saved; 2 entries, 2 msec
+egress-proxy-1  | 2026/08/24 15:43:36| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 15:43:36| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 15:43:36| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 17:03:11| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 17:03:11| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 17:03:11| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 18:17:09| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 18:17:09| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 18:17:09| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 18:58:06| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 18:58:06| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 18:58:06| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 20:00:24| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 20:00:24| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 20:00:24| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 20:52:43| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 20:52:43| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 20:52:43| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 21:41:40| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 21:41:40| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 21:41:40| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 22:45:18| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 22:45:18| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 22:45:18| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/24 23:54:08| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 23:54:08| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/24 23:54:08| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 01:13:53| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 01:13:53| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 01:13:53| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 02:07:17| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 02:07:17| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 02:07:17| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 02:59:40| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 02:59:40| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 02:59:40| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 04:12:26| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 04:12:26| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 04:12:26| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 05:23:00| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 05:23:00| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 05:23:00| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 06:38:21| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 06:38:21| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 06:38:21| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 07:52:16| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 07:52:16| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 07:52:16| NETDB state saved; 2 entries, 7 msec
+egress-proxy-1  | 2026/08/25 08:53:32| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 08:53:32| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 08:53:32| NETDB state saved; 2 entries, 35 msec
+egress-proxy-1  | 2026/08/25 09:41:41| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 09:41:41| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 09:41:41| NETDB state saved; 2 entries, 1 msec
+egress-proxy-1  | 2026/08/25 10:29:03| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 10:29:03| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 10:29:03| NETDB state saved; 2 entries, 1 msec
+egress-proxy-1  | 2026/08/25 11:09:27| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 11:09:27| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 11:09:27| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 12:24:02| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 12:24:02| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 12:24:02| NETDB state saved; 2 entries, 5 msec
+egress-proxy-1  | 2026/08/25 13:36:32| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 13:36:32| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 13:36:32| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 14:54:10| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 14:54:10| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 14:54:10| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 15:57:26| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 15:57:26| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 15:57:26| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 16:39:48| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 16:39:48| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 16:39:48| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 17:23:08| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 17:23:08| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 17:23:08| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 18:15:53| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 18:15:53| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 18:15:53| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 19:31:16| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 19:31:16| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 19:31:16| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 20:35:23| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 20:35:23| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 20:35:23| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 21:46:04| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 21:46:04| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 21:46:04| NETDB state saved; 2 entries, 1 msec
+egress-proxy-1  | 2026/08/25 22:55:13| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 22:55:13| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 22:55:13| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/25 23:45:49| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 23:45:49| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/25 23:45:49| NETDB state saved; 2 entries, 2 msec
+egress-proxy-1  | 2026/08/26 00:33:13| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 00:33:13| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 00:33:13| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/26 01:30:29| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 01:30:29| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 01:30:29| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/26 02:49:44| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 02:49:44| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 02:49:44| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/26 04:08:27| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 04:08:27| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 04:08:27| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/26 05:16:22| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 05:16:22| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 05:16:22| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/26 06:09:46| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 06:09:46| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 06:09:46| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/26 07:27:06| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 07:27:06| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 07:27:06| NETDB state saved; 2 entries, 2 msec
+egress-proxy-1  | 2026/08/26 08:41:51| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 08:41:51| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 08:41:51| NETDB state saved; 2 entries, 3 msec
+egress-proxy-1  | 2026/08/26 09:47:14| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 09:47:14| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 09:47:14| NETDB state saved; 2 entries, 0 msec
+egress-proxy-1  | 2026/08/26 10:57:13| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 10:57:13| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 10:57:13| NETDB state saved; 2 entries, 4 msec
+egress-proxy-1  | 2026/08/26 12:04:11| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 12:04:11| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 12:04:11| NETDB state saved; 2 entries, 4 msec
+egress-proxy-1  | 2026/08/26 13:19:26| Logfile: opening log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 13:19:26| Logfile: closing log stdio:/var/spool/squid/netdb.state
+egress-proxy-1  | 2026/08/26 13:19:26| NETDB state saved; 2 entries, 1 msec

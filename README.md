@@ -12,19 +12,29 @@ audit sono in [`SPIRIT.md`](SPIRIT.md) — leggerlo prima di qualunque contribut
 
 ## Stato
 
-**Fase 1** (in corso): audit indipendente di
-[`agentic-threat-detection`](https://github.com/FareedKhan-dev/agentic-threat-detection)
-di FareedKhan-dev. Design completo — toy agent, pipeline di misura indipendente dal
-tool testato, schema dati, adapter, modulo metriche — passato per council checkpoint e
-grill-with-docs. Vedi [`docs/design/2026-08-14-toy-agent-e-pipeline-misura.md`](docs/design/2026-08-14-toy-agent-e-pipeline-misura.md).
-Implementazione in corso: Plan 1 (toy agent), Plan 2 (modulo metriche/report), Plan 3
-(container di controllo con egress di rete ristretto a `openrouter.ai`), Gap 9 (split
-del container di controllo in `agent`/`detector` isolati, vedi "Struttura" sotto), Plan 4
-(`run_batch.py`, il batch orchestrator che fa girare l'intero dataset attraverso
-`agent`/`detector` e produce il report finale, vedi "Come eseguire" sotto) e Plan 5 (il
-dataset di audit — catalogo, 31 `TestCase`, gate di copertura/anti-scorciatoia, vedi
-`catalog/`/`dataset/` sotto) sono completi e testati. Primo report reale pubblicato in
-`docs/reports/`.
+Architettura N-vendor: harness (toy agent + pipeline di misura, indipendente dal tool
+testato) e due vendor auditati finora, entrambi con report reali pubblicati in
+`docs/reports/`:
+
+- **aidr** ([`agentic-threat-detection`](https://github.com/FareedKhan-dev/agentic-threat-detection)
+  di FareedKhan-dev) — due report: [`agentic-threat-detection-2026-08-19/`](docs/reports/agentic-threat-detection-2026-08-19/)
+  (primo run reale) e [`aidr-2026-08-26/`](docs/reports/aidr-2026-08-26/) (rieseguito
+  dopo la chiusura di Gap 19/20/21 — vedi `NOTE.md` in quella cartella per il confronto
+  numerico tra i due). Finding centrale: il detector giudica il linguaggio del prompt
+  (intento), non l'effetto reale delle azioni dell'agente — vedi
+  [`docs/research/2026-08-26-analisi-metriche-intento-vs-effetto.md`](docs/research/2026-08-26-analisi-metriche-intento-vs-effetto.md).
+- **LlamaFirewall** (AlignmentCheck, Meta) — [`llamafirewall-2026-08-28/`](docs/reports/llamafirewall-2026-08-28/).
+  Finding centrale: il detector valuta un'azione alla volta contro l'istruzione
+  immediata, mai la legittimità dell'obiettivo né l'effetto complessivo — vedi
+  [`docs/research/2026-08-28-analisi-llamafirewall-alignmentcheck-azione-per-azione.md`](docs/research/2026-08-28-analisi-llamafirewall-alignmentcheck-azione-per-azione.md).
+
+Design completo — toy agent, pipeline di misura, schema dati, adapter, modulo metriche
+— passato per council checkpoint e grill-with-docs. Vedi
+[`docs/design/2026-08-14-toy-agent-e-pipeline-misura.md`](docs/design/2026-08-14-toy-agent-e-pipeline-misura.md)
+e, per l'architettura multi-vendor,
+[`docs/design/2026-08-27-multi-vendor-llamafirewall-design.md`](docs/design/2026-08-27-multi-vendor-llamafirewall-design.md).
+Limiti aperti e debito tecnico dichiarati per intero in
+[`docs/design/registro-limiti-aperti.md`](docs/design/registro-limiti-aperti.md).
 
 ## Struttura
 
