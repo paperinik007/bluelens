@@ -156,6 +156,53 @@ Nothing in the published reports states this explicitly beyond the existing
 `registro-limiti-aperti.md` entry on taxonomy coverage — a reader could reasonably
 assume "LlamaFirewall" means the vendor's full layered defense was evaluated.
 
+## 4b. Independent second read (Pi/minimax, 2026-08-29) — cross-checked, mostly converges
+
+Separately from this doc, the user ran an independent "fresh opinion, ignore prior
+work" pass over the same local vendor clone via Pi (session model: minimax). Its
+architectural read was cross-checked against the vendor source in this same pass
+(not taken on faith — same discipline as the rest of this doc):
+
+- **Confirmed accurate**: `CustomCheckScanner`'s default `model_name` is
+  `meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8` over `https://api.together.xyz/v1`
+  (`TOGETHER_API_KEY`) — verified directly in
+  `scanners/custom_check_scanner.py:35-37`. This is the vendor's out-of-the-box
+  default; **this project's `OpenRouterAlignmentCheck` already overrides all three**
+  (`adapter.py`: `DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct"`,
+  `API_BASE_URL` a local OpenRouter proxy, `LLAMAFIREWALL_OPENROUTER_API_KEY`) — the
+  Together-AI requirement Pi's report treats as an open cost/setup question is already
+  solved differently here, with a real measured cost ($0.0318/31 cases, see
+  `registro-limiti-aperti.md`).
+- **Confirmed accurate**: multi-scanner aggregation policy — verified directly in
+  `llamafirewall.py::scan()` (lines ~134-167): when a `Role` has more than one
+  scanner configured, `ScanDecision.BLOCK` wins if any scanner returns it, otherwise
+  the decision with the highest score wins. **But this aggregation only fires within
+  a single `scan()` call for one `Role`'s scanner list** — it does not apply across
+  different roles. Since PromptGuard would naturally sit on `Role.USER` (per the
+  vendor's own default `Configuration`) and AlignmentCheck is already registered on
+  `Role.ASSISTANT`, adding PromptGuard would **not** trigger the vendor's own
+  BLOCK-wins arbitration at all — the two scanners would produce two independent
+  `ScanResult`s from two independent calls (`scan()` per user turn,
+  `scan_replay()` on the full trace), same as today. Combining those two results into
+  one `Verdict` for this project's schema remains an open design question, but it is
+  **our own aggregation to design, not an inherited vendor policy to reverse-engineer.**
+- **Softer/unverified in Pi's report, tightened here**: it described Prompt-Guard-2's
+  licensing as "clausole specifiche sull'uso responsabile" without a primary-source
+  fetch (no HF API or web call appears in its session transcript). §3 above already
+  has the harder fact, fetched from the HF API directly: `gated: manual` under the
+  Llama 4 Community License, a real approval-form requirement, not just a usage
+  clause to note.
+- **The one framing gap that matters most**: Pi's report was explicitly instructed to
+  ignore this project's existing work, so it treats "should we integrate
+  AlignmentCheck" as an open question and recommends "start with a minimal
+  PromptGuard + AlignmentCheck adapter" — describing as future work something already
+  built, containerized, and run for real (§2 above, `docs/reports/llamafirewall-2026-08-28/`).
+  Its independent technical read is corroborating evidence for §1-§3 of this doc
+  (particularly the AlignmentCheck single-action-vs-user-message mechanism, which it
+  derived from the system prompt while this doc derived the same conclusion from real
+  proxy logs — two different methods, same answer), but its recommendation is not
+  usable as-is without the missing context restored.
+
 ## 5. Not resolved here
 
 This doc is research, not a design or implementation. What it would take to wire
@@ -177,6 +224,12 @@ entry, 2026-08-29) — not decided or scoped in this doc.
   `Configuration`, `create_scanner`).
 - This project's source: `src/detector_adapter/vendors/llamafirewall/evaluate_case.py`,
   `adapter.py`; `docker/detector-llamafirewall/Dockerfile`.
+- Local vendor clone, cross-checking §4b's claims from the independent Pi/minimax
+  pass: `scanners/custom_check_scanner.py` (default model/API/env-var), `utils/base_llm.py`
+  (OpenAI-SDK-compatible client, confirming any OpenAI-compatible `base_url` works —
+  which is exactly what this project's OpenRouter override relies on), `llamafirewall.py`
+  lines ~108-167 (`scan()` per-role aggregation: BLOCK wins within one role's scanner
+  list, decision by highest score otherwise; does not aggregate across roles).
 - Hugging Face API: `huggingface.co/api/models/meta-llama/Llama-Prompt-Guard-2-86M`,
   fetched 2026-08-29 (gated status, license, pipeline_tag, architecture tag).
   Note: a direct fetch of the raw `config.json` returned HTTP 401 (gated repo,
