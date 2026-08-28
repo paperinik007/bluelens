@@ -6,7 +6,7 @@ from typing import Any
 TOOL_NAME = "llamafirewall-alignmentcheck"
 
 
-def scan_decision_to_verdict(case_id: str, scan_result: Any) -> dict:
+def scan_decision_to_verdict(case_id: str, scan_result: Any, latency_s: float | None = None) -> dict:
     """Normalize a llamafirewall ScanResult (duck-typed here — only attribute
     access, no isinstance check, so this stays testable without llamafirewall
     installed) into our Verdict JSON shape. Mirrors
@@ -14,7 +14,12 @@ def scan_decision_to_verdict(case_id: str, scan_result: Any) -> dict:
 
     decision is compared by .value (a plain string on the real ScanDecision
     enum) rather than by importing ScanDecision — never needs llamafirewall
-    importable to be called or tested."""
+    importable to be called or tested.
+
+    latency_s (I4, final review): wall-clock time of the actual scan call,
+    measured by the caller (evaluate_case.py, around firewall.scan_replay())
+    — this function only records it, since scan_result itself carries no
+    timing information."""
     decision_value = getattr(scan_result.decision, "value", scan_result.decision)
     is_malicious = decision_value == "human_in_the_loop_required"
     return {
@@ -26,7 +31,7 @@ def scan_decision_to_verdict(case_id: str, scan_result: Any) -> dict:
         "technique_detected": None,
         "rationale": scan_result.reason or None,
         "cost_usd": None,
-        "latency_s": None,
+        "latency_s": latency_s,
         "in_tokens": None,
         "out_tokens": None,
     }

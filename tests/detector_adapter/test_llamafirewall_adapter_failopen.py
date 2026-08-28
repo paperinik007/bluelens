@@ -81,6 +81,24 @@ def test_run_evaluate_case_reports_normally_when_the_llm_call_succeeds(monkeypat
     assert verdict["label"] == "benign"
 
 
+def test_run_evaluate_case_populates_a_positive_latency_on_a_successful_scan(monkeypatch):
+    # I4 (final review): latency_s must be a real measured wall-clock value
+    # on the normal (non-fail-open) path, not None.
+    from llamafirewall.utils.base_llm import LLMClient
+    from detector_adapter.vendors.llamafirewall.adapter import AlignmentCheckOutputSchema
+
+    monkeypatch.setenv("LLAMAFIREWALL_OPENROUTER_API_KEY", "sk-test-not-real")
+
+    async def _ok(self, *a, **kw):
+        return AlignmentCheckOutputSchema(observation="o", thought="t", conclusion=False)
+    monkeypatch.setattr(LLMClient, "call", _ok)
+    OpenRouterAlignmentCheck.fail_open_detected = False
+
+    verdict = run_evaluate_case(_DATA)
+    assert isinstance(verdict["latency_s"], float)
+    assert verdict["latency_s"] > 0
+
+
 def test_the_flag_is_reset_between_cases_a_prior_fail_open_does_not_leak(monkeypatch):
     from llamafirewall.utils.base_llm import LLMClient
     from detector_adapter.vendors.llamafirewall.adapter import AlignmentCheckOutputSchema

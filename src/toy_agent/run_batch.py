@@ -21,9 +21,13 @@ AGENT_TIMEOUT_S = 120.0
 DETECTOR_TIMEOUT_S = 180.0
 BREAKER_THRESHOLD = 3
 MAX_TRANSCRIPT_UNUSABLE_FRACTION = 0.10
-MAX_COST_USD_DEFAULT = 5.00  # PROVVISORIO — nessun costo reale ancora
-                              # misurato per LlamaFirewall (Task 17 lo
-                              # misura e rivede questo default, v3 fix)
+MAX_COST_USD_DEFAULT = 5.00  # Costo reale misurato per LlamaFirewall (Task 17,
+                              # 2026-08-28): $0.0318/31 casi ($0.00102/caso);
+                              # aidr: $0.0136/31 casi ($0.00044/caso) - circa
+                              # 2.3x piu' caro per caso, stesso ordine di
+                              # grandezza. Confermato ampiamente conservativo
+                              # (>150x il costo osservato per l'intero run) -
+                              # vedi docs/design/registro-limiti-aperti.md.
 
 # Vendor -> host env var holding that vendor's OpenRouter key. run_batch.py
 # runs on the host, not inside a container — the active vendor's key must
@@ -287,7 +291,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--max-cost-usd", type=float, default=MAX_COST_USD_DEFAULT,
         help="cumulative proxy cost (USD) above which the batch is interrupted (not the single case) — "
-             "PROVVISORIO, da rivedere sul primo costo reale misurato (Task 17)",
+             "default measured and confirmed conservative on a real run (Task 17): LlamaFirewall "
+             "$0.0318/31 cases, aidr $0.0136/31 cases, both >150x below this default",
     )
     parsed = parser.parse_args(args)
 

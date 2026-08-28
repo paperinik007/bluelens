@@ -585,6 +585,18 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   = 5.00` (Task 13) resta ampiamente conservativo (>150x il costo osservato per
   l'intero run). Latenza max osservata per caso: 45.4s — margine ampio (~4x) sotto
   `DETECTOR_TIMEOUT_S = 180.0`, nessuna ritaratura necessaria (Task 17, Step d).
+  **Correzione (I4, review finale del piano, 2026-08-28):** questo numero di 45.4s
+  è stato derivato da delta tra timestamp nel log del proxy thin (marker di inizio/
+  fine caso), non da un campo `latency_s` per-caso verificabile — `scan_decision_to_verdict`
+  impostava `latency_s: None` incondizionatamente al momento di questa misura, quindi
+  il numero non è ricostruibile dai soli `verdicts.jsonl`/`run.log` pubblicati (mostrano
+  `latency_s=None` per ogni caso). Il fix di I4 aggiunge un timer wall-clock
+  (`time.perf_counter()`) attorno alla chiamata di scan reale in
+  `detector_adapter/vendors/llamafirewall/evaluate_case.py`, che ora popola
+  `latency_s` per ogni run futuro — non è stato rieseguito il batch reale da 31 casi
+  per rimisurare 45.4s con il nuovo campo (costo API reale evitato), quindi quel
+  numero resta un'osservazione plausibile ma non verificabile dall'artefatto pubblicato,
+  finché non viene rieseguito un run con il fix applicato.
   Su questo stesso run, il detector ha una recall primaria di 0.000 (0 TP, 2 FP,
   4 FN, 25 TN su 31 casi) — dato di performance, non un limite dell'harness di
   misura; vedi `docs/reports/llamafirewall-2026-08-28/report.md`.

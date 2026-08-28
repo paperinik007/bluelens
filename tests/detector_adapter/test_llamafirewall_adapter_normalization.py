@@ -64,3 +64,15 @@ def test_tool_name_is_the_declared_llamafirewall_constant():
 def test_status_is_ok_on_the_normal_path():
     v = scan_decision_to_verdict("c9", _scan_result())
     assert v["status"] == "ok"
+
+
+def test_latency_s_defaults_to_none_when_the_caller_does_not_pass_it():
+    v = scan_decision_to_verdict("c10", _scan_result())
+    assert v["latency_s"] is None
+
+
+def test_latency_s_is_recorded_when_the_caller_passes_it():
+    # I4 (final review): evaluate_case.py measures wall-clock latency around
+    # the actual scan call and passes it through here.
+    v = scan_decision_to_verdict("c11", _scan_result(), latency_s=1.23)
+    assert v["latency_s"] == 1.23
