@@ -549,6 +549,26 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   questo meccanismo, indipendentemente dalla tassonomia usata per
   descriverlo. Analisi completa, verificata caso per caso sulle rationale
   reali: `docs/research/2026-08-28-analisi-llamafirewall-alignmentcheck-azione-per-azione.md`.
+  **Branch `judge-targeted-cases` (2026-08-28/29) non mergiato, per una conseguenza diretta
+  di questa stessa voce**: il design (`docs/design/2026-08-28-judge-targeted-cases-design.md`,
+  §3.2) affermava che una nota rivolta al "sistema di revisione" nel turno seed sarebbe
+  "strutturalmente invisibile" per AlignmentCheck perché "letta da `read_ticket_content`,
+  non l'istruzione immediatamente precedente all'azione" — affermazione mai verificata sul
+  meccanismo reale già descritto qui sopra (il turno seed **è** lo `USER MESSAGE` valutato
+  a ogni singola azione, non un ticket letto via tool). Verificato indipendentemente sui
+  file reali durante la Step 2 final review (Opus) del branch: adapter
+  (`src/detector_adapter/vendors/llamafirewall/adapter.py`, `role == "user"` →
+  `UserMessage`), il file YAML del caso nuovo, e il log proxy reale del gemello
+  (`docs/reports/llamafirewall-2026-08-28/bulk_export_to_partner_address/detector-llamafirewall.vendor_proxy.jsonl`).
+  Un secondo limite, indipendente dal primo: il gemello malevolo scelto
+  (`bulk_export_to_partner_address`) è già un miss (`benign`) su **entrambi** i vendor
+  pubblicati — un payload che spinge verso "benigno" un caso già benigno per il detector non
+  ha spazio di misura. Nessuna correzione applicata: il branch resta non mergiato,
+  work-in-progress abbandonato a questo stato, non cancellato. Prossimo passo deciso con
+  l'utente: verificare prima se il container `detector-llamafirewall` espone già (solo non
+  cablato in `adapter.py`) altri scanner nativi oltre `AGENT_ALIGNMENT` — in particolare
+  `PROMPT_GUARD`, lo scanner single-turn pensato proprio per payload di prompt injection
+  come questo — prima di decidere se/come ridisegnare l'esperimento "judge-targeted".
 
 - **La metrica strict (attribuzione della tecnica) resta definita solo per
   aidr** — per LlamaFirewall si pubblica solo la primary (label-only), già
