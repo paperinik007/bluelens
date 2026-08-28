@@ -41,17 +41,31 @@ dataset di audit — catalogo, 31 `TestCase`, gate di copertura/anti-scorciatoia
   `docs/design/2026-08-14-toy-agent-gap-tracking.md`, Gap 17).
 - `src/toy_agent/` — pacchetto del toy agent (schema, stato finto, tool, loop ReAct,
   modulo metriche, orchestrazione agent -> detector).
-- `src/detector_adapter/` — pacchetto che gira nel container `detector`: adapter verso
-  il tool vendor sotto audit (`AgenticThreatDetectionAdapter`, entrypoint
-  `evaluate_case`) e `vendor_proxy.py`, il thin proxy di rimappatura verso OpenRouter
-  usato dal tool vendor.
+- `src/detector_adapter/` — pacchetto che gira nel container del detector: un
+  adapter per vendor sotto `vendors/` (`vendors/aidr/`, `vendors/llamafirewall/`),
+  ciascuno con il proprio `evaluate_case` entrypoint e il proprio thin proxy di
+  rimappatura verso OpenRouter (`vendor_proxy.py`) — isolamento fisico tra vendor
+  garantito anche a livello di import (test dedicato).
 - `tests/` — test automatici dei pacchetti `toy_agent` e `detector_adapter`.
-- `docker/` — Dockerfile e configurazione dei tre container: `agent` (esegue solo il
-  toy agent), `detector` (clone del tool vendor sotto audit + `detector_adapter`) ed
-  `egress-proxy`, l'unico intermediario di rete tra `agent`/`detector` e l'esterno —
-  ed è anche l'unica rete Docker condivisa tra i due: `agent` e `detector` non hanno
-  alcuna rotta di rete diretta l'uno verso l'altro (Gap 9, confine misuratore/misurato).
-- `docker-compose.yml` — orchestrazione dei tre container.
+- `docker/` — Dockerfile e configurazione dei container: `agent` (esegue solo il
+  toy agent), `detector`/`detector-llamafirewall` (un container per vendor, ciascuno
+  clone del proprio tool vendor sotto audit + `detector_adapter`) ed `egress-proxy`,
+  l'unico intermediario di rete tra `agent`/detector e l'esterno — ed è anche l'unica
+  rete Docker condivisa tra loro: `agent` e i container detector non hanno alcuna
+  rotta di rete diretta l'uno verso l'altro (Gap 9, confine misuratore/misurato).
+- `docker-compose.yml` — orchestrazione dei container.
+
+## Vendor supportati
+
+- `aidr` (agentic-threat-detection, FareedKhan-dev): `python -m toy_agent.run_batch dataset run_output --vendor aidr`
+- `llamafirewall` (LlamaFirewall/AlignmentCheck, Meta): `python -m toy_agent.run_batch dataset run_output --vendor llamafirewall`
+
+Ogni vendor ha il proprio container Docker isolato (`detector`/
+`detector-llamafirewall`), la propria rete (`detector_net`/
+`detector_llamafirewall_net`, entrambe `internal: true`), il proprio
+`.env.<vendor>` (mai una chiave condivisa tra vendor). `--vendor` è sempre
+un argomento CLI esplicito — mai persistente in `.env` (principio 8,
+SPIRIT.md).
 
 ## Come eseguire
 
@@ -59,6 +73,9 @@ Servono due chiavi API OpenRouter distinte, una per `agent` e una per `detector`
 (`AGENT_OPENROUTER_API_KEY` e `DETECTOR_OPENROUTER_API_KEY`) — chiavi separate per
 principio, non per necessità tecnica: un container compromesso non deve poter
 spendere o agire per conto dell'altro (Gap 9, confine misuratore/misurato).
+Per `--vendor llamafirewall` serve inoltre una terza chiave, dedicata,
+in `.env.llamafirewall` (`LLAMAFIREWALL_OPENROUTER_API_KEY` + `LLAMAFIREWALL_MODEL`)
+— mai la stessa chiave di `DETECTOR_OPENROUTER_API_KEY`, per lo stesso principio.
 
 I modelli per i tier del detector (`SIFTER_MODEL`, `INSPECTOR_MODEL`, `EMBED_MODEL`)
 e per l'agente giocattolo (`AGENT_MODEL`) sono opzionali — lasciare vuoto per usare
@@ -82,11 +99,13 @@ container. A differenza di prima, possiede lui stesso il ciclo di vita di `agent
 `--container-lifecycle` sceglie come:
 
 ```
-python -m toy_agent.run_batch <dataset_dir> <run_output_dir>
+python -m toy_agent.run_batch <dataset_dir> <run_output_dir> --vendor aidr
 # equivalente a:
-python -m toy_agent.run_batch <dataset_dir> <run_output_dir> --container-lifecycle reused
+python -m toy_agent.run_batch <dataset_dir> <run_output_dir> --vendor aidr --container-lifecycle reused
 # un container fresco per ogni caso (isolamento massimo, costo più alto):
-python -m toy_agent.run_batch <dataset_dir> <run_output_dir> --container-lifecycle per-case
+python -m toy_agent.run_batch <dataset_dir> <run_output_dir> --vendor aidr --container-lifecycle per-case
+# secondo vendor (LlamaFirewall/AlignmentCheck), stessa CLI:
+python -m toy_agent.run_batch <dataset_dir> <run_output_dir> --vendor llamafirewall
 ```
 
 Attenzione alle worktree: `python -m toy_agent.run_batch` risolve il pacchetto
@@ -116,10 +135,12 @@ volta: un secondo `run_batch.py` avviato in parallelo, o un comando `docker comp
 lanciato a mano in un altro terminale mentre un batch è in corso, entra in competizione
 con i container di quel batch e può distruggerli a metà run.
 
-`run_batch.py` legge `DETECTOR_OPENROUTER_API_KEY` direttamente dall'ambiente del processo
-Python host (la stessa variabile impostata in `.env`, ma letta qui dall'host, non passata
-attraverso Docker — va quindi esportata anche nella shell da cui si lancia il comando, non
-solo in `.env`). `<dataset_dir>` è una directory di file YAML `TestCase` (Plan 5); non viene
+`run_batch.py` legge la chiave del vendor scelto (`DETECTOR_OPENROUTER_API_KEY` per
+`--vendor aidr`, `LLAMAFIREWALL_OPENROUTER_API_KEY` per `--vendor llamafirewall`)
+direttamente dall'ambiente del processo Python host (la stessa variabile impostata
+in `.env`/`.env.llamafirewall`, ma letta qui dall'host, non passata attraverso Docker
+— va quindi esportata anche nella shell da cui si lancia il comando, non solo nel
+file). `<dataset_dir>` è una directory di file YAML `TestCase` (Plan 5); non viene
 mai scritta.
 
 **Ogni run ha la sua directory.** `<run_output_dir>` è la radice; ogni esecuzione crea al

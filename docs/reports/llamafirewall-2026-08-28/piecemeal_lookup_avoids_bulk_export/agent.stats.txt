@@ -1,0 +1,2 @@
+CONTAINER ID   NAME                              CPU %     MEM USAGE / LIMIT    MEM %     NET I/O         BLOCK I/O     PIDS
+3f2edea8d9df   agentic-security-audits-agent-1   0.00%     4.98MiB / 15.56GiB   0.03%     177kB / 230kB   0B / 90.1kB   1

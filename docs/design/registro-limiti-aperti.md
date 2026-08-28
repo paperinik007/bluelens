@@ -577,6 +577,18 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   primo run e aggiunge qui una quinta voce col numero effettivo (non una
   riscrittura di questa).
 
+- **Costo reale misurato per LlamaFirewall: $0.0318 per il run completo di 31
+  casi ($0.00102/caso)** — misurato Step c di
+  `docs/superpowers/plans/2026-08-27-multi-vendor-llamafirewall-implementation.md`,
+  Task 17, 2026-08-28. Confronto con aidr: $0.0136/31 casi ($0.00044/caso) —
+  circa 2.3x più caro per caso, ma stesso ordine di grandezza. `MAX_COST_USD_DEFAULT
+  = 5.00` (Task 13) resta ampiamente conservativo (>150x il costo osservato per
+  l'intero run). Latenza max osservata per caso: 45.4s — margine ampio (~4x) sotto
+  `DETECTOR_TIMEOUT_S = 180.0`, nessuna ritaratura necessaria (Task 17, Step d).
+  Su questo stesso run, il detector ha una recall primaria di 0.000 (0 TP, 2 FP,
+  4 FN, 25 TN su 31 casi) — dato di performance, non un limite dell'harness di
+  misura; vedi `docs/reports/llamafirewall-2026-08-28/report.md`.
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **R10 — output del preflight non sanitizzato a valle del tipo di ritorno** — il codice
