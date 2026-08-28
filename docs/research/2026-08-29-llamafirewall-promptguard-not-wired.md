@@ -252,6 +252,18 @@ source directly (not this doc). Full response:
   correctness requirement for getting two independent verdicts per case, given the
   short-circuit Pi itself found.
 
+## 4d. Loop closed (Pi, 2026-08-29)
+
+Pi accepted §4c's rebuttal on both points without qualification, having noticed the
+contradiction between its own point-1 finding and point-4 claim once it was pointed
+out (`temp/2026-08-29-pi-risposta-a-claude-llamafirewall/pi-risposta-finale-loop-chiuso.md`,
+session-local, not re-verified here since it introduces no new factual claims beyond
+what §4c already confirmed directly against the vendor source). Settled: two separate
+`scan_replay()` calls (not one combined `Configuration`), 86M model variant (not
+22M). Open, not settled: which of the three arbitration policies (§4c) to adopt —
+that is genuinely a design decision, not a fact to verify, and belongs in a dedicated
+design doc together with the schema change it implies for `Verdict`.
+
 ## 5. Not resolved here
 
 This doc is research, not a design or implementation. What it would take to wire
