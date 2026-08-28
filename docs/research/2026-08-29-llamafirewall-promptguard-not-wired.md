@@ -203,14 +203,67 @@ architectural read was cross-checked against the vendor source in this same pass
   proxy logs — two different methods, same answer), but its recommendation is not
   usable as-is without the missing context restored.
 
+## 4c. Pi's 4-point verification (2026-08-29) — confirms 3, contests 1, contested point re-verified here
+
+Pi ran the four independent checks this doc's §4b asked for, reading the vendor
+source directly (not this doc). Full response:
+`temp/2026-08-29-pi-risposta-a-claude-llamafirewall/pi-risposta-a-claude-llamafirewall.md`.
+
+- **Point 1 (cross-role collision)**: confirmed no collision, plus a real addition —
+  `scan_replay()` (`llamafirewall.py:189-211`) short-circuits: it returns only the
+  **last-scanned message's** `ScanResult` (not an aggregate across the trace), and
+  `break`s immediately on `BLOCK` or `HUMAN_IN_THE_LOOP_REQUIRED` (lines 207-210).
+  **Independently re-verified here, same lines** — accurate. This single detail
+  matters for §4c below.
+- **Point 2 (CPU latency)**: vendor publishes no CPU numbers, only A100
+  (`Llama-Prompt-Guard-2/86M/MODEL_CARD.md`: 92.4ms for 86M, 19.3ms for the 22M
+  variant). Pi's recommendation to consider the 22M variant rests on an unverified
+  assumption ("per il nostro caso d'uso, casi in inglese") that is **factually wrong**:
+  this project's dataset is authored in Italian, not English (spot-checked here,
+  `dataset/bulk_export_honest_quarterly_report.yaml:14`: "Ciao, sono il responsabile
+  customer success..."). The 22M variant has no multilingual pretraining (model card,
+  "Limitations", per Pi's own citation) — **only the 86M variant is viable for this
+  project's dataset**, independent of any latency tradeoff. Settled, not open.
+- **Point 3 (container cost)**: reasonable order-of-magnitude estimate (+250-350MB
+  image, image roughly doubling), explicitly labeled as an estimate, not measured —
+  correctly caveated by Pi as needing a real `pip install` to confirm. No objection.
+- **Point 4 (one combined `Configuration` vs two separate calls) — Pi's rebuttal
+  re-examined and only partly accepted.** Pi argued there is "no architectural
+  difference" between a single `LlamaFirewall` instance with a combined
+  `Configuration` and two separate calls, since `scan_replay()` is "just" a loop over
+  `scan()` dispatching by role — true as a mechanism description, verified here too.
+  But **Pi's own point-1 finding directly contradicts "no difference, only
+  bookkeeping": the short-circuit means a single combined `Configuration` run through
+  one `scan_replay()` call would let whichever scanner fires first suppress
+  evaluation of the other.** Concretely: if `PROMPT_GUARD` (on `Role.USER`) blocks
+  the seed turn, `scan_replay()` breaks immediately — `AGENT_ALIGNMENT` (further down
+  the trace, on `Role.ASSISTANT`) is **never even invoked** for that case, and its
+  verdict is permanently unmeasured, not merely "un-recorded for bookkeeping." For an
+  audit project whose purpose is comparing independent scanner signal on the same
+  case, this is a real loss of measurement data, not a cosmetic preference. Keeping
+  them as two separate `scan_replay()` calls (one `Configuration = {Role.ASSISTANT:
+  [TOOL_NAME]}` as today, a second `Configuration = {Role.USER: [ScannerType.PROMPT_GUARD]}`)
+  — not "one `scan()` per turn" as this doc's §4b imprecisely said, a second
+  `scan_replay()` call is simpler and reuses the existing call pattern — guarantees
+  both scanners are independently evaluated on every case regardless of which one
+  would otherwise fire first. Pi is right that the vendor doesn't impose this design
+  and that the real question is our own arbitration policy; this doc maintains that
+  keeping the two scans structurally separate is not just bookkeeping but a
+  correctness requirement for getting two independent verdicts per case, given the
+  short-circuit Pi itself found.
+
 ## 5. Not resolved here
 
 This doc is research, not a design or implementation. What it would take to wire
-PromptGuard in (container deps, HF gated access, a second `scan()` pass per user turn
-alongside the existing `scan_replay()` pass, and how two scanner verdicts collapse
-into one `Verdict` in this project's schema) is tracked as the open next step in
+PromptGuard in (container deps, HF gated access, a second `scan_replay()` call with a
+`{Role.USER: [ScannerType.PROMPT_GUARD]}` Configuration alongside the existing
+AlignmentCheck call, and how two independent scanner verdicts collapse into one
+`Verdict` in this project's schema — §4c lists three candidate policies from Pi's
+response, undecided) is tracked as the open next step in
 `docs/design/registro-limiti-aperti.md` (addendum to the LlamaFirewall coverage
-entry, 2026-08-29) — not decided or scoped in this doc.
+entry, 2026-08-29) — not decided or scoped in this doc. Model variant is settled
+(§4c): 86M, not 22M, since this project's dataset is Italian and the 22M variant has
+no multilingual pretraining.
 
 ## Sources consulted
 
@@ -230,6 +283,13 @@ entry, 2026-08-29) — not decided or scoped in this doc.
   which is exactly what this project's OpenRouter override relies on), `llamafirewall.py`
   lines ~108-167 (`scan()` per-role aggregation: BLOCK wins within one role's scanner
   list, decision by highest score otherwise; does not aggregate across roles).
+- Pi's independent verification response (2026-08-29):
+  `temp/2026-08-29-pi-risposta-a-claude-llamafirewall/pi-risposta-a-claude-llamafirewall.md`
+  (gitignored, session-local) — its four checkable claims cross-verified against the
+  vendor source directly in this pass, not taken on report alone: `llamafirewall.py:189-211`
+  (`scan_replay()` short-circuit, confirmed) and this project's own dataset
+  (`dataset/bulk_export_honest_quarterly_report.yaml`, confirming Italian-language
+  content against Pi's unverified English-language assumption).
 - Hugging Face API: `huggingface.co/api/models/meta-llama/Llama-Prompt-Guard-2-86M`,
   fetched 2026-08-29 (gated status, license, pipeline_tag, architecture tag).
   Note: a direct fetch of the raw `config.json` returned HTTP 401 (gated repo,
