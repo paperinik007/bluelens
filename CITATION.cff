@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: >-
+  If you use this method, the dataset, the harness, or any of the published
+  findings, please cite this repository as below.
+title: BlueLens
+abstract: >-
+  Independent, transparent measurement of "agentic threat detection" tools —
+  products that claim to catch malicious behavior in AI agents. Most
+  benchmarks for these tools are self-reported: the team that builds the
+  detector also builds the benchmark that scores it. BlueLens exists to be
+  an independent counterpart — a public methodology, purpose-built datasets,
+  and results published in full, including the statistical limits of the
+  measurement itself.
+type: software
+authors:
+  - family-names: Ardovini
+    given-names: Salvatore
+    alias: paperinik007
+repository-code: "https://github.com/paperinik007/bluelens"
+url: "https://github.com/paperinik007/bluelens"
+license:
+  - AGPL-3.0-or-later
+  - CC-BY-SA-4.0
+keywords:
+  - agentic AI security
+  - LLM security
+  - AI red teaming
+  - independent audit
+  - prompt injection
+  - threat detection

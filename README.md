@@ -1,11 +1,11 @@
-# agentic-security-audits
+# BlueLens
 
-Ente indipendente di audit per tool di "agentic threat detection" — prodotti che
-promettono di rilevare comportamenti malevoli negli agenti AI. La maggior parte dei
-benchmark che li accompagnano è self-reported: lo stesso team che costruisce il
-detector costruisce anche il benchmark che lo valuta. Questo repo esiste per fare da
-controparte indipendente: metodologia trasparente, dataset propri, risultati
-pubblicati per intero — inclusi i limiti statistici delle proprie misure.
+Audit indipendente di tool di "agentic threat detection" — prodotti che promettono di
+rilevare comportamenti malevoli negli agenti AI. La maggior parte dei benchmark che li
+accompagnano è self-reported: lo stesso team che costruisce il detector costruisce anche
+il benchmark che lo valuta. Questo repo esiste per fare da controparte indipendente:
+metodologia trasparente, dataset propri, risultati pubblicati per intero — inclusi i
+limiti statistici delle proprie misure.
 
 Il perché, cosa questo progetto non è, e i principi metodologici che vincolano ogni
 audit sono in [`SPIRIT.md`](SPIRIT.md) — leggerlo prima di qualunque contributo.
@@ -176,6 +176,14 @@ solo il report finale.
 
 ## Licenza
 
-Non ancora formalizzata. L'intento dichiarato in `SPIRIT.md` (principio 7) è una
-licenza copyleft/share-alike, coerente con la scelta di pubblicare tutto (principio 6)
-senza che chi forka il lavoro possa richiuderlo.
+Doppia licenza, coerente con l'intento dichiarato in `SPIRIT.md` (principio 7:
+copyleft/share-alike, per impedire che chi forka il lavoro lo richiuda):
+
+- **Codice** (`src/`, `tests/`, `docker/`) — [AGPL-3.0-or-later](LICENSE). Copyleft forte,
+  copre anche il caso di un fork fatto girare come servizio hosted senza mai distribuirne
+  il codice sorgente (la scappatoia che la sola GPL non copre).
+- **Documentazione, ricerca, dataset** (`docs/`, `dataset/`, `catalog/`) —
+  [CC BY-SA 4.0](LICENSE-DOCS). Attribuzione obbligatoria, chi ridistribuisce derivati
+  deve mantenerli con la stessa licenza aperta.
+
+Citazione: vedi [`CITATION.cff`](CITATION.cff) (riconosciuto nativamente da GitHub).

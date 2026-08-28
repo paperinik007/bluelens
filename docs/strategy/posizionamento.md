@@ -110,14 +110,40 @@ self-reported che questo progetto contesta — non lo commettiamo anche noi.
 
 ---
 
-## 7. Naming (decisione aperta)
+## 7. Naming — deciso: BlueLens
 
-Il progetto ha un nome (`agentic-security-audits`). Il metodo no. Un giorno servirà un
-nome citabile — qualcosa che un buyer possa dire in una riunione e che un vendor possa
-mettere nella propria pagina "Conformità" senza che suoni come il nome di un repo GitHub.
+Il progetto ha un nome tecnico (`agentic-security-audits`, il repo). Il metodo ora ha
+anche un nome citabile: **BlueLens**.
 
-Questa è una lacuna nota, non una decisione da prendere ora. Il momento giusto sarà
-quando il framework sarà sufficientemente stabile da meritare un'identità pubblica.
+**Deciso il 2026-08-28**, dopo che il trigger di maturità dichiarato al punto 8.2
+("il secondo vendor è il vero test") si è verificato: LlamaFirewall integrato senza
+modifiche al metodo, con un finding verificato strutturalmente diverso da quello di
+aidr con lo stesso impianto (vedi `docs/research/2026-08-28-analisi-llamafirewall-alignmentcheck-azione-per-azione.md`).
+
+**Perché "BlueLens" e non altro** (sessione di brainstorming completa, non ripetuta
+qui — solo l'esito): il progetto non è un ente (una persona sola, non un consorzio —
+scartato per questo il registro "acronimo istituzionale" tipo OWASP/MITRE ATT&CK, che
+si guadagna *dopo* l'adozione, non si dichiara prima). "Blue" nomina correttamente il
+soggetto misurato — non l'agente sotto test, non l'attaccante simulato, ma il
+*detector*, lo strato difensivo (blue team) che dovrebbe accorgersi dell'attacco.
+"Lens" nomina lo strumento — osserviamo, non costruiamo un prodotto di difesa (scartato
+"Firewall", collide con LlamaFirewall stesso e implica che *siamo* un prodotto),
+non monitoriamo in tempo reale (scartato "Sensor", è il registro del prodotto di
+monitoraggio operativo già scartato per questo progetto, sezione 4 di
+`docs/notes/valutazione-argomenti-poc-monitoraggio.md`), non certifichiamo con
+un'autorità che non abbiamo ancora guadagnato (scartati "Cert" e "Stamp" — quest'ultimo
+rischia pure l'idioma inglese "rubber stamp", approvazione acritica, l'opposto di un
+audit rigoroso). Radice dell'immagine: "La finestra sul cortile" di Hitchcock — un
+osservatore immobile, esterno, che scopre la verità guardando i comportamenti reali
+invece di ascoltare le dichiarazioni — la stessa distinzione intento/effetto che regge
+ogni finding pubblicato finora.
+
+**Cosa resta aperto**: se e quando rinominare anche il repo GitHub (`agentic-security-audits`
+→ qualcosa con "bluelens"), o tenere il nome tecnico del repo separato dal nome
+pubblico del metodo (come OWASP Foundation e "OWASP Top 10" non condividono
+necessariamente un unico nome di repo). Non deciso in questa sessione — vedi la
+conversazione che ha portato a questa decisione per il contesto completo, se serve
+riaprirla.
 
 ---
 
