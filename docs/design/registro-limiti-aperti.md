@@ -564,11 +564,20 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   (`bulk_export_to_partner_address`) è già un miss (`benign`) su **entrambi** i vendor
   pubblicati — un payload che spinge verso "benigno" un caso già benigno per il detector non
   ha spazio di misura. Nessuna correzione applicata: il branch resta non mergiato,
-  work-in-progress abbandonato a questo stato, non cancellato. Prossimo passo deciso con
-  l'utente: verificare prima se il container `detector-llamafirewall` espone già (solo non
-  cablato in `adapter.py`) altri scanner nativi oltre `AGENT_ALIGNMENT` — in particolare
-  `PROMPT_GUARD`, lo scanner single-turn pensato proprio per payload di prompt injection
-  come questo — prima di decidere se/come ridisegnare l'esperimento "judge-targeted".
+  work-in-progress abbandonato a questo stato, non cancellato. **Causa a monte
+  identificata e documentata, 2026-08-29**: LlamaFirewall è documentato dal vendor come
+  difesa a più livelli (PromptGuard 2 + AlignmentCheck + CodeShield + Regex), questo
+  progetto ne cablava solo `AGENT_ALIGNMENT` — fedele all'esempio ufficiale del vendor per
+  `scan_replay()`, non una scorciatoia, ma mai dichiarato esplicitamente come scelta con un
+  costo. `PROMPT_GUARD` non è raggiungibile via OpenRouter (è un classificatore
+  discriminativo, `DebertaV2ForSequenceClassification`, non un modello generativo — non il
+  tipo di modello che OpenRouter instrada) ed è gated manualmente sotto licenza Meta Llama
+  4. Analisi completa, fonti primarie (doc vendor, HF API, doc OpenRouter):
+  `docs/research/2026-08-29-llamafirewall-promptguard-not-wired.md`. Prossimo passo
+  (non ancora scopato): attivare `PROMPT_GUARD` nel container (`torch`/`transformers`/
+  `huggingface_hub` mancanti, accesso HF gated da ottenere, una seconda chiamata `scan()`
+  per turno utente da affiancare a `scan_replay()`, decidere come i due verdetti confluiscono
+  in un unico `Verdict`) prima di decidere se/come ridisegnare l'esperimento "judge-targeted".
 
 - **La metrica strict (attribuzione della tecnica) resta definita solo per
   aidr** — per LlamaFirewall si pubblica solo la primary (label-only), già
