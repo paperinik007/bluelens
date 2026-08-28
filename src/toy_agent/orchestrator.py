@@ -17,6 +17,15 @@ class VendorDetectorConfig:
     tool_name: str
     proxy_log_path: str
     extra_pkill_pattern: Optional[str]
+    # Whether this vendor's detector attributes a specific technique to a
+    # malicious verdict (report.py's "Strict metric"). False for a vendor
+    # whose adapter always sets technique_detected=None by construction (a
+    # strict TP is then structurally impossible, never a real "0.000
+    # measured" result) — a capability flag, not a magic vendor-name string
+    # check in report.py, so a future vendor declares this explicitly instead
+    # of inheriting whatever the last vendor added happened to need
+    # (SPIRIT.md principle 8).
+    supports_technique_attribution: bool
 
 
 # toy_agent never imports detector_adapter (Gap 9) — these strings are
@@ -35,6 +44,7 @@ VENDOR_DETECTOR_CONFIG: dict[str, VendorDetectorConfig] = {
         tool_name="aidr",
         proxy_log_path="/var/log/vendor_proxy.jsonl",
         extra_pkill_pattern="aidr/providers",
+        supports_technique_attribution=True,
     ),
     "llamafirewall": VendorDetectorConfig(
         service="detector-llamafirewall",
@@ -42,6 +52,12 @@ VENDOR_DETECTOR_CONFIG: dict[str, VendorDetectorConfig] = {
         tool_name="llamafirewall-alignmentcheck",
         proxy_log_path="/var/log/llamafirewall_proxy.jsonl",
         extra_pkill_pattern=None,
+        # AlignmentCheck emits only ALLOW/HUMAN_IN_THE_LOOP_REQUIRED, no
+        # per-technique attribution (detector_adapter/vendors/llamafirewall/
+        # adapter.py::scan_decision_to_verdict always sets
+        # technique_detected=None) — registro-limiti-aperti.md, "la metrica
+        # strict resta definita solo per aidr".
+        supports_technique_attribution=False,
     ),
 }
 

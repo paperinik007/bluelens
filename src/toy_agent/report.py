@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from .metrics import MetricsResult, MetricScores, ConfidenceInterval, TechniqueBreakdown, effective_ground_truth, is_reclassified
+from .orchestrator import VENDOR_DETECTOR_CONFIG
 from .schema import TestCase, Verdict, Transcript
 
 _VENDOR_RATIONALE: dict[str, str] = {
@@ -113,6 +114,15 @@ def render_report(
     """
     unusable = transcript_unusable or {}
     lines: list[str] = []
+    # Capability lookup, not a hardcoded vendor-name check (SPIRIT.md
+    # principle 8): an unrecognized vendor string (e.g. a test double, or a
+    # future vendor not yet registered) defaults to True — the prior
+    # behavior for every vendor before this flag existed, so an unregistered
+    # name never loses a real capability it might have.
+    _vendor_config = VENDOR_DETECTOR_CONFIG.get(vendor)
+    supports_technique_attribution = (
+        True if _vendor_config is None else _vendor_config.supports_technique_attribution
+    )
 
     # --- Part 1: Executive Summary ---
     lines.append("# Audit Report: " + tool_name)
@@ -168,9 +178,17 @@ def render_report(
     lines.append("")
     lines.append("### Strict metric (technique attribution)")
     lines.append("")
-    lines.append(f"- **Precision:** {_fmt_point_and_ci(metrics.strict.precision, metrics.strict.precision_ci)}")
-    lines.append(f"- **Recall:** {_fmt_point_and_ci(metrics.strict.recall, metrics.strict.recall_ci)}")
-    lines.append(f"- **F1:** {_fmt_point_and_ci(metrics.strict.f1, metrics.strict.f1_ci)}")
+    if supports_technique_attribution:
+        lines.append(f"- **Precision:** {_fmt_point_and_ci(metrics.strict.precision, metrics.strict.precision_ci)}")
+        lines.append(f"- **Recall:** {_fmt_point_and_ci(metrics.strict.recall, metrics.strict.recall_ci)}")
+        lines.append(f"- **F1:** {_fmt_point_and_ci(metrics.strict.f1, metrics.strict.f1_ci)}")
+    else:
+        lines.append(
+            f"- **Not applicable for this vendor.** {tool_name}'s detector does not attribute a "
+            f"technique to its verdicts (`technique_detected` is always `None` by construction) - "
+            f"a strict precision/recall would be zero by construction, not a measured result. See "
+            f"docs/design/registro-limiti-aperti.md, \"la metrica strict resta definita solo per aidr\"."
+        )
     lines.append("")
     lines.append("### Vendor-declared numbers (for comparison)")
     lines.append("")
@@ -186,16 +204,36 @@ def render_report(
     lines.append("| Metric | Precision [95% CI] | Recall [95% CI] | F1 [95% CI] | TP | FP | FN | TN |")
     lines.append("|---|---|---|---|---|---|---|---|")
     lines.append(_fmt_scores_table_row("Primary", metrics.primary))
-    lines.append(_fmt_scores_table_row("Strict", metrics.strict))
+    if supports_technique_attribution:
+        lines.append(_fmt_scores_table_row("Strict", metrics.strict))
+    else:
+        lines.append(f"| Strict | n/a | n/a | n/a | {metrics.strict.tp} | {metrics.strict.fp} | {metrics.strict.fn} | {metrics.strict.tn} |")
     lines.append("")
+    if not supports_technique_attribution:
+        lines.append(
+            f"*Strict precision/recall/F1 are `n/a` for {tool_name}: this vendor's detector never "
+            f"attributes a technique (see \"Strict metric\" note in Part 1). TP/FP/FN/TN above are "
+            f"real counts under the strict definition (tp requires a technique match, which never "
+            f"happens here), shown only for auditability, not as a scored metric.*"
+        )
+        lines.append("")
 
-    if metrics.per_technique:
+    if metrics.per_technique and supports_technique_attribution:
         lines.append("### Per-technique breakdown (strict — technique-attribution recall)")
         lines.append("")
         lines.append("| Technique | Recall [95% CI] | TP | FN | Excluded |")
         lines.append("|---|---|---|---|---|")
         for tech in sorted(metrics.per_technique.keys()):
             lines.append(_fmt_technique_row(tech, metrics.per_technique[tech]))
+        lines.append("")
+    elif metrics.per_technique and not supports_technique_attribution:
+        lines.append("### Per-technique breakdown (strict — technique-attribution recall)")
+        lines.append("")
+        lines.append(
+            f"Not applicable for {tool_name}: this vendor's detector does not attribute a technique "
+            f"to its verdicts, so a per-technique strict breakdown would be zero by construction for "
+            f"every row, not a measured result. See docs/design/registro-limiti-aperti.md."
+        )
         lines.append("")
 
     if metrics.per_technique_primary:

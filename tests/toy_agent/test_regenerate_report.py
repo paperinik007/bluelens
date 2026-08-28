@@ -67,6 +67,13 @@ def _write_verdicts_jsonl(run_output_dir: Path, verdict_dicts: list[dict]) -> No
             f.write(json.dumps(d) + "\n")
 
 
+def _write_vendor_provenance(run_output_dir: Path, vendor: str = "aidr") -> None:
+    """C1 fix: regenerate() now refuses unless the run's provenance.json
+    declares which vendor produced it (never defaults to aidr silently) —
+    every test that expects a successful regeneration needs this."""
+    provenance.write_provenance({"vendor": vendor}, run_output_dir)
+
+
 def _write_transcript(run_output_dir: Path, case_id: str, turns: list[dict], stop_reason: str | None = "completed") -> None:
     raw_dir = run_output_dir / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
@@ -89,6 +96,7 @@ def test_happy_path_reconstructs_a_correct_report(tmp_path):
     ])
     _write_transcript(run_output_dir, "c1_benign", turns=[])
     _write_transcript(run_output_dir, "c2_malicious", turns=[])
+    _write_vendor_provenance(run_output_dir)
 
     report = regenerate_report.regenerate(dataset_dir, run_output_dir)
 
@@ -167,6 +175,7 @@ def test_missing_transcript_file_is_handled_gracefully_and_not_counted_as_a_conv
     (run_output_dir / "raw").mkdir(parents=True, exist_ok=True)
     # Deliberately no raw/c1_malicious.transcript.json on disk (the raw/
     # directory itself exists, as it does in every real run directory).
+    _write_vendor_provenance(run_output_dir)
 
     report = regenerate_report.regenerate(dataset_dir, run_output_dir)
 
@@ -203,6 +212,7 @@ def test_reclassified_technique_row_shows_na_not_a_fabricated_zero(tmp_path):
         {"seq": 0, "role": "user", "content": "hi", "tool_call": None},
         {"seq": 1, "role": "assistant", "content": "sure, let me check that", "tool_call": None},
     ])
+    _write_vendor_provenance(run_output_dir)
 
     report = regenerate_report.regenerate(dataset_dir, run_output_dir)
 
@@ -233,6 +243,7 @@ def test_transcript_file_present_but_unparseable_is_counted_as_a_conversion_fail
     (raw_dir / "c1_malformed.transcript.json").write_text(
         json.dumps({"turns": [], "stop_reason": "completed"}), encoding="utf-8"
     )
+    _write_vendor_provenance(run_output_dir)
 
     report = regenerate_report.regenerate(dataset_dir, run_output_dir)
 
@@ -261,6 +272,7 @@ def test_regeneration_excludes_an_unusable_case_from_the_metric(tmp_path):
     ])
     _write_transcript(run_output_dir, "c1_benign", turns=[])
     _write_transcript(run_output_dir, "c2_model_error", turns=[], stop_reason="model_error")
+    _write_vendor_provenance(run_output_dir)
 
     report = regenerate_report.regenerate(dataset_dir, run_output_dir)
 
@@ -302,6 +314,7 @@ def test_regeneration_uses_the_recorded_provenance_not_todays(tmp_path):
     _write_transcript(run_output_dir, "c1", turns=[])
 
     prov = {
+        "vendor": "aidr",
         "measurer_commit": "0745490",
         "measurer_dirty": False,
         "vendor_commit": "abc1234",
@@ -323,7 +336,15 @@ def test_regeneration_uses_the_recorded_provenance_not_todays(tmp_path):
     assert "vendor_commit=abc1234" in report
 
 
-def test_regeneration_declares_a_run_with_no_recorded_provenance(tmp_path):
+def test_regeneration_refuses_when_no_vendor_is_recorded_in_provenance(tmp_path):
+    # C1 (final review): a run whose provenance.json is missing entirely (or
+    # lacks a "vendor" field) must not silently regenerate a report as if it
+    # were an aidr run — regenerate() must refuse rather than guess which
+    # vendor produced it (SPIRIT.md principle 8). format_provenance(None)'s
+    # own "not recorded" text (still exercised directly in
+    # test_provenance.py) is about display of the OTHER provenance fields
+    # for a run whose vendor IS known — it is no longer reachable from this
+    # tool's regenerate() when the vendor itself is unknown.
     dataset_dir = tmp_path / "dataset"
     run_output_dir = tmp_path / "run_output"
 
@@ -336,9 +357,49 @@ def test_regeneration_declares_a_run_with_no_recorded_provenance(tmp_path):
     _write_transcript(run_output_dir, "c1", turns=[])
 
     # No provenance.json written
+    with pytest.raises(ValueError, match="vendor"):
+        regenerate_report.regenerate(dataset_dir, run_output_dir)
+
+
+def test_regeneration_refuses_for_a_provenance_declaring_an_unknown_vendor(tmp_path):
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "run_output"
+
+    _write_dataset(dataset_dir, [
+        _dataset_entry("c1", label="benign"),
+    ])
+    _write_verdicts_jsonl(run_output_dir, [
+        _verdict_dict("c1", label="benign"),
+    ])
+    _write_transcript(run_output_dir, "c1", turns=[])
+    provenance.write_provenance({"vendor": "not-a-real-vendor"}, run_output_dir)
+
+    with pytest.raises(ValueError, match="not-a-real-vendor"):
+        regenerate_report.regenerate(dataset_dir, run_output_dir)
+
+
+def test_regeneration_is_vendor_aware_for_a_llamafirewall_run(tmp_path):
+    # C1 (final review): the core bug — a run directory whose provenance.json
+    # declares vendor="llamafirewall" must produce a report with the
+    # llamafirewall title, and must NOT show the aidr "Vendor P=1.0, R=0.667"
+    # line (that line is specific to aidr's own declared benchmark, render_report
+    # only emits it when vendor == "aidr").
+    dataset_dir = tmp_path / "dataset"
+    run_output_dir = tmp_path / "run_output"
+
+    _write_dataset(dataset_dir, [
+        _dataset_entry("c1_benign", label="benign"),
+    ])
+    _write_verdicts_jsonl(run_output_dir, [
+        _verdict_dict("c1_benign", label="benign"),
+    ])
+    _write_transcript(run_output_dir, "c1_benign", turns=[])
+    _write_vendor_provenance(run_output_dir, vendor="llamafirewall")
+
     report = regenerate_report.regenerate(dataset_dir, run_output_dir)
 
-    assert "not recorded" in report
+    assert "# Audit Report: llamafirewall-alignmentcheck" in report
+    assert "P=1.0, R=0.667" not in report
 
 
 def test_anti_shortcut_gate_refuses_to_regenerate_when_a_tool_appears_only_in_malicious_cases(tmp_path):
@@ -397,6 +458,7 @@ def test_main_passes_the_guard_in_the_real_working_tree(tmp_path, monkeypatch):
     _write_dataset(dataset_dir, [_dataset_entry("c1")])
     _write_verdicts_jsonl(run_output_dir, [_verdict_dict("c1")])
     _write_transcript(run_output_dir, "c1", turns=[])
+    _write_vendor_provenance(run_output_dir)
     # Must not exit: guard sees the package imported from the real working tree.
     regenerate_report.main([str(dataset_dir), str(run_output_dir)])
     assert (run_output_dir / "report.md").exists()

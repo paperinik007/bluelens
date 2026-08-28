@@ -9,6 +9,7 @@ from . import criteria
 from . import metrics as metrics_module, provenance
 from .dataset import load_dataset
 from .metrics import compute_metrics
+from .orchestrator import VENDOR_DETECTOR_CONFIG
 from .report import render_report
 from .run_batch import (
     AGENT_TIMEOUT_S,
@@ -173,12 +174,39 @@ def regenerate(dataset_dir: Path, run_output_dir: Path) -> str:
         )
 
     prov = provenance.read_provenance(run_output_dir)
+
+    # C1 (final review, was: this tool never forwarded tool_name/vendor to
+    # render_report, so it silently regenerated every report with the aidr
+    # defaults — including for a llamafirewall run). The vendor must come
+    # from THIS run's own recorded provenance, never a code default
+    # (SPIRIT.md principle 8, run_batch.py's --vendor is likewise always
+    # explicit, never a persisted/implicit choice). A run whose provenance
+    # doesn't say which vendor produced it (missing file, or a vendor value
+    # this checkout doesn't recognize) must refuse rather than guess.
+    vendor = prov.get("vendor") if prov else None
+    if not vendor:
+        raise ValueError(
+            f"{run_output_dir} has no vendor recorded in provenance.json (file missing, or no "
+            f"'vendor' field) — refusing to regenerate a report without knowing which vendor "
+            f"produced this run; silently defaulting to aidr is exactly the defect this fix "
+            f"exists to remove (SPIRIT.md principle 8)"
+        )
+    if vendor not in VENDOR_DETECTOR_CONFIG:
+        raise ValueError(
+            f"provenance.json at {run_output_dir} declares vendor {vendor!r}, which is not one "
+            f"of this checkout's known vendors ({sorted(VENDOR_DETECTOR_CONFIG)}) — refusing to "
+            f"regenerate a report for an unrecognized vendor"
+        )
+    detector_config = VENDOR_DETECTOR_CONFIG[vendor]
+
     metrics = compute_metrics(result.metric_cases, result.metric_verdicts)
     setup_notes = _setup_notes(result, AGENT_TIMEOUT_S, DETECTOR_TIMEOUT_S, BREAKER_THRESHOLD, prov)
     return render_report(
         result.cases,
         result.verdicts,
         metrics,
+        tool_name=detector_config.tool_name,
+        vendor=vendor,
         setup_notes=setup_notes,
         transcript_unusable=result.transcript_unusable,
         provenance=prov,

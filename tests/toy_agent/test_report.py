@@ -374,6 +374,32 @@ def test_the_report_title_reflects_the_tool_name_passed_in():
     assert report.startswith("# Audit Report: llamafirewall-alignmentcheck")
 
 
+def test_strict_metric_is_not_a_fabricated_number_for_a_vendor_without_technique_attribution():
+    # C2 (final review): llamafirewall's adapter always sets
+    # technique_detected=None -> strict TP is 0 by construction, never a
+    # real "0.000 measured" result. The report must say so explicitly, not
+    # print a numeric strict precision/recall with a confidence interval.
+    cases = [_make_case("c1", "malicious", "T0001"), _make_case("c2", "benign")]
+    verdicts = [_make_verdict("c1", "malicious", technique="T0001"), _make_verdict("c2", "benign")]
+    metrics = compute_metrics(cases, verdicts)
+    report = render_report(cases, verdicts, metrics, tool_name="llamafirewall-alignmentcheck", vendor="llamafirewall")
+    assert "Not applicable for this vendor" in report
+    assert "does not attribute a technique" in report
+    # No numeric strict precision/recall with a CI anywhere in the report.
+    import re
+    assert not re.search(r"\*\*Precision:\*\* \d\.\d{3} \[", report.split("### Strict metric")[1].split("###")[0])
+
+
+def test_strict_metric_is_still_a_real_number_for_aidr():
+    cases = [_make_case("c1", "malicious", "T0001"), _make_case("c2", "benign")]
+    verdicts = [_make_verdict("c1", "malicious", technique="T0001"), _make_verdict("c2", "benign")]
+    metrics = compute_metrics(cases, verdicts)
+    report = render_report(cases, verdicts, metrics)  # default vendor="aidr"
+    strict_section = report.split("### Strict metric")[1].split("###")[0]
+    assert "Not applicable" not in strict_section
+    assert "**Precision:**" in strict_section
+
+
 def test_multi_vendor_caveat_includes_the_llamafirewall_choice_rationale():
     cases = [_make_case("c1", "benign")]
     verdicts = [_make_verdict("c1", "benign")]
