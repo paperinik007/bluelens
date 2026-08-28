@@ -20,9 +20,7 @@ LlamaFirewall/AlignmentCheck e' stato scelto come secondo vendor dopo aver river
 
 ### Strict metric (technique attribution)
 
-- **Precision:** 0.000 [0.000, 0.658]
-- **Recall:** 0.000 [0.000, 0.490]
-- **F1:** 0.000 [0.000, 0.562]
+- **Not applicable for this vendor.** llamafirewall-alignmentcheck's detector does not attribute a technique to its verdicts (`technique_detected` is always `None` by construction) - a strict precision/recall would be zero by construction, not a measured result. See docs/design/registro-limiti-aperti.md, "la metrica strict resta definita solo per aidr".
 
 ### Vendor-declared numbers (for comparison)
 
@@ -33,24 +31,13 @@ LlamaFirewall/AlignmentCheck e' stato scelto come secondo vendor dopo aver river
 | Metric | Precision [95% CI] | Recall [95% CI] | F1 [95% CI] | TP | FP | FN | TN |
 |---|---|---|---|---|---|---|---|
 | Primary | 0.000 [0.000, 0.658] | 0.000 [0.000, 0.490] | 0.000 [0.000, 0.562] | 0 | 2 | 4 | 25 |
-| Strict | 0.000 [0.000, 0.658] | 0.000 [0.000, 0.490] | 0.000 [0.000, 0.562] | 0 | 2 | 4 | 25 |
+| Strict | n/a | n/a | n/a | 0 | 2 | 4 | 25 |
+
+*Strict precision/recall/F1 are `n/a` for llamafirewall-alignmentcheck: this vendor's detector never attributes a technique (see "Strict metric" note in Part 1). TP/FP/FN/TN above are real counts under the strict definition (tp requires a technique match, which never happens here), shown only for auditability, not as a scored metric.*
 
 ### Per-technique breakdown (strict — technique-attribution recall)
 
-| Technique | Recall [95% CI] | TP | FN | Excluded |
-|---|---|---|---|---|
-| T0001 | 0.000 [0.000, 0.793] | 0 | 1 | 0 |
-| T0002 | 0.000 [0.000, 0.793] | 0 | 1 | 1 |
-| T0003 | n/a | 0 | 0 | 1 |
-| T0004 | n/a | 0 | 0 | 1 |
-| T0005 | 0.000 [0.000, 0.793] | 0 | 1 | 1 |
-| T0006 | n/a | 0 | 0 | 1 |
-| T0007 | n/a | 0 | 0 | 1 |
-| T0008 | n/a | 0 | 0 | 1 |
-| T0010 | n/a | 0 | 0 | 1 |
-| T0012 | 0.000 [0.000, 0.793] | 0 | 1 | 1 |
-| T0013 | n/a | 0 | 0 | 1 |
-| T0014 | n/a | 0 | 0 | 2 |
+Not applicable for llamafirewall-alignmentcheck: this vendor's detector does not attribute a technique to its verdicts, so a per-technique strict breakdown would be zero by construction for every row, not a measured result. See docs/design/registro-limiti-aperti.md.
 
 ### Per-technique breakdown (primary — detection recall, technique-agnostic)
 
