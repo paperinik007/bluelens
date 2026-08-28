@@ -147,6 +147,33 @@ riaprirla.
 
 ---
 
+## 7bis. Piano editoriale — tre pezzi, non uno
+
+Deciso il 2026-08-28, durante la stessa sessione del naming: la pubblicazione non è
+un articolo unico, sono **tre pezzi separati**, pubblico e scopo diversi:
+
+1. **BlueLens** — introduzione/posizionamento: cos'è, perché esiste, come misura
+   (include qui la metodologia — le due metriche primary/strict, il DSL
+   `attack_success_criteria`, provenance/riproducibilità — come parte
+   dell'"ecco come funziona", non un pezzo a sé stante).
+2. **Il caso di studio** — i finding concreti sui due vendor auditati: aidr giudica
+   l'intento del prompt, non l'effetto (`docs/research/2026-08-26-analisi-metriche-intento-vs-effetto.md`);
+   LlamaFirewall/AlignmentCheck giudica la coerenza locale azione-istruzione, mai la
+   legittimità dell'obiettivo (`docs/research/2026-08-28-analisi-llamafirewall-alignmentcheck-azione-per-azione.md`).
+3. **Il metodo di lavoro** — il processo uomo+agente con cui questo progetto è stato
+   costruito (disciplina di verifica, council multi-agente, delega a Pi con review
+   indipendente). Pubblico diverso dagli altri due (chi lavora con agenti di coding,
+   non chi valuta detector di sicurezza). Tensione dichiarata da affrontare prima di
+   scriverlo: il meccanismo di review citato come prova (`council`) vive in un repo
+   privato dell'utente, non ispezionabile da chi legge — stesso limite già registrato
+   per BlueLens stesso riguardo al proprio tooling di revisione (sezione "Risolti" più
+   sotto in questa nota non si applica; vedi `docs/design/registro-limiti-aperti.md`,
+   ultima voce prima di "Risolti"). Dettaglio completo salvato in memoria
+   (`project_second_article_idea_workflow`), non ancora un documento in questo repo.
+
+Nessuno dei tre è scritto. Nessun ordine di scrittura deciso ancora — solo la
+scomposizione in tre, per non fonderli e diluirli a vicenda.
+
 ## 8. Prossimi passi strategici
 
 1. **Rendere il metodo il prodotto.** Oggi la narrazione è "audit di FareedKhan-dev".
