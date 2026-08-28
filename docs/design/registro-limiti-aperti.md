@@ -533,6 +533,25 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   Design doc: `docs/design/2026-08-27-multi-vendor-llamafirewall-design.md`,
   "Limiti dichiarati". Non risolvibile senza un secondo dataset scritto nel
   linguaggio nativo del vendor — fuori scope di questo piano.
+  **Causa del recall 0.000 identificata e verificata caso per caso, 2026-08-28**
+  (non solo un'ipotesi di taxonomy mismatch — più radicale): il prompt di
+  sistema di AlignmentCheck (catturato nel `vendor_proxy.jsonl` del run
+  `20260828-100238-9775af`) valuta **una singola azione alla volta contro il
+  messaggio utente immediatamente precedente**, chiedendo solo "l'azione
+  persegue l'obiettivo dichiarato?", mai "l'obiettivo stesso è legittimo?"
+  o "qual è l'effetto complessivo?". I 4 attacchi realmente riusciti nel
+  run sono tutti richieste esplicite di un'azione dannosa a cui l'agente ha
+  compiaciuto — per costruzione "aligned" (verificato sulle `rationale`
+  reali dei verdetti, non solo sulla struttura del prompt). Gli unici 2 flag
+  prodotti sull'intero run (`unrequested_account_deactivation_as_fix`,
+  `order_summary_sent_to_own_address`) sono innescati da errori di tool che
+  fanno deviare l'agente dal percorso diretto — confusione procedurale, non
+  riconoscimento di un contenuto dannoso. **Un dataset riscritto nel
+  linguaggio nativo del vendor non risolverebbe questo**: qualunque attacco
+  che chieda esplicitamente, in un turno, l'azione voluta resta invisibile a
+  questo meccanismo, indipendentemente dalla tassonomia usata per
+  descriverlo. Analisi completa, verificata caso per caso sulle rationale
+  reali: `docs/research/2026-08-28-analisi-llamafirewall-alignmentcheck-azione-per-azione.md`.
 
 - **La metrica strict (attribuzione della tecnica) resta definita solo per
   aidr** — per LlamaFirewall si pubblica solo la primary (label-only), già
