@@ -601,6 +601,65 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   4 FN, 25 TN su 31 casi) — dato di performance, non un limite dell'harness di
   misura; vedi `docs/reports/llamafirewall-2026-08-28/report.md`.
 
+- **Test di isolamento import non copre `detector_adapter.vendors.<altro>` come forma
+  di import, e manca del tutto un test `toy_agent` ↛ `detector_adapter`** —
+  `tests/test_no_vendor_imports.py` confronta il nome del modulo importato solo con il
+  prefisso top-level (`"aidr"`/`"llamafirewall"`), quindi un import tipo
+  `from detector_adapter.vendors.aidr.adapter import X` dentro `vendors/llamafirewall/`
+  (o viceversa) non verrebbe intercettato; e non esiste alcun test che verifichi che
+  `toy_agent` non importi mai `detector_adapter`, benché sia la garanzia su cui
+  `orchestrator.py` poggia esplicitamente (Gap 9). Trovato: final whole-branch review
+  del piano multi-vendor LlamaFirewall (I2), 2026-08-28. Fix: aggiungere
+  `detector_adapter.vendors.<altro>` ai prefissi proibiti per ciascun sottopackage, più
+  il test mancante `toy_agent` ↛ `detector_adapter`.
+
+- **Circuit breaker di costo inerte con `--container-lifecycle per-case`** —
+  `sequence.py` ricalcola il costo cumulativo rileggendo il log proxy dentro il
+  container dopo ogni caso; in modalità `per-case` il container viene ricreato
+  (`docker compose rm -f -s -v`) a ogni caso, quindi il log riparte vuoto e
+  `cumulative_cost_usd` non supera mai il costo di un singolo caso — il breaker non
+  scatta mai in questa modalità, pur essendo esposta in CLI e documentata in README.
+  Trovato: final whole-branch review (I5), 2026-08-28. Fix: accumulare il costo lato
+  harness tra i cicli open/close (somma dei delta per caso), oppure rifiutare
+  esplicitamente la combinazione `--container-lifecycle per-case` + `--max-cost-usd`.
+
+- **Dipendenze non pinnate nel container `detector-llamafirewall`** — il Dockerfile fa
+  `pip install --no-deps llamafirewall==1.0.3` (pin corretto sul pacchetto vendor) ma poi
+  `pip install 'openai>=1.76.0' 'pydantic>=2.11.3'` senza pin esatto: il client LLM che
+  esegue materialmente il giudizio (`openai`) può cambiare versione a ogni rebuild senza
+  che nulla lo registri — `provenance.py` cattura solo la versione di `llamafirewall`.
+  Rispetto ad aidr (git checkout di un commit esatto + `requirements.txt` del vendor) il
+  sistema misurato è definito peggio. Trovato: final whole-branch review (I7),
+  2026-08-28. Fix: pinnare `openai==`/`pydantic==` e registrarne le versioni in
+  provenance, o dichiarare esplicitamente il limite se il pin esatto non è praticabile.
+
+- **`tool_name` duplicato in 3 punti senza guardia anti-drift** — la duplicazione
+  (`vendors/aidr/adapter.py`, `vendors/llamafirewall/adapter.py`, `orchestrator.py`) è
+  corretta per design (nessun import incrociato tra vendor), ma i verdetti normali
+  portano il `TOOL_NAME` dell'adapter mentre `_error_verdict`/`_fallback_verdict`
+  portano `config.tool_name`: una divergenza tra i due produrrebbe due `tool_name`
+  diversi nello stesso `verdicts.jsonl` senza segnalazione. Trovato: final whole-branch
+  review (I8), 2026-08-28. Fix: un test che estragga il literal dai due `adapter.py` per
+  confronto testuale (senza importarli), analogo alla guardia AST già esistente per gli
+  import incrociati.
+
+- **Piccole imprecisioni di documentazione emerse dalla final whole-branch review del
+  piano multi-vendor LlamaFirewall (M1-M6, 2026-08-28)**, nessuna bloccante:
+  README chiama "vendor_proxy.py" il file `openrouter_proxy.py` di llamafirewall (M1,
+  che non rimappa nulla per scelta esplicita); la sezione "Stato" del README non
+  riflette il secondo vendor né il secondo report pubblicato, e `--max-cost-usd` non è
+  documentato (M2); un commento in `orchestrator.py` sul deadline interno del
+  sottoprocesso non riflette che per llamafirewall il `pkill` esterno è l'unico
+  meccanismo, non un fallback (M3, llamafirewall non ha un deadline interno come aidr);
+  il report limita a 3 le misclassificazioni mostrate senza dichiararlo esplicitamente
+  (M4); la garanzia di isolamento tra reti vendor dipende dalla configurazione di
+  `squid.conf` (splice solo su SNI `openrouter.ai`), non dall'assenza di un percorso di
+  rete — vale la pena dichiararlo esplicitamente dove si afferma la proprietà (M5);
+  `run_adapter_tests.sh` del container llamafirewall installa `pytest` a runtime,
+  funziona solo perché il Dockerfile lo preinstalla già, e un futuro rimaneggiamento che
+  tolga quella riga romperebbe lo script in modo non ovvio (M6, il Dockerfile aidr
+  documenta esplicitamente questa trappola, quello llamafirewall no).
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **R10 — output del preflight non sanitizzato a valle del tipo di ritorno** — il codice
