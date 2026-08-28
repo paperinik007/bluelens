@@ -54,7 +54,14 @@ services:
     depends_on:
       - egress-proxy
     env_file:
-      - .env.llamafirewall
+      # I1 (final review): long-form + required: false — env_file is resolved
+      # at project load time, not at service-selection time, so without this
+      # a missing .env.llamafirewall broke `docker compose build`/`up`/`rm`
+      # even for `agent`/`detector` (--vendor aidr) alone. `.env.*` is
+      # gitignored, so a fresh clone has no such file until --vendor
+      # llamafirewall is actually used.
+      - path: .env.llamafirewall
+        required: false
     environment:
       HTTPS_PROXY: http://egress-proxy:3128
       LLAMAFIREWALL_PROXY_LOG_PATH: /var/log/llamafirewall_proxy.jsonl

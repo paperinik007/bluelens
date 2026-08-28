@@ -167,6 +167,21 @@ def test_docker_compose_passes_agent_model_to_the_agent_service():
     assert "AGENT_MODEL" in compose["services"]["agent"]["environment"]
 
 
+def test_docker_compose_does_not_require_env_llamafirewall_for_other_services():
+    # I1 (final review): env_file is resolved at project load time, not at
+    # service-selection time -- a plain string env_file entry would break
+    # `docker compose build`/`up`/`rm` for agent/detector (--vendor aidr)
+    # whenever .env.llamafirewall is absent (it's gitignored, so a fresh
+    # clone has none). The long-form entry with required: false fixes this.
+    compose = yaml.safe_load(Path("docker-compose.yml").read_text(encoding="utf-8"))
+    env_file = compose["services"]["detector-llamafirewall"]["env_file"]
+    assert isinstance(env_file, list)
+    entry = env_file[0]
+    assert isinstance(entry, dict), "env_file must use the long form to set required: false"
+    assert entry["path"] == ".env.llamafirewall"
+    assert entry["required"] is False
+
+
 def test_transcript_to_dict_round_trips_the_new_fields():
     """Create Transcript with model_retry_count=2 and a ToolCall with
     arguments_parse_failed=True, raw_arguments='{"filter": ', round-trip

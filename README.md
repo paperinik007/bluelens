@@ -90,6 +90,11 @@ docker compose build
 docker compose up -d egress-proxy
 ```
 
+`.env.llamafirewall` serve solo per `--vendor llamafirewall` (vedi sopra) — non
+è necessario crearlo per usare `--vendor aidr`; `docker-compose.yml` lo dichiara
+opzionale (`required: false`), quindi la sua assenza non blocca `docker compose
+build`/`up`/`rm` per gli altri servizi.
+
 Attenzione: `docker compose config` stampa entrambe le chiavi in chiaro — non
 eseguirlo in una sessione di terminale condivisa o loggata.
 
