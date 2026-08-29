@@ -233,6 +233,41 @@ motivi:
 3. È il più citabile: "facciamo per i detector agentici quello che AV-TEST fa per gli
    antivirus" si spiega in una frase, senza bisogno di contesto aggiuntivo.
 
+**Caveat (dichiarato dall'utente subito dopo, poi corretto una volta ciascuno con
+verifica reale, stessa sessione)**: il metodo è lo stesso, la scala no — da dire
+esplicitamente, coerente col punto 6 ("le debolezze si dicono, non si nascondono"). Ma
+i due problemi sono di natura diversa, vanno tenuti separati:
+
+1. **Tecniche da iniettare — meno grave di quanto sembrasse.**
+   [VERIFICATO, 2026-08-29] **MITRE ATLAS** è una tassonomia di attacchi AI reale,
+   attivamente mantenuta, in espansione proprio sull'agentic AI (v5.1.0 nov. 2025, 16
+   tattiche/84 tecniche; aggiornamenti fino a v5.4.0 feb. 2026 con tecniche
+   agent-specifiche come "Publish Poisoned AI Agent Tool"). Non è un catalogo statico
+   isolato — è un flusso esterno codificato e mantenuto da terzi, a differenza di come
+   presentato nella prima stesura di questo caveat. **Ma va distinto cosa è codificato
+   da cosa no**: la tassonomia sì; un **corpus di campioni-attacco etichettati** legato
+   a quella tassonomia, della scala dei feed di malware usati da AV-TEST, non è stato
+   trovato — il nostro stesso `docs/research/2026-08-19-prior-art-agent-security-harnesses.md`
+   aveva già verificato che nessun benchmark accademico esistente usa i codici ATLAS.
+   Il catalogo T0001-T0014 di questo progetto resta un artefatto da costruire a mano,
+   ma può appoggiarsi a una tassonomia esterna che matura da sola, invece di essere
+   isolato.
+2. **Accesso ai prodotti — non verificato, non risolvibile a tavolino.** La prima
+   stesura di questo caveat trattava "solo contact-sales, nessun self-serve" (dato
+   verificato nella Tabella 1) come equivalente a "inaccessibile" — non lo è. "Solo
+   contact-sales" significa che nel materiale fetched non è stata trovata
+   un'iscrizione self-serve, non che una richiesta di demo/POC verrebbe rifiutata.
+   **Non è stata testata nessuna richiesta reale a nessuno dei 10 vendor** — resta una
+   domanda aperta e verificabile (scrivere e vedere cosa risponde), non una barriera
+   strutturale accertata. Un'asimmetria plausibile ma non verificata: un ricercatore
+   indipendente senza azienda/budget dietro potrebbe ricevere un trattamento diverso da
+   un buyer enterprise.
+
+La frase corretta resta **"BlueLens applica il metodo di un certificatore AV-style, su
+una fornitura ancora da verificare su entrambi i lati"** — ma il lato tecniche è meglio
+di quanto sembrasse (una tassonomia esterna matura esiste), il lato accesso-prodotti è
+semplicemente non testato, non necessariamente peggiore.
+
 ### Altri ambiti AI con lo stesso problema (livello di certezza dichiarato per ciascuno)
 
 - **Rilevatori di testo generato da AI** (GPTZero, Turnitin AI detection,

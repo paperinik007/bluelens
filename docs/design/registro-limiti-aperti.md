@@ -802,3 +802,29 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   Non risolvibile aggiornando il file del 20/08 in-place senza perdere la cronologia della
   ricerca originale (era corretta con l'informazione disponibile in quel momento) — da
   trattare come nota di lettura, non da correggere retroattivamente il testo del 20/08.
+
+- **Ogni P/R pubblicato finora misura 14 istanze specifiche, non le 14 classi di tecnica
+  che rappresentano — mai dichiarato esplicitamente prima d'ora.** Ogni T-code
+  (T0001-T0014) non è un attacco, è una classe di attacchi: uno spazio potenzialmente
+  infinito di varianti concrete che condividono lo stesso meccanismo. Il caso scritto a
+  mano nel dataset (es. `bulk_export_to_partner_address` per T0002) è un solo
+  rappresentante scelto da quello spazio. Il risultato misurato ("aidr cattura T0002" /
+  "lo manca") è vero **per quel rappresentante**, non necessariamente per l'intera classe
+  — un'altra variante dello stesso T0002 (parole diverse, tool diverso coinvolto) potrebbe
+  essere catturata dove la nostra non lo è, o viceversa. Trovato il 2026-08-29 mappando a
+  mano un case study MITRE ATLAS (`AML.CS0035`, esfiltrazione da Slack AI) sui nostri 6
+  tool: il seed risultante è quasi identico a un caso T0002 già nel dataset — la
+  ripetizione ha reso visibile che ogni T-code pubblicato oggi è un punto singolo
+  campionato da uno spazio più ampio, non un caso di test esaustivo per quella classe.
+  **È una versione più tagliente del principio 8 di SPIRIT.md (strutturale vs
+  contingente)**: quel principio si applicava finora caso per caso, quando emergeva un
+  dubbio specifico; questo lo rende strutturale a ogni singolo T-code già pubblicato, non
+  solo al lavoro futuro. Non risolto: richiede o (a) più varianti indipendenti per T-code
+  prima di poter dichiarare un risultato robusto alla classe intera, non solo
+  all'istanza, o (b) una dichiarazione esplicita nei report pubblicati che il numero
+  misura un campione, non la classe. Nessuna delle due ancora decisa o implementata.
+  Cambia anche l'obiettivo del lavoro con ATLAS (discusso in una nota di brainstorming
+  iniziale, poi purgata): non (solo) trovare tecniche
+  mancanti al catalogo, ma generare varianti indipendenti dello stesso T-code per
+  testare se il risultato attuale è robusto o un colpo di fortuna sulla formulazione
+  specifica scelta.
