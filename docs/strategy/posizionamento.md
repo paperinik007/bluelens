@@ -187,3 +187,90 @@ scomposizione in tre, per non fonderli e diluirli a vicenda.
    che cercano riferimenti.
 4. **Scegliere il nome quando il metodo è stabile.** Non è urgente, ma è una decisione
    da prendere una volta sola — sbagliare nome costa un rebrand.
+
+---
+
+## 9. Il metodo generalizza oltre l'agentic security (osservazione, non decisione)
+
+Emerso il 2026-08-29 durante una pausa forzata (il lavoro sul secondo scanner di
+LlamaFirewall, PromptGuard, è bloccato in attesa dell'approvazione gated di Meta — vedi
+`docs/design/registro-limiti-aperti.md`, voce LlamaFirewall). **Non è un'idea nuova
+inventata in questa sessione**: il principio — non fidarsi del numero che un tool
+pubblica su sé stesso, verificare indipendentemente sul confine ingresso/uscita
+dichiarato — questo stesso progetto lo ha già trovato due volte sui propri soggetti,
+non solo teorizzato:
+- `aidr` (il tool sotto audit) pubblica P/R/F1 contro il proprio benchmark, il
+  **Gauntlet**, costruito da chi lo pubblica.
+- **AgentDoG** (candidato scartato come secondo vendor, `docs/research/2026-08-27-agentdog-verification.md`)
+  pubblica P/R/F1 contro il proprio **ATBench** — stessa struttura di conflitto
+  d'interesse, registrata esplicitamente nel doc di mercato come "same conflict-of-interest
+  structure this project already refuses to trust for aidr's Gauntlet".
+
+Il punto 1 di questo stesso documento ("Non misuriamo il modello — misuriamo il
+detector") è quindi un caso specifico di un principio più largo: **non fidarsi
+dell'autocertificazione di nessun tool AI che promette un risultato misurabile**, non
+solo dei detector di minacce agentiche.
+
+### Il parallelo più forte trovato finora: i laboratori di test antivirus (non-AI, ma lo stesso identico schema)
+
+Trovato più tardi nella stessa sessione del 2026-08-29, discutendo CodeShield+OWASP
+Benchmark: **AV-TEST, AV-Comparatives, SE Labs** fanno da decenni, per gli antivirus,
+esattamente quello che questo progetto fa per i detector agentici — campioni noti
+(malware reale + file puliti noti) lanciati contro il prodotto, tasso di rilevamento e
+falsi positivi misurati indipendentemente dal claim del vendor. Non è nell'ambito AI, ma
+è lo schema di misura più vicino di tutti quelli trovati in questa sezione, per tre
+motivi:
+1. Testa specificamente **prodotti di sicurezza** (non classificatori AI generici come
+   negli altri esempi sotto) — stesso dominio concettuale di questo progetto.
+2. **Ha un modello di ricavo già rodato e verificato**, non solo un ente pubblico che
+   testa gratis: [VERIFICATO, 2026-08-29, `av-comparatives.org/funding/`] i test del
+   "Public Test Series" sono gratuiti, ma i vendor pagano per certificazione, report
+   dettagliati, uso del logo — dichiarano esplicitamente che il pagamento non influenza
+   il risultato. **Questo è un precedente reale, funzionante da decenni, del modello di
+   ricavo "Vendor... Certificazione indipendente (pagata dal vendor ma con firewall
+   organizzativo)" già scritto al punto 4 di questo documento** — non più solo un'ipotesi
+   sulla carta.
+3. È il più citabile: "facciamo per i detector agentici quello che AV-TEST fa per gli
+   antivirus" si spiega in una frase, senza bisogno di contesto aggiuntivo.
+
+### Altri ambiti AI con lo stesso problema (livello di certezza dichiarato per ciascuno)
+
+- **Rilevatori di testo generato da AI** (GPTZero, Turnitin AI detection,
+  Originality.ai) — i vendor dichiarano accuratezza molto alta; uno studio indipendente
+  di Stanford (Liang et al., 2023) ha trovato tassi di falsi positivi più alti sui testi
+  di non-madrelingua inglesi rispetto a quanto dichiarato. Confidenza alta
+  sull'esistenza dello studio, numeri esatti non citati qui perché non verificati in
+  questa sessione.
+- **Riconoscimento facciale/biometria** — il caso più forte trovato: il NIST gestisce da
+  anni il **FRVT** (Face Recognition Vendor Test), un programma di test indipendente
+  nato perché le autocertificazioni dei vendor non erano affidabili. Unico caso qui dove
+  esiste già un'istituzione dedicata proprio per questo motivo — il parallelo
+  istituzionale più diretto con l'ambizione dichiarata al punto 3 di questo documento
+  ("l'ente dopo il metodo"). Confidenza alta, programma pubblico documentato da anni.
+- **Scanner di vulnerabilità nel codice generato da AI** (incluso CodeShield di
+  LlamaFirewall, mai testato in questo progetto) — esiste l'**OWASP Benchmark
+  Project**, suite di test indipendente nata perché i claim dei vendor SAST non erano
+  comparabili tra loro. Stesso schema del punto precedente. Confidenza alta.
+- **Rilevatori di deepfake/media sintetici** — la Deepfake Detection Challenge di Meta
+  (2019-2020) ha mostrato un divario netto tra prestazioni dichiarate in laboratorio e
+  quelle su un test set indipendente "a scatola nera". Confidenza alta sull'esistenza
+  della challenge, numeri non citati per lo stesso motivo di cui sopra.
+- **Strumenti "LLM-as-judge"** (TruLens, Ragas — verificati come reali il 2026-08-29,
+  vedi addendum in `docs/research/2026-08-20-vendor-market-agentic-threat-detection.md`)
+  — problema **ricorsivo**: sono AI che giudicano altre AI (allucinazioni, pertinenza
+  RAG), e la loro accuratezza da giudice è raramente verificata da terzi. Già osservato
+  internamente a questo progetto: `llama-4-maverick` come giudice ha fallito la
+  validazione dello schema strutturato su un caso reale, `llama-3.3-70b-instruct` no
+  (`docs/design/registro-limiti-aperti.md`) — l'affidabilità del giudice va verificata,
+  non assunta, anche dentro questo stesso progetto.
+
+### Cosa NON è questa sezione
+
+Non è una decisione di allargare lo scope di BlueLens oggi. Il progetto resta
+un'audit di detector agentici, con due vendor misurati e un metodo dimostrato su quel
+caso concreto (punto 8.2). Questa sezione è una nota di posizionamento: risponde in
+anticipo alla debolezza dichiarata al punto 6 ("il mercato è piccolo e giovane") con
+un argomento — il metodo, non il mercato specifico, è la cosa riusabile, e ha già
+precedenti istituzionali riconosciuti (NIST FRVT, OWASP Benchmark) in ambiti AI
+adiacenti. Se e quando allargare lo scope reale del progetto resta una decisione
+separata, non presa qui.
