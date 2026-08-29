@@ -783,3 +783,22 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   commit da compilare al momento del commit reale — vedi
   `detector_adapter/vendors/aidr/adapter.py`, `_wrap_sifter_triage`);
   per LlamaFirewall, in un task precedente di questo stesso piano.
+
+- **Correzione: il motivo dello scarto di AgentDoG non è il requisito GPU** — la tabella di
+  idoneità in `docs/research/2026-08-20-vendor-market-agentic-threat-detection.md`
+  (§"Suitability table"/"Detailed per-candidate analysis") descrive AgentDoG come
+  "❌ GPU needed" basandosi solo sulle varianti 4B-8B (Qwen3.5-4B, Llama3.1-8B). Questo è
+  **superato**: `docs/research/2026-08-27-agentdog-verification.md` (§6) verifica
+  l'esistenza di una variante 0.8B Base **CPU-viable, senza GPU**. Il motivo reale per cui
+  AgentDoG resta scartato (deciso con l'utente il 27/08, LlamaFirewall preferito) è
+  documentato nella tabella di confronto dello stesso file (§"Comparison table"): repo
+  **non pushato dal 2026-06-08** (~3 mesi stale al momento della verifica), **nessun file
+  LICENSE** nel repo del codice, adozione debolissima (la variante 0.8B Base ha 105
+  download/mese e 1 like, la meno usata del proprio catalogo), nessuna valutazione
+  indipendente di terze parti trovata. Errore di sintesi ripetuto verbalmente in
+  conversazione il 2026-08-29 (corretto dall'utente sul momento) — registrato qui perché
+  il documento del 2026-08-20 stesso non è mai stato corretto con il dato più aggiornato
+  del 27/08, quindi chi legge solo quel file continuerebbe a trovare la ragione sbagliata.
+  Non risolvibile aggiornando il file del 20/08 in-place senza perdere la cronologia della
+  ricerca originale (era corretta con l'informazione disponibile in quel momento) — da
+  trattare come nota di lettura, non da correggere retroattivamente il testo del 20/08.
