@@ -309,3 +309,49 @@ un argomento — il metodo, non il mercato specifico, è la cosa riusabile, e ha
 precedenti istituzionali riconosciuti (NIST FRVT, OWASP Benchmark) in ambiti AI
 adiacenti. Se e quando allargare lo scope reale del progetto resta una decisione
 separata, non presa qui.
+
+---
+
+## 10. Gate pre-pubblicazione — contenuto da purgare prima che il repo diventi pubblico
+
+Deciso il 2026-08-30, discutendo dove deve vivere fisicamente la famiglia di note
+spin-off del `toy_agent` (contesto delle idee stesse al punto 9 sopra). Il fix già fatto
+sulle note (`docs/notes/2026-08-29-famiglia-spinoff-toy-agent.md`, sezione "Dove si
+decide") protegge solo da un lettore interno a questo progetto — futura sessione, mia o
+dell'utente — che potrebbe leggere il tono descrittivo delle note come un piano in attesa
+di approvazione **dentro** questo repo. Non protegge da un lettore diverso: chi, dal di
+fuori, trova esplicitamente descritta un'idea in tensione diretta con la tesi del punto 1
+("non misuriamo il modello") nel momento in cui questo repo (oggi privato,
+`paperinik007/bluelens`) o il suo contenuto diventa pubblico.
+
+**Decisione**: non rimuovere ora — il repo è privato, il rischio non è attivo oggi. Un
+unico passaggio di pulizia della storia git, eseguito prima di qualunque cambio di
+visibilità del repo o di qualunque estrazione di contenuto per il terzo pezzo editoriale
+(§7bis, "il metodo di lavoro"), è più efficiente che rincorrere ogni singolo file mano a
+mano che nasce — nel frattempo è probabile che si accumuli altro materiale simile.
+
+**Cosa purgare — elenco preciso, da eseguire come controllo meccanico, non da
+ricostruire a memoria**:
+- `docs/notes/2026-08-29-atlas-antivirus-metodo-note.md`
+- `docs/notes/2026-08-29-famiglia-spinoff-toy-agent.md`
+- `docs/notes/2026-08-29-idea-harness-bersaglio-pubblico.md`
+- `docs/notes/2026-08-29-idea-sottoprodotto-benchmark-modelli.md`
+- La sezione "Estensione futura dichiarata (Nodo D)" in tutte e 4 le versioni del design
+  doc del metodo ATLAS — descrive la stessa idea in prosa, anche se per escluderla dalla
+  tesi: `docs/design/2026-08-29-atlas-audit-method-design.md` (v1),
+  `docs/design/2026-08-30-atlas-audit-method-design-v2.md` (v2),
+  `docs/design/2026-08-30-atlas-audit-method-design-v3.md` (v3),
+  `docs/design/2026-08-30-atlas-audit-method-design-v4.md` (v4).
+- Commit da purgare dalla storia: `c7ec3d6` (introduce le note),
+  `29410e6` (aggiorna le note, introduce i design doc v1-v4).
+- Prima di eseguire, ricontrollare se sessioni successive a questa (2026-08-30) hanno
+  aggiunto altro materiale collegato alla stessa famiglia di idee — questo elenco è
+  accurato alla data della decisione, non garantito completo per sempre.
+
+**Come**: riscrittura della storia (`git filter-repo` o equivalente) sui path sopra,
+poi force-push su `origin` — operazione distruttiva sul remoto, da confermare
+esplicitamente con l'utente al momento dell'esecuzione, non solo qui.
+
+**Perché non risolto ora**: coerente con come il progetto tratta altri rischi reali ma
+non attivi (`docs/design/registro-limiti-aperti.md`) — dichiarato esplicitamente come
+debito, non rinviato per omissione.
