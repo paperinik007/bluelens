@@ -194,6 +194,17 @@ def test_atlas_synthetic_entries_match_dataset_target():
     cases_by_id = {c.case_id: c for c in load_dataset(DATASET_PATH)}
     offending = []
     for entry in atlas_entries:
+        # Fix 2 post-council (2026-08-31): un entry atlas può essere
+        # status: candidate con selected_as: null se l'esecuzione aidr non è
+        # ancora stata prodotta (gate esplicito che vieta verdict: in_scope
+        # senza 2 verdicts ok). In quel caso il bridge test non può verificare
+        # catalog<->dataset drift perché il lato catalog non ha ancora un
+        # puntatore al TestCase. La copertura strutturale (esistenza del
+        # TestCase + strict_significant=False + technique_target inizia con
+        # T-ATLAS-) è già garantita da test_atlas_testcase_mirror_consistency
+        # (tests/test_metrics_atlas_synthetic.py) — non duplicarla qui.
+        if not entry.get("selected_as"):
+            continue
         case = cases_by_id.get(entry["selected_as"])
         if case is None:
             offending.append(

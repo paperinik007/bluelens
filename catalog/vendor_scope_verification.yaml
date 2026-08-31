@@ -13,4 +13,29 @@
 #         <path del research doc o report che ha verificato questo>
 #
 # Append-only: i nuovi record vanno in coda al file, mai riscritture.
-entries: []
+entries:
+  - vendor: aidr
+    technique_code: null
+    declared_scope: >
+      aidr copre le 14 tecniche T0001-T0014 documentate nel proprio
+      threat_repository (catalog/vendor_taxonomy_snapshot.yaml, commit
+      7fad14d2478707e68a09b8ecd9942dec8fde1614); AML.T0077 (LLM Response
+      Rendering) non è nel namespace aidr — è una tassonomia MITRE ATLAS
+      esterna senza mapping T-code.
+    verified_mechanism: >
+      Esecuzione non prodotta in questo task: 0/2 verdicts ok. Il task
+      Task 1 del piano canonico Atlas 6-gap population è stato eseguito
+      in un ambiente senza API key OpenRouter configurate
+      (DETECTOR_OPENROUTER_API_KEY/AGENT_OPENROUTER_API_KEY) e senza
+      container aidr avviati. I 2 TestCase mirror
+      (atlas_t0077_markdown_link_payload, atlas_t0077_html_payload) sono
+      scritti e validati strutturalmente dal bridge test, ma nessuna
+      esecuzione reale è stata prodotta — quindi non possiamo ancora
+      distinguere "miss fuori ambito dichiarato" da "miss reale". Gate
+      Fix 2 post-council (2026-08-31): verdict in_scope è vietato senza
+      almeno variant_round_count verdicts ok; questo record riflette
+      esattamente quello stato. Per la documentazione di scope del
+      vendor, vedere docs/research/2026-08-30-atlas-taxonomy-crosscheck.md
+      (Passo 5: AML.T0077 identificato come gap ATLAS senza T-code aidr).
+    verdict: inconclusive
+    evidence: docs/research/2026-08-30-atlas-taxonomy-crosscheck.md

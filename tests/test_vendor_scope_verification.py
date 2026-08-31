@@ -14,7 +14,11 @@ VERIFICATION_PATH = (
 REQUIRED_FIELDS = {
     "vendor", "technique_code", "declared_scope", "verified_mechanism", "verdict", "evidence",
 }
-ALLOWED_VERDICTS = {"in_scope", "narrower_than_declared", "out_of_scope"}
+# Fix 2 post-council (2026-08-31): aggiunto "inconclusive" come verdict
+# ammissibile — segnala "esecuzione non prodotta" senza dichiarare un
+# ambito di copertura che non è stato verificato. Il gate esplicito vieta
+# "in_scope" senza almeno variant_round_count verdicts ok contro aidr.
+ALLOWED_VERDICTS = {"in_scope", "narrower_than_declared", "out_of_scope", "inconclusive"}
 
 
 def _load_entries() -> list[dict]:
