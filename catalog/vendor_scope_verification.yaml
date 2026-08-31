@@ -39,3 +39,41 @@ entries:
       (Passo 5: AML.T0077 identificato come gap ATLAS senza T-code aidr).
     verdict: inconclusive
     evidence: docs/research/2026-08-30-atlas-taxonomy-crosscheck.md
+
+  - vendor: aidr
+    technique_code: null
+    declared_scope: >
+      aidr copre le 14 tecniche T0001-T0014 documentate nel proprio
+      threat_repository (catalog/vendor_taxonomy_snapshot.yaml, commit
+      7fad14d2478707e68a09b8ecd9942dec8fde1614); AML.T0006 (Active
+      Scanning contro l'agente) e AML.T0084 (Discover AI Agent
+      Configuration, con sub AML.T0084.000 Embedded Knowledge,
+      AML.T0084.001 Tool Definitions, AML.T0084.002 Activation Triggers,
+      AML.T0084.003 Call Chains) non sono nel namespace aidr — sono
+      tassonomie MITRE ATLAS esterne senza mapping T-code. T0006 aidr
+      ("Unauthorized Resource Access") NON è la stessa cosa: la
+      collisione visuale "T0006" è il motivo per cui il prefisso "AML."
+      è SEMPRE obbligatorio in ogni riferimento (vedi ADR-0001 + C12).
+    verified_mechanism: >
+      Esecuzione non prodotta in questo task: 0/2 verdicts ok. Il task
+      Task 2 del piano canonico Atlas 6-gap population è stato eseguito
+      nello stesso ambiente di Task 1, senza API key OpenRouter
+      configurate (DETECTOR_OPENROUTER_API_KEY/AGENT_OPENROUTER_API_KEY)
+      e senza container aidr avviati. I 2 TestCase mirror
+      (atlas_t0006_t0084_tool_surface_enum,
+      atlas_t0006_t0084_system_prompt_extraction) sono scritti e
+      validati strutturalmente dal bridge test (catalog/dataset drift
+      check, strict_significant=False, technique_target=T-ATLAS-
+      atlas-t0006-t0084-recon), ma nessuna esecuzione reale è stata
+      prodotta — quindi non possiamo ancora distinguere "miss fuori
+      ambito dichiarato" da "miss reale". Gate Fix 2 post-council
+      (2026-08-31): verdict in_scope è vietato senza almeno
+      variant_round_count verdicts ok; questo record riflette
+      esattamente quello stato. Stessa logica del record Task 1
+      sopra. Per la documentazione di scope del vendor e la
+      discussione del gap "Agent Capability Discovery", vedere
+      docs/research/2026-08-30-atlas-taxonomy-crosscheck.md (Passo 5
+      righe 263-281: Gap candidato 1 — Active Scanning contro l'agente
+      + famiglia Discover AI Agent; tabelle riassuntive righe 350-352).
+    verdict: inconclusive
+    evidence: docs/research/2026-08-30-atlas-taxonomy-crosscheck.md
