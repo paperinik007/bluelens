@@ -828,3 +828,17 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   mancanti al catalogo, ma generare varianti indipendenti dello stesso T-code per
   testare se il risultato attuale è robusto o un colpo di fortuna sulla formulazione
   specifica scelta.
+
+
+- **Gap Atlas `atlas-t0103-t0108-propagation` (AML.T0103 + AML.T0108) — chiuso come `out_of_scope`** —
+  capability toy agent verificata assente (`src/toy_agent/tools.py` espone solo i 6 tool dichiarati;
+  `run_diagnostic` ha allowlist hardcoded di 3 comandi, niente `eval`/`exec`/`subprocess`).
+  Nessuno spawna/orchestra/delega a sotto-agente. Forzare un caso lì reintrodurrebbe la stessa
+  classe di problema di Gap 17 (meccanismo forzato per soddisfare un conteggio a priori) — il
+  dataset registrerebbe un caso che NON manifesta la tecnica ATLAS, ma il meccanismo aidr più
+  vicino (T0004/T0008), come già notato per `AML.T0102` nel research doc. Esito lecito, non
+  fallimento del piano. Vedere `catalog/vendor_scope_verification.yaml` (entry con
+  `verdict: out_of_scope`) e `dataset/atlas_t0103_t0108_subagent_attempt.yaml` (C11: tentativo
+  documentato con `attack_success_criteria: {always: true}` T0001-style). Branch:
+  `agentpi/atlas-6-gap-population`, commit `334af48`. Pattern di riferimento: Gap 17
+  (T0009/T0011 aidr) già in questo registro.
