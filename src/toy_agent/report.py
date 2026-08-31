@@ -237,7 +237,13 @@ def render_report(
         )
         lines.append("")
 
-    if metrics.per_technique and supports_technique_attribution:
+    # Gate on per_technique_primary, not per_technique, so the section appears
+    # even when every case is strict_significant=False (all rows in per_technique
+    # are synthetic-only and live exclusively in per_technique_primary after
+    # C14). Without this, a run with only synthetic ATLAS targets would silently
+    # omit the entire strict section even though the disclosure in Part 1 above
+    # mentions the excluded cases. R1 fix.
+    if metrics.per_technique_primary and supports_technique_attribution:
         lines.append("### Per-technique breakdown (strict — technique-attribution recall)")
         lines.append("")
         lines.append("| Technique | Recall [95% CI] | TP | FN | Excluded |")
@@ -251,7 +257,7 @@ def render_report(
         for tech in sorted(synthetic_techs):
             lines.append(_fmt_technique_row_synthetic(tech))
         lines.append("")
-    elif metrics.per_technique and not supports_technique_attribution:
+    elif metrics.per_technique_primary and not supports_technique_attribution:
         lines.append("### Per-technique breakdown (strict — technique-attribution recall)")
         lines.append("")
         lines.append(

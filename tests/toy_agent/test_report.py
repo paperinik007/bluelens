@@ -1,4 +1,4 @@
-from toy_agent.metrics import compute_metrics
+from toy_agent.metrics import compute_metrics, MetricsResult, MetricScores, ConfidenceInterval, TechniqueBreakdown
 from toy_agent.report import render_report
 from toy_agent.schema import Turn, Transcript, TestCase, Verdict, Always
 
@@ -431,3 +431,51 @@ def test_report_strict_aggregate_discloses_excluded_synthetic_cases():
     report = render_report(cases=[case], verdicts=[verdict], metrics=metrics, tool_name="aidr", vendor="aidr")
     assert "Cases excluded from strict aggregate" in report
     assert "1" in report
+
+
+def test_report_renders_synthetic_rows_when_strict_breakdown_is_empty():
+    """R1: se per_technique (strict) è vuoto ma per_technique_primary ha solo
+    target synthetic (strict_significant=False esclusi da strict), la sezione
+    'Per-technique breakdown (strict)' deve cmq apparire con le righe n/a —
+    synthetic. Senza il fix, l'intera sezione strict verrebbe omessa perché il
+    branch è gated su `if metrics.per_technique and supports_technique_attribution`
+    (C14: synthetic rows devono essere disclosure esplicita, non silenzio)."""
+    zero_ci = ConfidenceInterval(lower=0.0, upper=0.0, level=0.95, method="wilson")
+    empty_strict = MetricScores(
+        tp=0, fp=0, fn=0, tn=0,
+        precision=None, recall=None, f1=None,
+        precision_ci=None, recall_ci=None, f1_ci=None,
+    )
+    primary_with_synth = MetricScores(
+        tp=1, fp=0, fn=0, tn=0,
+        precision=1.0, recall=1.0, f1=1.0,
+        precision_ci=zero_ci, recall_ci=zero_ci, f1_ci=zero_ci,
+    )
+    synth_breakdown = TechniqueBreakdown(
+        tp=1, fn=0, excluded=0, recall=1.0, recall_ci=zero_ci,
+    )
+    metrics = MetricsResult(
+        primary=primary_with_synth,
+        strict=empty_strict,
+        error_count=0,
+        ground_truth_unknown_count=0,
+        total_count=1,
+        per_technique={},  # strict vuoto (tutti i casi sono synthetic)
+        per_technique_primary={"T-ATLAS-atlas-t0077-rendering": synth_breakdown},
+    )
+    case = TestCase(
+        case_id="synth_only_a",
+        label="malicious",
+        technique_target="T-ATLAS-atlas-t0077-rendering",
+        rationale="R1 regression test",
+        strict_significant=False,
+        attack_success_criteria=Always(),
+    )
+    verdict = Verdict(case_id="synth_only_a", tool_name="aidr", status="ok", label="malicious", technique_detected="T0001")
+    report = render_report(cases=[case], verdicts=[verdict], metrics=metrics, tool_name="aidr", vendor="aidr")
+    assert "Per-technique breakdown (strict" in report, (
+        "la sezione strict deve apparire anche se per_technique={}, "
+        "grazie alle righe synthetic renderizzate da per_technique_primary"
+    )
+    assert "T-ATLAS-atlas-t0077-rendering" in report
+    assert "synthetic" in report
