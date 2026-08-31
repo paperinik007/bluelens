@@ -119,16 +119,19 @@ pragmatist, risk, skeptic) e dalla review di Claude Code:
    opzionale `strict_significant: bool = True`. Niente modifica al `__post_init__`
    esistente (campo è backward-compatible, default sicuro).
 
-6. **Estensione `metrics.py`** (`src/toy_agent/metrics.py:285-298`): quando
-   `case.strict_significant is False`, il caso NON entra in `per_tech_strict` (ma entra
-   in `per_tech_primary` se ha `technique_target`). Il commento esistente a riga 295
-   ("only for cases with a technique_target") viene esteso con una nota sul campo
-   `strict_significant`. Il campo `strict_significant` non ha effetto sui contatori
-   globali `s_tp`/`s_fp`/`s_fn`/`s_tn` — per costruzione il caso synthetic può solo
-   produrre s_tp se il vendor restituisce `technique_detected` uguale al synthetic
-   target (es. `T-ATLAS-atlas-t0077-rendering`), che nessun vendor reale farà;
-   questo è accettabile **solo se** il conteggio è etichettato come "non
-   significativo" nel report.
+6. **Estensione `metrics.py`** (`src/toy_agent/metrics.py`): quando
+   `case.strict_significant is False`, il caso NON entra in `per_tech_strict` (righe
+   ~305-324, ma entra in `per_tech_primary` se ha `technique_target`) **E NON entra nei
+   contatori aggregati strict `s_tp`/`s_fp`/`s_fn`/`s_tn`** (righe ~239-303 — blocco
+   diverso e distinto dal breakdown per-tecnica). **Correzione 2026-08-31 (grilling sul
+   piano canonico)**: la versione precedente di questa voce escludeva il campo solo dal
+   breakdown per-tecnica, lasciando i contatori aggregati contaminati — quegli stessi
+   contatori alimentano il Precision/Recall/F1 strict pubblicato in testa al report
+   (`report.py`, sezione "Strict metric"), il numero più visibile di tutti. Un caso
+   synthetic eseguito con successo da aidr come malicious produce comunque un FN
+   garantito per costruzione lì (mai `technique_detected == "T-ATLAS-..."`) se i
+   contatori aggregati restano invariati — stessa violazione del principio 8 che questa
+   patch esiste per chiudere, spostata di un livello. Vedi ADR-0002 (aggiornata).
 
 7. **Modifica a `report.py`** (o equivalente generatore di output): le righe del
    breakdown strict per-tecnica che hanno `strict_significant: False` (i.e. i casi
@@ -261,6 +264,7 @@ pragmatist, risk, skeptic) e dalla review di Claude Code:
 | C13 | Ogni `TestCase` mirror in `dataset/*.yaml` ha `strict_significant: False` + `technique_target.startswith("T-ATLAS-")` + `technique_target == f"T-ATLAS-{catalog_entry.variant_cluster_id}"` per la corrispondente entry in `cases.yaml` | test specifico |
 | C14 | Il breakdown `per_tech_strict` in `metrics.py` NON include righe per casi con `strict_significant: False` (check sulla proprietà semantica, non sul pattern di stringa del target sintetico — se un domani il prefisso `T-ATLAS-` cambia o un altro caso `strict_significant: False` usa un prefisso diverso, il check resta corretto) | ispezione manuale di `metrics.py` + test di integrazione |
 | C15 | Ogni nuova entry di `cases.yaml` per questo batch ha `variant_cluster_id` valorizzato (è **obbligatorio** per le nuove entry, non più solo opzionale come nel design v4 per le31 esistenti). Le 31 entry esistenti restano con `variant_cluster_id: null` (regola del design v4: `variant_cluster_id` non retroattivo). Il `variant_cluster_id` è uno dei 4 ammessi: `atlas-t0077-rendering`, `atlas-t0006-t0084-recon`, `atlas-t0012-valid-accounts`, `atlas-t0103-t0108-propagation` | test specifico in `tests/test_catalog.py` |
+| C16 | **NUOVO (2026-08-31)** — I contatori aggregati strict `s_tp`/`s_fp`/`s_fn`/`s_tn` in `metrics.py` NON includono casi con `strict_significant: False` (stesso criterio semantico di C14, applicato al blocco aggregato — righe ~239-303, distinto dal breakdown per-tecnica righe ~305-324). Il Precision/Recall/F1 strict pubblicato in `report.py` non include più FN garantiti per costruzione sui target synthetic | test di integrazione: un run con solo casi `strict_significant: False` malicious e correttamente rilevati da aidr deve dare `metrics.strict.recall` non contaminato (nessun FN attribuibile a quei casi specifici) |
 
 ## Architettura
 
@@ -351,7 +355,8 @@ Aggiunti da questo spec (vincoli operativi):
 4. **Coverage zero di C8 su questo batch**: come in precedenza — `technique_code:
    null` su tutte le 8-12 entry nuove
 5. **Coverage zero del breakdown strict per le entry nuove**: previsto per costruzione,
-   gestito da `strict_significant: False` + esclusione da `per_tech_strict` + label
+   gestito da `strict_significant: False` + esclusione da `per_tech_strict` **e dai
+   contatori aggregati `s_tp`/`s_fp`/`s_fn`/`s_tn`** (correzione 2026-08-31, C16) + label
    `n/a` nel report. **Diverso da un fallimento**: un FN garantito per costruzione
    non è un segnale sulla qualità del detector, è un artefatto di labeling.
 
