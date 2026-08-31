@@ -107,11 +107,10 @@ def test_report_shows_na_row_for_synthetic_tech():
     assert "T-ATLAS-atlas-t0077-rendering" not in metrics.per_technique
 
 
-@pytest.mark.xfail(reason="Atlas 6-gap spec C13: synthetic TestCase mirrors are populated "
-                   "by Task 1/2/3 (cases with technique_target=T-ATLAS-... are not in "
-                   "dataset/ yet). Task 0 only adds the schema; the mirror entries are "
-                   "added by the productive cluster tasks. Will become xfail_strict=False "
-                   "(or simply pass) after Task 1-3 land.", strict=False)
+# Atlas 6-gap Task 1 R1: removed @pytest.mark.xfail (was xfail(strict=False)).
+# Era rumoroso (XPASS) dopo che Task 1 ha popolato i TestCase mirror per
+# atlas-t0077-rendering (atlas_t0077_markdown_link_payload, atlas_t0077_html_payload)
+# — vedi commit 0df7aaf. Il test passa naturalmente senza marker.
 def test_atlas_testcase_mirror_consistency():
     """C13: ogni TestCase mirror in dataset/ per un cluster atlas ha
     strict_significant: False + technique_target inizia con 'T-ATLAS-'

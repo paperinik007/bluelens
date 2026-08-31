@@ -8,7 +8,7 @@
 #         <cosa il vendor dichiara di coprire>
 #       verified_mechanism: >
 #         <cosa il meccanismo fa davvero, verificato>
-#       verdict: in_scope | narrower_than_declared | out_of_scope
+#       verdict: in_scope | narrower_than_declared | out_of_scope | inconclusive
 #       evidence: >
 #         <path del research doc o report che ha verificato questo>
 #

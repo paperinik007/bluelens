@@ -240,11 +240,9 @@ ALLOWED_VARIANT_CLUSTERS = {
 }
 
 
-@pytest.mark.xfail(reason="Atlas 6-gap spec C3/C15: catalog entries with "
-                   "variant_cluster_id in {atlas-t0077-rendering, "
-                   "atlas-t0006-t0084-recon, atlas-t0012-valid-accounts, "
-                   "atlas-t0103-t0108-propagation} are populated by Task 1/2/3/4, "
-                   "not Task 0. Task 0 only wires the schema.", strict=False)
+# Atlas 6-gap Task 1 R1: removed @pytest.mark.xfail (was xfail(strict=False)).
+# Era rumoroso (XPASS) dopo che Task 1 ha popolato atlas-t0077-rendering
+# (commit 0df7aaf). Il test passa naturalmente senza marker.
 def test_atlas_synthetic_entries_have_required_fields():
     """C3: le 8-10 nuove entry (cluster atlas-t0077-rendering,
     atlas-t0006-t0084-recon, atlas-t0012-valid-accounts) hanno tutti i
@@ -266,9 +264,9 @@ def test_atlas_synthetic_entries_have_required_fields():
     assert not missing, f"atlas entries missing required fields: {missing}"
 
 
-@pytest.mark.xfail(reason="Atlas 6-gap spec C15: variant_cluster_id whitelist "
-                   "check fires only after Task 1/2/3/4 populate catalog entries "
-                   "with variant_cluster_id. Task 0 only wires the schema.", strict=False)
+# Atlas 6-gap Task 1 R1: removed @pytest.mark.xfail (was xfail(strict=False)).
+# Era rumoroso (XPASS) dopo che Task 1 ha popolato le entry atlas con
+# variant_cluster_id valorizzato. Il test passa naturalmente senza marker.
 def test_atlas_entries_have_valid_variant_cluster_id():
     """C15: variant_cluster_id è obbligatorio per le nuove entry del batch
     (non più solo opzionale come per le 31 esistenti). Le 31 esistenti
