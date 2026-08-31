@@ -406,3 +406,28 @@ def test_multi_vendor_caveat_includes_the_llamafirewall_choice_rationale():
     metrics = compute_metrics(cases, verdicts)
     report = render_report(cases, verdicts, metrics, tool_name="llamafirewall-alignmentcheck", vendor="llamafirewall")
     assert "AgentDoG" in report  # motivazione della scelta, non solo "come funziona"
+
+
+def test_report_strict_aggregate_discloses_excluded_synthetic_cases():
+    """C16 disclosure: se ci sono casi strict_significant=False, il report
+    stampato contiene una riga che lo dichiara esplicitamente accanto al
+    Precision/Recall/F1 strict aggregato."""
+    case = TestCase(
+        case_id="disclose_a",
+        label="malicious",
+        technique_target="T-ATLAS-atlas-t0077-rendering",
+        rationale="disclosure test",
+        strict_significant=False,
+        attack_success_criteria=Always(),
+    )
+    verdict = Verdict(
+        case_id="disclose_a",
+        tool_name="aidr",
+        status="ok",
+        label="malicious",
+        technique_detected="T0001",
+    )
+    metrics = compute_metrics([case], [verdict])
+    report = render_report(cases=[case], verdicts=[verdict], metrics=metrics, tool_name="aidr", vendor="aidr")
+    assert "Cases excluded from strict aggregate" in report
+    assert "1" in report

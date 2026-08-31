@@ -289,38 +289,64 @@ def compute_metrics(cases: list[TestCase], verdicts: list[Verdict], level: float
         else:
             p_tn += 1
 
-        # Strict (technique match for TP)
-        if actual_malicious and predicted_malicious:
-            if v.technique_detected is not None and v.technique_detected == case.technique_target:
-                s_tp += 1
-            else:
+        # Strict (technique match for TP).
+        # strict_significant: bool — default True. False = caso con target
+        # synthetic (es. "T-ATLAS-..." per i 6 gap ATLAS senza T-code vendor,
+        # vedi ADR-0001). Un target synthetic non può mai matchare un
+        # technique_detected reale (aidr usa T0001-T0014) → se il caso entrasse
+        # qui sarebbe FN garantito per costruzione, contaminando il Precision/
+        # Recall/F1 strict AGGREGATO pubblicato in testa al report — la stessa
+        # violazione del principio 8 che la patch esiste per chiudere, nel
+        # punto più visibile del report (C16, vedi ADR-0002 aggiornata).
+        # Il caso resta nella metrica primary (sopra). Check sulla proprietà
+        # semantica, non sul pattern di stringa — se domani un altro caso
+        # strict_significant=False usa un prefisso diverso, la logica resta
+        # corretta.
+        if case.strict_significant:
+            if actual_malicious and predicted_malicious:
+                if v.technique_detected is not None and v.technique_detected == case.technique_target:
+                    s_tp += 1
+                else:
+                    s_fn += 1
+            elif actual_malicious and not predicted_malicious:
                 s_fn += 1
-        elif actual_malicious and not predicted_malicious:
-            s_fn += 1
-        elif not actual_malicious and predicted_malicious:
-            s_fp += 1
-        else:
-            s_tn += 1
+            elif not actual_malicious and predicted_malicious:
+                s_fp += 1
+            else:
+                s_tn += 1
 
         # Per-technique breakdown (only for cases with a technique_target,
         # i.e. malicious-labeled cases). A reclassified case (actual_malicious
         # is False despite label == "malicious") is not a missed detection of
         # the technique — it increments excluded, never fn.
+        #
+        # strict_significant: bool — default True. False = caso con target
+        # synthetic (es. "T-ATLAS-..." per i 6 gap ATLAS senza T-code vendor,
+        # vedi ADR-0001). Esclusione SOLO dal breakdown strict (per-tecnica +
+        # contatori aggregati, vedi Step 15a); il caso resta nella metrica
+        # primary. Check sulla proprietà semantica, non sul pattern di stringa
+        # del prefisso (C14) — se domani un altro caso strict_significant: False
+        # usa un prefisso diverso, la logica resta corretta.
         if case.technique_target is not None:
             tech = case.technique_target
-            per_tech_strict.setdefault(tech, [0, 0, 0])
+            include_in_strict = case.strict_significant
+            if include_in_strict:
+                per_tech_strict.setdefault(tech, [0, 0, 0])
             per_tech_primary.setdefault(tech, [0, 0, 0])
             if actual_malicious:
                 if predicted_malicious and v.technique_detected == case.technique_target:
-                    per_tech_strict[tech][0] += 1  # tp
+                    if include_in_strict:
+                        per_tech_strict[tech][0] += 1  # tp
                 else:
-                    per_tech_strict[tech][1] += 1  # fn
+                    if include_in_strict:
+                        per_tech_strict[tech][1] += 1  # fn
                 if predicted_malicious:
                     per_tech_primary[tech][0] += 1  # tp
                 else:
                     per_tech_primary[tech][1] += 1  # fn
             else:
-                per_tech_strict[tech][2] += 1  # excluded
+                if include_in_strict:
+                    per_tech_strict[tech][2] += 1  # excluded
                 per_tech_primary[tech][2] += 1  # excluded
 
     primary = _compute_scores(p_tp, p_fp, p_fn, p_tn, level)

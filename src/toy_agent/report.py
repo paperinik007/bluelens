@@ -46,6 +46,14 @@ def _fmt_technique_row(name: str, tb: TechniqueBreakdown) -> str:
     )
 
 
+def _fmt_technique_row_synthetic(tech: str) -> str:
+    """Riga n/a per target synthetic (Atlas 6-gap batch, strict_significant=False).
+    5 celle come l'header reale (Technique | Recall | TP | FN | Excluded) — il
+    dettaglio completo (perché, quanti casi) vive nella disclosure aggregata di
+    Step 18b, non duplicato riga per riga. Vedi spec Scope IN voce 7 + C14."""
+    return f"| {tech} | n/a | n/a | n/a | synthetic — vedi disclosure sopra |"
+
+
 def _format_transcript_excerpt(transcript: Transcript, max_turns: int = 3, max_content_len: int = 200) -> str:
     """Format first N turns of a transcript for the report (Gap 8)."""
     lines = []
@@ -182,6 +190,17 @@ def render_report(
         lines.append(f"- **Precision:** {_fmt_point_and_ci(metrics.strict.precision, metrics.strict.precision_ci)}")
         lines.append(f"- **Recall:** {_fmt_point_and_ci(metrics.strict.recall, metrics.strict.recall_ci)}")
         lines.append(f"- **F1:** {_fmt_point_and_ci(metrics.strict.f1, metrics.strict.f1_ci)}")
+        # C16 disclosure: casi strict_significant=False esclusi dai contatori
+        # aggregati strict (target synthetic, FN garantito per costruzione).
+        # vedi docs/design/registro-limiti-aperti.md + ADR-0002. Derived inline
+        # from cases (no separate MetricsResult field, no double bookkeeping).
+        strict_excluded_synthetic_count = sum(1 for case in cases if not case.strict_significant)
+        if strict_excluded_synthetic_count > 0:
+            lines.append(
+                f"- **Cases excluded from strict aggregate:** {strict_excluded_synthetic_count} "
+                f"(strict_significant=False — synthetic ATLAS target without vendor T-code, "
+                f"see ADR-0002 + docs/design/registro-limiti-aperti.md)"
+            )
     else:
         lines.append(
             f"- **Not applicable for this vendor.** {tool_name}'s detector does not attribute a "
@@ -225,6 +244,12 @@ def render_report(
         lines.append("|---|---|---|---|---|")
         for tech in sorted(metrics.per_technique.keys()):
             lines.append(_fmt_technique_row(tech, metrics.per_technique[tech]))
+        # Atlas 6-gap batch: synthetic targets (T-ATLAS-...) live in
+        # per_technique_primary but were excluded from per_technique (C14).
+        # Render them as n/a rows here rather than silently omitting them.
+        synthetic_techs = set(metrics.per_technique_primary.keys()) - set(metrics.per_technique.keys())
+        for tech in sorted(synthetic_techs):
+            lines.append(_fmt_technique_row_synthetic(tech))
         lines.append("")
     elif metrics.per_technique and not supports_technique_attribution:
         lines.append("### Per-technique breakdown (strict — technique-attribution recall)")
@@ -234,6 +259,10 @@ def render_report(
             f"to its verdicts, so a per-technique strict breakdown would be zero by construction for "
             f"every row, not a measured result. See docs/design/registro-limiti-aperti.md."
         )
+        # Same synthetic-target disclosure as the supports_technique_attribution branch.
+        synthetic_techs = set(metrics.per_technique_primary.keys()) - set(metrics.per_technique.keys())
+        for tech in sorted(synthetic_techs):
+            lines.append(_fmt_technique_row_synthetic(tech))
         lines.append("")
 
     if metrics.per_technique_primary:

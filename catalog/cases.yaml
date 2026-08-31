@@ -48,6 +48,35 @@
 #   status         - "candidate" | "selected"
 #   selected_as    - case_id del TestCase reale, valorizzato solo dopo la
 #                    scrittura
+#
+# Campi opzionali aggiunti dal batch Atlas 6-gap (Task 0, design v4):
+#   variant_cluster_id - identificatore del cluster di variante ATLAS (per il
+#                        batch Atlas 6-gap), opzionale. Valori ammessi per le
+#                        entry di quel batch: "atlas-t0077-rendering",
+#                        "atlas-t0006-t0084-recon", "atlas-t0012-valid-accounts",
+#                        "atlas-t0103-t0108-propagation". null per tutte le
+#                        voci esistenti. Vedi spec docs/design/2026-08-30-atlas-6-gap-spec.md.
+#   variant_round_count - numero di varianti pianificate per il cluster
+#                         (2 o 3), opzionale, null per le voci esistenti.
+#                         Vincolo: 2 obbligatorio per i cluster produttivi
+#                         del batch Atlas 6-gap; nessuna quota per il cluster
+#                         "atlas-t0103-t0108-propagation" se l'esito è
+#                         out_of_scope.
+#   per_vendor_concordance - mappa {vendor: agreed|disagreed|inconclusive}
+#                            popolata dopo l'esecuzione (Passo 3), opzionale.
+#                            Vincolo: ancorato alla metrica primary, mai alla
+#                            strict (vedi design v4 "Dove vive il tracking").
+#   atlas_codes - lista di codici ATLAS top-level mappati a questa entry,
+#                 opzionale. Permette di risalire meccanicamente da "ATLAS gap
+#                 X" nel research doc a "case Y" in cases.yaml. Per il batch
+#                 Atlas 6-gap: [AML.T0077], [AML.T0006, AML.T0084], [AML.T0012],
+#                 o [AML.T0103, AML.T0108]. Prefisso "AML." sempre, mai un
+#                 numero nudo (collisione con T-code aidr T0006/T0012).
+#                 C12 NON verificato da CI: il file
+#                 dist/v6/ATLAS-2026.07.yaml (MITRE ATLAS tassonomia) non è
+#                 incluso nel repo. Validazione documentale a cura
+#                 dell'autore. Riferimento esterno:
+#                 https://atlas.mitre.org/techniques/
 
 entries:
   - catalog_id: forcedleak_ticket_hidden_instruction

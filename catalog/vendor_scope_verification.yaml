@@ -1,0 +1,16 @@
+# Verification narratives for vendor scope (Atlas 6-gap batch, Passo 5).
+#
+# Schema (fisso dal design v4 righe 221-283):
+#   entries:
+#     - vendor: <aidr|llamafirewall|futuro>
+#       technique_code: <T00NN da vendor_taxonomy_snapshot.yaml | null>
+#       declared_scope: >
+#         <cosa il vendor dichiara di coprire>
+#       verified_mechanism: >
+#         <cosa il meccanismo fa davvero, verificato>
+#       verdict: in_scope | narrower_than_declared | out_of_scope
+#       evidence: >
+#         <path del research doc o report che ha verificato questo>
+#
+# Append-only: i nuovi record vanno in coda al file, mai riscritture.
+entries: []

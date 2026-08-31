@@ -52,3 +52,11 @@ def test_vendors_aidr_never_imports_llamafirewall():
 def test_vendors_llamafirewall_never_imports_aidr():
     offending = _files_importing(LLAMAFIREWALL_VENDOR_ROOT, "aidr")
     assert not offending, f"vendors/llamafirewall must never import aidr: {offending}"
+
+
+def test_toy_agent_package_never_imports_catalog():
+    """Atlas 6-gap spec C10: src/toy_agent non importa da catalog/. Vincolo
+    architetturale generale (design v4), promosso a test pytest reale — non
+    un check manuale documentato."""
+    offending = _files_importing(SRC_ROOT, "catalog")
+    assert not offending, f"toy_agent must never import catalog: {offending}"
