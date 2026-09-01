@@ -121,6 +121,12 @@ class TestCase:
     transcript: Optional[Transcript] = None
     attack_success_criteria: Optional[CriterionType] = None
     attack_succeeded: Optional[bool] = None
+    strict_significant: bool = True  # default True: il caso conta nel breakdown
+                                      # strict per-tecnica. False = escluso dal
+                                      # breakdown strict (es. target synthetic
+                                      # T-ATLAS-...); resta nella metrica primary.
+                                      # Vedi docs/design/2026-08-30-atlas-6-gap-spec.md
+                                      # Scope IN voce 5 + ADR-0002.
 
     def __post_init__(self) -> None:
         if self.label not in ("malicious", "benign"):

@@ -41,3 +41,10 @@ def test_every_non_excluded_technique_has_a_malicious_test_case():
         f"{sorted(missing)} — every technique except {sorted(DECLARED_UNCOVERED_TECHNIQUES)} "
         f"(Gap 17) must be covered before run_batch.py runs on the full dataset"
     )
+
+
+def test_no_regression_on_existing_dataset_cases():
+    """C9: i 31 casi esistenti in dataset/ continuano a essere caricati senza
+    errori. Il loader non si è rotto a causa dei 4 nuovi campi opzionali."""
+    cases = load_dataset(DATASET_DIR)
+    assert len(cases) >= 31, f"dataset has {len(cases)} cases, expected >=31"

@@ -155,14 +155,130 @@ def test_selected_catalog_entries_match_their_dataset_test_case():
         if case is None:
             offending.append(f"{entry['catalog_id']}: selected_as {entry['selected_as']!r} not found in dataset/")
             continue
-        if entry["label_hint"] == "malicious" and case.technique_target != entry["technique_code"]:
-            offending.append(
-                f"{entry['catalog_id']}: dataset technique_target {case.technique_target!r} "
-                f"!= catalog technique_code {entry['technique_code']!r}"
-            )
+        if entry["label_hint"] == "malicious":
+            if entry["technique_code"] is None:
+                # Atlas 6-gap batch: entry con technique_code null + variant_cluster_id valorizzato.
+                # Confronto diretto, niente removeprefix (vedi ADR-0001).
+                if entry.get("variant_cluster_id") is None:
+                    offending.append(
+                        f"{entry['catalog_id']}: technique_code null requires variant_cluster_id"
+                    )
+                elif case.technique_target != f"T-ATLAS-{entry['variant_cluster_id']}":
+                    offending.append(
+                        f"{entry['catalog_id']}: dataset technique_target {case.technique_target!r} "
+                        f"!= expected T-ATLAS-{{entry['variant_cluster_id']}}"
+                    )
+            elif case.technique_target != entry["technique_code"]:
+                offending.append(
+                    f"{entry['catalog_id']}: dataset technique_target {case.technique_target!r} "
+                    f"!= catalog technique_code {entry['technique_code']!r}"
+                )
         if entry["catalog_id"] not in case.rationale:
             offending.append(f"{entry['catalog_id']}: dataset case {case.case_id!r} rationale does not mention the catalog_id")
     assert not offending, f"catalog/dataset drift: {offending}"
+
+
+def test_atlas_synthetic_entries_match_dataset_target():
+    """Atlas 6-gap spec Scope IN voce 4: entry con technique_code is None e
+    variant_cluster_id valorizzato deve matchare un TestCase mirror in dataset/
+    con technique_target == f"T-ATLAS-{entry.variant_cluster_id}" (confronto
+    diretto, niente manipolazione di stringhe). Caso di errore storico evitato:
+    "T-ATLAS-T0077".removeprefix("T-ATLAS-") == "T0077" non è mai in
+    ["AML.T0077"]. Vedi ADR-0001."""
+    atlas_entries = [
+        e for e in _load_entries()
+        if e.get("technique_code") is None and e.get("variant_cluster_id") is not None
+    ]
+    if not atlas_entries:
+        return  # nessuna entry synthetic ancora — vacuously fine
+    cases_by_id = {c.case_id: c for c in load_dataset(DATASET_PATH)}
+    offending = []
+    for entry in atlas_entries:
+        # Fix 2 post-council (2026-08-31): un entry atlas può essere
+        # status: candidate con selected_as: null se l'esecuzione aidr non è
+        # ancora stata prodotta (gate esplicito che vieta verdict: in_scope
+        # senza 2 verdicts ok). In quel caso il bridge test non può verificare
+        # catalog<->dataset drift perché il lato catalog non ha ancora un
+        # puntatore al TestCase. La copertura strutturale (esistenza del
+        # TestCase + strict_significant=False + technique_target inizia con
+        # T-ATLAS-) è già garantita da test_atlas_testcase_mirror_consistency
+        # (tests/test_metrics_atlas_synthetic.py) — non duplicarla qui.
+        if not entry.get("selected_as"):
+            continue
+        case = cases_by_id.get(entry["selected_as"])
+        if case is None:
+            offending.append(
+                f"{entry['catalog_id']}: selected_as {entry['selected_as']!r} not found in dataset/"
+            )
+            continue
+        expected = f"T-ATLAS-{entry['variant_cluster_id']}"
+        if case.technique_target != expected:
+            offending.append(
+                f"{entry['catalog_id']}: dataset technique_target {case.technique_target!r} "
+                f"!= expected {expected!r}"
+            )
+    assert not offending, f"atlas synthetic catalog/dataset drift: {offending}"
+
+
+def test_catalog_loads_with_new_optional_fields():
+    """C1: i 4 nuovi campi opzionali in cases.yaml (variant_cluster_id,
+    variant_round_count, per_vendor_concordance, atlas_codes) sono accettati
+    dal loader esistente senza errori. Backward-compatibility: le 31 entry
+    esistenti non li hanno valorizzati e il loader non li richiede."""
+    entries = _load_entries()
+    assert len(entries) >= 31, f"cases.yaml has {len(entries)} entries, expected >=31"
+    # Verifica che il dataset loader non fallisca
+    from toy_agent.dataset import load_dataset
+    load_dataset(DATASET_PATH)  # solleva se schema rotto
+
+
+ALLOWED_VARIANT_CLUSTERS = {
+    "atlas-t0077-rendering",
+    "atlas-t0006-t0084-recon",
+    "atlas-t0012-valid-accounts",
+    "atlas-t0103-t0108-propagation",
+}
+
+
+# Atlas 6-gap Task 1 R1: removed @pytest.mark.xfail (was xfail(strict=False)).
+# Era rumoroso (XPASS) dopo che Task 1 ha popolato atlas-t0077-rendering
+# (commit 0df7aaf). Il test passa naturalmente senza marker.
+def test_atlas_synthetic_entries_have_required_fields():
+    """C3: le 8-10 nuove entry (cluster atlas-t0077-rendering,
+    atlas-t0006-t0084-recon, atlas-t0012-valid-accounts) hanno tutti i
+    required fields di cases.yaml. Le entry di atlas-t0103-t0108-propagation
+    NON sono in cases.yaml per design (esito out_of_scope, C11)."""
+    allowed_clusters = {
+        "atlas-t0077-rendering", "atlas-t0006-t0084-recon",
+        "atlas-t0012-valid-accounts",  # NOT atlas-t0103-t0108-propagation
+    }
+    atlas_entries = [
+        e for e in _load_entries()
+        if e.get("variant_cluster_id") in allowed_clusters
+    ]
+    assert atlas_entries, "no atlas entries found — Task 1/2/3 not executed yet"
+    missing = {
+        e["catalog_id"]: REQUIRED_FIELDS - set(e.keys())
+        for e in atlas_entries if REQUIRED_FIELDS - set(e.keys())
+    }
+    assert not missing, f"atlas entries missing required fields: {missing}"
+
+
+# Atlas 6-gap Task 1 R1: removed @pytest.mark.xfail (was xfail(strict=False)).
+# Era rumoroso (XPASS) dopo che Task 1 ha popolato le entry atlas con
+# variant_cluster_id valorizzato. Il test passa naturalmente senza marker.
+def test_atlas_entries_have_valid_variant_cluster_id():
+    """C15: variant_cluster_id è obbligatorio per le nuove entry del batch
+    (non più solo opzionale come per le 31 esistenti). Le 31 esistenti
+    restano con variant_cluster_id: null (regola del design v4: non retroattivo).
+    I valori ammessi sono i 4 cluster del batch."""
+    atlas_entries = [e for e in _load_entries() if e.get("variant_cluster_id") is not None]
+    assert atlas_entries, "no atlas entries found — Task 1-3 not executed yet"
+    offenders = [
+        e["catalog_id"] for e in atlas_entries
+        if e["variant_cluster_id"] not in ALLOWED_VARIANT_CLUSTERS
+    ]
+    assert not offenders, f"atlas entries with unknown variant_cluster_id: {offenders}"
 
 
 def _filled_template_example(label: str, technique_target: str | None) -> dict:

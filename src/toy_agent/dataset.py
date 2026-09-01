@@ -58,6 +58,14 @@ def _entry_to_test_case(data: dict, source: Path) -> TestCase:
         rationale=data["rationale"],
         transcript=transcript,
         attack_success_criteria=attack_success_criteria,
+        # strict_significant: bool = True di default — il TestCase conta nei
+        # contatori strict aggregati e nel breakdown per-tecnica strict.
+        # Atlas 6-gap batch: i 6 cluster synthetic (T-ATLAS-...) lo passano a
+        # False perché il target non colliderà mai con un T-code aidr reale,
+        # sarebbe FN garantito per costruzione. Default True preserva il
+        # comportamento per tutti i 31 casi esistenti (backward-compatible).
+        # Vedi ADR-0001, ADR-0002, schema.TestCase.strict_significant.
+        strict_significant=data.get("strict_significant", True),
     )
 
 
