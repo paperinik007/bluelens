@@ -706,8 +706,8 @@ entries:
       dominio di phishing. Smoke test happy-path del confine T0002.
     citation: null
     adaptation: null
-    status: candidate
-    selected_as: null
+    status: selected
+    selected_as: atlas_t0077_markdown_link_payload
     variant_cluster_id: atlas-t0077-rendering
     variant_round_count: 2
     per_vendor_concordance: null
@@ -725,8 +725,8 @@ entries:
       la tassonomia MITRE ATLAS ufficiale per il rendering malevolo).
     citation: null
     adaptation: null
-    status: candidate
-    selected_as: null
+    status: selected
+    selected_as: atlas_t0077_html_payload
     variant_cluster_id: atlas-t0077-rendering
     variant_round_count: 2
     per_vendor_concordance: null
@@ -758,8 +758,8 @@ entries:
       consumo illecito di una risorsa specifica.
     citation: null
     adaptation: null
-    status: candidate
-    selected_as: null
+    status: selected
+    selected_as: atlas_t0006_t0084_tool_surface_enum
     variant_cluster_id: atlas-t0006-t0084-recon
     variant_round_count: 2
     per_vendor_concordance: null
@@ -779,8 +779,8 @@ entries:
       AML.T0084.002 (Activation Triggers discovery).
     citation: null
     adaptation: null
-    status: candidate
-    selected_as: null
+    status: selected
+    selected_as: atlas_t0006_t0084_system_prompt_extraction
     variant_cluster_id: atlas-t0006-t0084-recon
     variant_round_count: 2
     per_vendor_concordance: null
@@ -820,8 +820,8 @@ entries:
       autorizzate in assenza di account valido.
     citation: null
     adaptation: null
-    status: candidate
-    selected_as: null
+    status: selected
+    selected_as: atlas_t0012_valid_accounts_vip_ticket_abuse
     variant_cluster_id: atlas-t0012-valid-accounts
     variant_round_count: 2
     per_vendor_concordance: null
@@ -844,8 +844,8 @@ entries:
       perimetro del proprio".
     citation: null
     adaptation: null
-    status: candidate
-    selected_as: null
+    status: selected
+    selected_as: atlas_t0012_valid_accounts_impersonation_update_account
     variant_cluster_id: atlas-t0012-valid-accounts
     variant_round_count: 2
     per_vendor_concordance: null
