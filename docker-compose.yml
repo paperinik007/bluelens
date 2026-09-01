@@ -33,6 +33,15 @@ services:
       dockerfile: docker/detector/Dockerfile
     depends_on:
       - egress-proxy
+    # Niente env_file: qui (a differenza di detector-llamafirewall): il
+    # container si aspetta la variabile generica OPENROUTER_API_KEY, mentre
+    # il valore vive lato host come DETECTOR_OPENROUTER_API_KEY (in
+    # .env.aidr) per restare distinguibile da AGENT_OPENROUTER_API_KEY —
+    # env_file: inietterebbe il nome cosi' com'e', senza rinominarlo. La
+    # sostituzione ${...} qui sotto fa da rinomina; risolve leggendo .env.aidr
+    # solo se quella variabile e' anche esportata nella shell che lancia
+    # `docker compose` (run_batch.py lo richiede comunque per l'uso proprio,
+    # vedi README) — Compose non carica .env.aidr da solo per la sostituzione.
     environment:
       OPENROUTER_API_KEY: ${DETECTOR_OPENROUTER_API_KEY}
       HTTPS_PROXY: http://egress-proxy:3128

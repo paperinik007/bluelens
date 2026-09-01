@@ -80,30 +80,37 @@ SPIRIT.md).
 ## Come eseguire
 
 Servono due chiavi API OpenRouter distinte, una per `agent` e una per `detector`
-(`AGENT_OPENROUTER_API_KEY` e `DETECTOR_OPENROUTER_API_KEY`) — chiavi separate per
-principio, non per necessità tecnica: un container compromesso non deve poter
-spendere o agire per conto dell'altro (Gap 9, confine misuratore/misurato).
-Per `--vendor llamafirewall` serve inoltre una terza chiave, dedicata,
-in `.env.llamafirewall` (`LLAMAFIREWALL_OPENROUTER_API_KEY` + `LLAMAFIREWALL_MODEL`)
-— mai la stessa chiave di `DETECTOR_OPENROUTER_API_KEY`, per lo stesso principio.
+(`AGENT_OPENROUTER_API_KEY` in `.env`, `DETECTOR_OPENROUTER_API_KEY` in `.env.aidr`)
+— chiavi separate per principio, non per necessità tecnica: un container compromesso
+non deve poter spendere o agire per conto dell'altro (Gap 9, confine
+misuratore/misurato). Per `--vendor llamafirewall` serve inoltre una terza chiave,
+dedicata, in `.env.llamafirewall` (`LLAMAFIREWALL_OPENROUTER_API_KEY` +
+`LLAMAFIREWALL_MODEL`) — mai la stessa chiave di `DETECTOR_OPENROUTER_API_KEY`, per
+lo stesso principio.
 
-I modelli per i tier del detector (`SIFTER_MODEL`, `INSPECTOR_MODEL`, `EMBED_MODEL`)
-e per l'agente giocattolo (`AGENT_MODEL`) sono opzionali — lasciare vuoto per usare
-i default del codice (`vendor_proxy.py` per i tier, `model_client.py` per l'agente).
-Tutti i modelli usati sono dichiarati nel report (Gap 20).
+I modelli per i tier del detector (`SIFTER_MODEL`, `INSPECTOR_MODEL`, `EMBED_MODEL`,
+in `.env.aidr`) e per l'agente giocattolo (`AGENT_MODEL`, in `.env`) sono opzionali —
+lasciare vuoto per usare i default del codice (`vendor_proxy.py` per i tier,
+`model_client.py` per l'agente). Tutti i modelli usati sono dichiarati nel report
+(Gap 20).
 
 ```
 cp .env.example .env
-# poi modificare .env e impostare AGENT_OPENROUTER_API_KEY=<chiave 1> e
+# poi modificare .env e impostare AGENT_OPENROUTER_API_KEY=<chiave 1>
+# creare .env.aidr (vedi il blocco commentato in .env.example) e impostare
 # DETECTOR_OPENROUTER_API_KEY=<chiave 2>
 docker compose build
 docker compose up -d egress-proxy
 ```
 
-`.env.llamafirewall` serve solo per `--vendor llamafirewall` (vedi sopra) — non
-è necessario crearlo per usare `--vendor aidr`; `docker-compose.yml` lo dichiara
-opzionale (`required: false`), quindi la sua assenza non blocca `docker compose
-build`/`up`/`rm` per gli altri servizi.
+`.env.aidr` e `.env.llamafirewall` servono solo per il rispettivo `--vendor` (vedi
+sopra) — non è necessario crearli entrambi; `docker-compose.yml` dichiara
+`.env.llamafirewall` opzionale (`required: false`) per il servizio
+`detector-llamafirewall`, quindi la sua assenza non blocca `docker compose
+build`/`up`/`rm` per gli altri servizi. `.env.aidr` invece alimenta il servizio
+`detector` via sostituzione `${...}` (non `env_file:` — vedi commento in
+`docker-compose.yml`), quindi va creato ed esportato nella shell prima di usare
+`--vendor aidr` (vedi sotto).
 
 Attenzione: `docker compose config` stampa entrambe le chiavi in chiaro — non
 eseguirlo in una sessione di terminale condivisa o loggata.
@@ -153,9 +160,9 @@ con i container di quel batch e può distruggerli a metà run.
 `run_batch.py` legge la chiave del vendor scelto (`DETECTOR_OPENROUTER_API_KEY` per
 `--vendor aidr`, `LLAMAFIREWALL_OPENROUTER_API_KEY` per `--vendor llamafirewall`)
 direttamente dall'ambiente del processo Python host (la stessa variabile impostata
-in `.env`/`.env.llamafirewall`, ma letta qui dall'host, non passata attraverso Docker
-— va quindi esportata anche nella shell da cui si lancia il comando, non solo nel
-file). `<dataset_dir>` è una directory di file YAML `TestCase` (Plan 5); non viene
+in `.env.aidr`/`.env.llamafirewall`, ma letta qui dall'host, non passata attraverso
+Docker — va quindi esportata anche nella shell da cui si lancia il comando, non solo
+nel file). `<dataset_dir>` è una directory di file YAML `TestCase` (Plan 5); non viene
 mai scritta.
 
 **Ogni run ha la sua directory.** `<run_output_dir>` è la radice; ogni esecuzione crea al

@@ -852,6 +852,29 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   `docker-compose.yml` (servizio `detector`) da sostituzione inline `${...}` a
   `env_file: .env.aidr`, mirroring del pattern già usato per `detector-llamafirewall`.
 
+  **Risolto (2026-09-01)**, con una deviazione dichiarata dal testo sopra: creato
+  `.env.aidr` (`DETECTOR_OPENROUTER_API_KEY` + `SIFTER_MODEL`/`INSPECTOR_MODEL`/
+  `EMBED_MODEL`, tutti e quattro contingenti ad aidr per costruzione, non solo la
+  chiave), `.env` ridotto a `AGENT_OPENROUTER_API_KEY`/`AGENT_MODEL`, `.env.example`
+  e `README.md` aggiornati di conseguenza. **Non** convertito a `env_file: .env.aidr`
+  come indicato sopra: verificato nel codice (`src/detector_adapter/vendors/aidr/
+  vendor_proxy.py:188`, `docker/detector/entrypoint.sh:10`) che il container si
+  aspetta la variabile generica `OPENROUTER_API_KEY`, mentre il nome lato host resta
+  `DETECTOR_OPENROUTER_API_KEY` per restare distinguibile da
+  `AGENT_OPENROUTER_API_KEY` — a differenza di LlamaFirewall (il cui codice legge
+  direttamente `LLAMAFIREWALL_OPENROUTER_API_KEY`, stesso nome dentro e fuori dal
+  container), `env_file:` inietterebbe il nome così com'è, senza rinominarlo, e
+  romperebbe il container. La sostituzione `${DETECTOR_OPENROUTER_API_KEY}` esistente
+  in `docker-compose.yml` resta quindi il meccanismo giusto — fa anche da rinomina —
+  e continua a funzionare perché richiede comunque l'esportazione della variabile
+  nella shell host, già obbligatoria per `run_batch.py` (README, invariato). Verificato:
+  `tests/toy_agent/test_run_batch.py`/`test_preflight.py`/`test_provenance.py`/
+  `tests/detector_adapter/test_vendor_proxy.py` (105 test, usano `monkeypatch.setenv`
+  diretto, non leggono `.env*`) passano invariati; `docker-compose.yml` resta YAML
+  valido. Non verificato dal vivo con `docker compose up` (avrebbe richiesto stampare
+  le chiavi in chiaro in questa sessione, evitato per lo stesso principio del warning
+  in testa al file).
+
 - **Gap Atlas `atlas-t0103-t0108-propagation` (AML.T0103 + AML.T0108) — chiuso come `out_of_scope`** —
   capability toy agent verificata assente (`src/toy_agent/tools.py` espone solo i 6 tool dichiarati;
   `run_diagnostic` ha allowlist hardcoded di 3 comandi, niente `eval`/`exec`/`subprocess`).
