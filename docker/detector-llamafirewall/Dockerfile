@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM python:3.11-slim
 
 RUN apt-get update \
@@ -7,6 +8,12 @@ RUN apt-get update \
 WORKDIR /opt
 
 RUN pip install --no-cache-dir --no-deps llamafirewall==1.0.3
+RUN pip install --no-cache-dir torch transformers 'huggingface_hub>=0.30.2,<1.0.0'
+ENV HF_HOME=/opt/hf-cache
+ENV HF_HUB_DISABLE_XET=1
+RUN --mount=type=secret,id=hf_token \
+    HF_TOKEN=$(cat /run/secrets/hf_token) python -c \
+    "from llamafirewall.scanners.promptguard_utils import PromptGuard; PromptGuard()"
 RUN pip install --no-cache-dir 'openai>=1.76.0' 'pydantic>=2.11.3'
 
 COPY docker/detector-llamafirewall/detector_adapter.pyproject.toml /opt/detector_adapter/pyproject.toml

@@ -60,6 +60,8 @@ services:
     build:
       context: .
       dockerfile: docker/detector-llamafirewall/Dockerfile
+      secrets:
+        - hf_token
     depends_on:
       - egress-proxy
     env_file:
@@ -88,3 +90,7 @@ networks:
     internal: true
   detector_llamafirewall_net:
     internal: true
+
+secrets:
+  hf_token:
+    environment: HF_TOKEN
