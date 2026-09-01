@@ -828,3 +828,26 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   mancanti al catalogo, ma generare varianti indipendenti dello stesso T-code per
   testare se il risultato attuale è robusto o un colpo di fortuna sulla formulazione
   specifica scelta.
+
+- **`.env.aidr` non è mai stato creato — la chiave di aidr vive nel `.env` condiviso,
+  deviazione silenziosa da una decisione architetturale esplicita.** La decisione presa
+  con l'utente il 2026-08-26 (`docs/notes/handoff-prossimo-pi-2026-08-26.md`, punto 5,
+  marcata "non ridiscutere") prevedeva `.env` condiviso con **solo** le chiavi
+  dell'agente (`AGENT_OPENROUTER_API_KEY`, `AGENT_MODEL`) e un file dedicato per vendor
+  (`.env.aidr` / `.env.agentdog` all'epoca), visto **solo** dal container di quel
+  vendor via `env_file:`. Nell'implementazione effettiva (`.env.example`,
+  `docker-compose.yml`), `DETECTOR_OPENROUTER_API_KEY` (chiave di aidr) è finita nel
+  `.env` condiviso insieme a quella dell'agente; solo il secondo vendor
+  (LlamaFirewall, ex AgentDoG) ha ricevuto il file separato `.env.llamafirewall`. Il
+  design doc successivo di LlamaFirewall (`docs/design/2026-08-27-multi-vendor-llamafirewall-design.md`)
+  non menziona né rivede questa scelta — trovato per caso il 2026-08-31 mentre si
+  copiava `.env` in un worktree per il batch Atlas 6-gap, segnalato dall'utente.
+  **Non un bug di isolamento runtime**: `docker-compose.yml` inietta comunque
+  `${AGENT_OPENROUTER_API_KEY}` solo nel container `agent` e
+  `${DETECTOR_OPENROUTER_API_KEY}` solo nel container `detector` (Gap 9 resta valido a
+  livello di container). Il problema è a livello di file host: chiunque legga `.env`
+  vede entrambe le chiavi insieme, mentre il design voleva che la chiave di ogni
+  vendor fosse leggibile solo dal proprio file dedicato. Non risolto: richiede
+  spostare `DETECTOR_OPENROUTER_API_KEY` in un nuovo `.env.aidr` e aggiornare
+  `docker-compose.yml` (servizio `detector`) da sostituzione inline `${...}` a
+  `env_file: .env.aidr`, mirroring del pattern già usato per `detector-llamafirewall`.
