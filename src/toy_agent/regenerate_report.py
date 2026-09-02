@@ -200,7 +200,7 @@ def regenerate(dataset_dir: Path, run_output_dir: Path) -> str:
     detector_config = VENDOR_DETECTOR_CONFIG[vendor]
 
     metrics = compute_metrics(result.metric_cases, result.metric_verdicts)
-    setup_notes = _setup_notes(result, AGENT_TIMEOUT_S, DETECTOR_TIMEOUT_S, BREAKER_THRESHOLD, prov)
+    setup_notes = _setup_notes(result, AGENT_TIMEOUT_S, DETECTOR_TIMEOUT_S, BREAKER_THRESHOLD, prov, vendor=vendor)
     return render_report(
         result.cases,
         result.verdicts,

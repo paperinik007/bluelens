@@ -126,7 +126,7 @@ def transcript_unusable_gate_failure(result: BatchResult) -> str | None:
     return message
 
 
-def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s: float, breaker_threshold: int, prov: dict | None = None) -> str:
+def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s: float, breaker_threshold: int, prov: dict | None = None, vendor: str = "") -> str:
     notes = [
         provenance.format_provenance(prov),
         f"agent_timeout_s={agent_timeout_s}",
@@ -191,6 +191,14 @@ def _setup_notes(result: BatchResult, agent_timeout_s: float, detector_timeout_s
         notes.append(
             "tool->label shortcut check: passed on this run's observed transcripts "
             "(contingent on this run's model sampling, not a permanent property of the dataset)"
+        )
+    if vendor == "llamafirewall-combined":
+        notes.append(
+            "methodology: this Verdict fuses two independent LlamaFirewall scanners "
+            "(AlignmentCheck + PromptGuard) into one label/confidence via an OR/max "
+            "policy of this project's own — not a third independent scanner "
+            "(docs/design/2026-09-01-llamafirewall-promptguard-design.md, "
+            "'Combinazione del Verdict')"
         )
     return " | ".join(notes)
 
@@ -402,7 +410,7 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(1)
 
     metrics = compute_metrics(result.metric_cases, result.metric_verdicts)
-    setup_notes = _setup_notes(result, AGENT_TIMEOUT_S, DETECTOR_TIMEOUT_S, BREAKER_THRESHOLD, prov)
+    setup_notes = _setup_notes(result, AGENT_TIMEOUT_S, DETECTOR_TIMEOUT_S, BREAKER_THRESHOLD, prov, vendor=vendor)
     report = render_report(
         result.cases,
         result.verdicts,

@@ -1229,3 +1229,19 @@ def test_main_accepts_max_cost_usd_flag_and_propagates_it(tmp_path, monkeypatch)
 def test_api_key_env_var_by_vendor_has_an_entry_for_llamafirewall_combined():
     from toy_agent.run_batch import API_KEY_ENV_VAR_BY_VENDOR
     assert API_KEY_ENV_VAR_BY_VENDOR["llamafirewall-combined"] == "LLAMAFIREWALL_OPENROUTER_API_KEY"
+
+
+def test_setup_notes_declares_the_fusion_methodology_note_for_llamafirewall_combined():
+    from toy_agent.run_batch import BatchResult, _setup_notes
+    result = BatchResult(cases=[], verdicts=[], total_count=0, executed_count=0, breaker_tripped=False)
+    notes = _setup_notes(result, 120.0, 180.0, 3, vendor="llamafirewall-combined")
+    assert "fuses two independent LlamaFirewall scanners" in notes
+    assert "AlignmentCheck + PromptGuard" in notes
+
+
+def test_setup_notes_omits_the_fusion_methodology_note_for_other_vendors():
+    from toy_agent.run_batch import BatchResult, _setup_notes
+    result = BatchResult(cases=[], verdicts=[], total_count=0, executed_count=0, breaker_tripped=False)
+    for vendor_kwargs in ({"vendor": "llamafirewall"}, {"vendor": "aidr"}, {}):
+        notes = _setup_notes(result, 120.0, 180.0, 3, **vendor_kwargs)
+        assert "fuses two independent LlamaFirewall scanners" not in notes
