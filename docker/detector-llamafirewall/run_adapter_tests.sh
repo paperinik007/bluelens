@@ -19,6 +19,8 @@ for f in test_llamafirewall_adapter_normalization.py \
          test_llamafirewall_adapter_serialization.py \
          test_llamafirewall_adapter_construction.py \
          test_llamafirewall_adapter_failopen.py \
+         test_llamafirewall_adapter_combined.py \
+         test_llamafirewall_evaluate_case_combined.py \
          test_llamafirewall_openrouter_proxy.py; do
     docker compose cp "tests/detector_adapter/$f" "detector-llamafirewall:/opt/detector_adapter/tests/$f"
 done
