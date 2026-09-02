@@ -573,11 +573,7 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   discriminativo, `DebertaV2ForSequenceClassification`, non un modello generativo — non il
   tipo di modello che OpenRouter instrada) ed è gated manualmente sotto licenza Meta Llama
   4. Analisi completa, fonti primarie (doc vendor, HF API, doc OpenRouter):
-  `docs/research/2026-08-29-llamafirewall-promptguard-not-wired.md`. Prossimo passo
-  (non ancora scopato): attivare `PROMPT_GUARD` nel container (`torch`/`transformers`/
-  `huggingface_hub` mancanti, accesso HF gated da ottenere, una seconda chiamata `scan()`
-  per turno utente da affiancare a `scan_replay()`, decidere come i due verdetti confluiscono
-  in un unico `Verdict`) prima di decidere se/come ridisegnare l'esperimento "judge-targeted".
+  `docs/research/2026-08-29-llamafirewall-promptguard-not-wired.md`.
 
 - **La metrica strict (attribuzione della tecnica) resta definita solo per
   aidr** — per LlamaFirewall si pubblica solo la primary (label-only), già
@@ -913,3 +909,33 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   futuri o se si rivede l'affidabilità delle motivazioni pubblicate nei report. Dettaglio
   completo in `docs/reports/atlas-6gap-aidr-2026-09-01/NOTE.md` e
   `catalog/vendor_scope_verification.yaml`.
+
+- **PromptGuard attivato in LlamaFirewall (`--vendor llamafirewall-combined`) — 5
+  limiti dichiarati, nessuno bloccante**. Design:
+  `docs/design/2026-09-01-llamafirewall-promptguard-design.md`. Piano:
+  `docs/superpowers/plans/2026-09-01-llamafirewall-promptguard-implementation.md`.
+  1. **Latenza per caso non ancora misurata su un run reale**: PromptGuard scansiona
+     un turno utente alla volta (non una volta per caso) — stime di Pi (500-1500ms/
+     chiamata su CPU, 86M) suggeriscono margine ampio sotto
+     `DETECTOR_TIMEOUT_S=180s`, ma va verificato nel primo run reale.
+  2. **Revisione HF non pinnata esplicitamente**: il loader del vendor
+     (`promptguard_utils.py::_load_model_and_tokenizer`) usa
+     `from_pretrained(model_name)` senza `revision=` — il build fissa qualunque
+     revisione sia `main` al momento del build (baked, stabile per la vita
+     dell'immagine), ma un rebuild futuro potrebbe silenziosamente prendere una
+     revisione diversa. Stesso tipo di rischio già accettato per
+     `SIFTER_MODEL`/`INSPECTOR_MODEL` (Gap 10).
+  3. **Bug pre-esistente in `scan_replay()`, applicabile ad AlignmentCheck** (non
+     introdotto da questo lavoro, scoperto verificandolo): se l'ultimo turno di un
+     transcript non è una risposta naturale dell'agente ma un turno "tool" (es.
+     "max turns reached"), lo `score` di AlignmentCheck riportato da
+     `scan_replay()` può non riflettere l'ultimo vero turno assistente scansionato.
+     Non risolto (fuori scope di questa attivazione di PromptGuard, tocca
+     un'integrazione già pubblicata) — da valutare separatamente.
+  4. **Troncamento silenzioso oltre 512 token**: `PromptGuardScanner`/
+     `promptguard_utils.py::_get_class_probabilities` usa `truncation=True,
+     max_length=512` — non un rischio di crash, ma un caso composto con un seed
+     turn molto lungo verrebbe analizzato solo nei primi 512 token, silenziosamente.
+     Non misurato se qualche caso del dataset attuale si avvicina al limite.
+  5. **`block_threshold=0.9` è il default del vendor**, non ritarato su questo
+     dataset — stesso trattamento già dato al default `gpt-4o-mini` non motivato.
