@@ -185,7 +185,27 @@ def test_agent_malformed_stdout_despite_exit_zero_never_reaches_detector():
     assert len(runner.calls) == 1
 
 
-@pytest.mark.parametrize("vendor,expected_tool_name", [("aidr", "aidr"), ("llamafirewall", "llamafirewall-alignmentcheck")])
+def test_secondary_log_path_defaults_to_none_for_aidr_and_llamafirewall():
+    assert VENDOR_DETECTOR_CONFIG["aidr"].secondary_log_path is None
+    assert VENDOR_DETECTOR_CONFIG["llamafirewall"].secondary_log_path is None
+
+
+def test_llamafirewall_combined_config_reuses_the_shared_detector_container():
+    config = VENDOR_DETECTOR_CONFIG["llamafirewall-combined"]
+    assert config.service == "detector-llamafirewall"
+    assert config.module == "detector_adapter.vendors.llamafirewall.evaluate_case_combined"
+    assert config.tool_name == "llamafirewall-combined"
+    assert config.proxy_log_path == "/var/log/llamafirewall_proxy.jsonl"
+    assert config.secondary_log_path == "/var/log/llamafirewall_promptguard_raw.jsonl"
+    assert config.extra_pkill_pattern is None
+    assert config.supports_technique_attribution is False
+
+
+@pytest.mark.parametrize("vendor,expected_tool_name", [
+    ("aidr", "aidr"),
+    ("llamafirewall", "llamafirewall-alignmentcheck"),
+    ("llamafirewall-combined", "llamafirewall-combined"),
+])
 def test_error_verdict_tool_name_matches_the_active_vendor(vendor, expected_tool_name):
     runner = ScriptedRunner([CommandResult(returncode=-1, stdout=b"", stderr=b"", failed_to_start=True)])
     result = run_test_case(_TEST_CASE, command_index=0, vendor=vendor, run_command=runner)

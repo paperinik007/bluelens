@@ -26,6 +26,11 @@ class VendorDetectorConfig:
     # of inheriting whatever the last vendor added happened to need
     # (SPIRIT.md principle 8).
     supports_technique_attribution: bool
+    # A second thin-proxy-style log to collect alongside proxy_log_path, or
+    # None when there isn't one (aidr, llamafirewall — both unchanged).
+    # llamafirewall-combined uses it for PromptGuard's local (non-OpenRouter)
+    # raw scan log — PromptGuard design doc, 2026-09-01.
+    secondary_log_path: Optional[str] = None
 
 
 # toy_agent never imports detector_adapter (Gap 9) — these strings are
@@ -58,6 +63,19 @@ VENDOR_DETECTOR_CONFIG: dict[str, VendorDetectorConfig] = {
         # technique_detected=None) — registro-limiti-aperti.md, "la metrica
         # strict resta definita solo per aidr".
         supports_technique_attribution=False,
+    ),
+    "llamafirewall-combined": VendorDetectorConfig(
+        service="detector-llamafirewall",
+        module="detector_adapter.vendors.llamafirewall.evaluate_case_combined",
+        tool_name="llamafirewall-combined",
+        proxy_log_path="/var/log/llamafirewall_proxy.jsonl",
+        extra_pkill_pattern=None,
+        # A fusion of two independent scanners, neither of which attributes
+        # a technique — technique_detected stays None regardless of which
+        # of the two determined the label (PromptGuard design doc,
+        # 'Combinazione del Verdict').
+        supports_technique_attribution=False,
+        secondary_log_path="/var/log/llamafirewall_promptguard_raw.jsonl",
     ),
 }
 
