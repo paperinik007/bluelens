@@ -66,6 +66,93 @@ def transcript_dict_to_trace(transcript: dict) -> list:
     return messages
 
 
+TOOL_NAME_COMBINED = "llamafirewall-combined"
+
+
+def aggregate_promptguard_turns(pg_turn_results: list) -> tuple[str, float]:
+    """Aggregate one ScanResult per scanned Role.USER turn into a single
+    (decision_value, score) pair for the whole case — max/any, never
+    scan_replay()'s own last-message-wins default (design doc, 'Architettura
+    / Data flow', risk finding #2 post-council: scan_replay() would have
+    silently reported whichever turn was scanned last, almost always an
+    assistant/tool turn with no PromptGuard signal at all, since only
+    Role.USER turns are ever scanned here). decision is compared by .value
+    (a plain string) — same duck-typing convention as
+    scan_decision_to_verdict, never requires llamafirewall importable."""
+    decisions = [getattr(r.decision, "value", r.decision) for r in pg_turn_results]
+    score = max((r.score for r in pg_turn_results), default=0.0)
+    return ("block" if "block" in decisions else "allow"), score
+
+
+def combine_scan_results_to_verdict(
+    case_id: str,
+    ac_result: Any,
+    pg_decision_value: str,
+    pg_score: float,
+    pg_turn_results: list,
+    ac_latency_s: float,
+    pg_latency_s: float,
+) -> dict:
+    """Fuse one AlignmentCheck ScanResult and the aggregated PromptGuard
+    decision/score (aggregate_promptguard_turns) into a single Verdict dict
+    (design doc, 'Combinazione del Verdict'). OR on the label, max on the
+    confidence — a fusion policy of this project's own, not inherited from
+    any vendor arbitration (no cross-role arbitration exists in the vendor
+    for two independently-registered scanners, verified in
+    docs/research/2026-08-29-llamafirewall-promptguard-not-wired.md).
+    technique_detected stays None unconditionally: PromptGuard is a binary
+    classifier with no technique attribution by construction, regardless of
+    which of the two scanners determined the label (skeptic finding,
+    design doc)."""
+    ac_decision_value = getattr(ac_result.decision, "value", ac_result.decision)
+    is_malicious = ac_decision_value == "human_in_the_loop_required" or pg_decision_value == "block"
+    pg_reason = max(pg_turn_results, key=lambda r: r.score).reason if pg_turn_results else "no user turn scanned"
+    return {
+        "case_id": case_id,
+        "tool_name": TOOL_NAME_COMBINED,
+        "status": "ok",
+        "label": "malicious" if is_malicious else "benign",
+        "confidence": max(ac_result.score, pg_score),
+        "technique_detected": None,
+        "rationale": f"AlignmentCheck: {ac_result.reason or 'n/a'} | PromptGuard: {pg_reason}",
+        "cost_usd": None,
+        "latency_s": ac_latency_s + pg_latency_s,
+        "in_tokens": None,
+        "out_tokens": None,
+    }
+
+
+def combined_error_verdict(case_id: str, source: str, exception_class: str | None) -> dict:
+    """Verdict for either scan failing inside evaluate_case_combined.py — the
+    whole case becomes status='error'/label=None regardless of which of the
+    two scanners failed (never a Verdict based on the one that survived,
+    design doc 'Gestione errori': that would silently inflate LlamaFirewall's
+    measured coverage on a case where only half the product responded).
+    `source` distinguishes a vendor fail-open (AlignmentCheck's remote LLM
+    call) from a local dependency error (PromptGuard's torch/transformers
+    stack) in the rationale text only — the Verdict shape is identical
+    either way (skeptic finding, design doc 'Gestione errori')."""
+    if source == "alignmentcheck":
+        detail = f"vendor fail-open: {exception_class}" if exception_class else "vendor fail-open"
+    elif source == "promptguard":
+        detail = f"local dependency error: {exception_class}" if exception_class else "local dependency error"
+    else:
+        raise ValueError(f"unknown source: {source!r}")
+    return {
+        "case_id": case_id,
+        "tool_name": TOOL_NAME_COMBINED,
+        "status": "error",
+        "label": None,
+        "confidence": None,
+        "technique_detected": None,
+        "rationale": detail,
+        "cost_usd": None,
+        "latency_s": None,
+        "in_tokens": None,
+        "out_tokens": None,
+    }
+
+
 try:
     from llamafirewall import register_llamafirewall_scanner
     from llamafirewall.scanners.custom_check_scanner import CustomCheckScanner
