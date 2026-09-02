@@ -21,6 +21,9 @@ TIER_ENV_VARS_BY_VENDOR: dict[str, dict[str, str]] = {
     "llamafirewall": {
         "llamafirewall": "LLAMAFIREWALL_MODEL",
     },
+    "llamafirewall-combined": {
+        "llamafirewall": "LLAMAFIREWALL_MODEL",
+    },
 }
 
 AGENT_ENV_VAR = "AGENT_MODEL"

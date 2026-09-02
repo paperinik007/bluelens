@@ -81,7 +81,7 @@ def collect_provenance(env: Mapping[str, str], vendor: str, repo_root: Path = Pa
         inspector_model_value = env.get("INSPECTOR_MODEL") or "(default in detector_adapter)"
         embed_model_value = env.get("EMBED_MODEL") or "(default in detector_adapter)"
         llamafirewall_model_value = NOT_APPLICABLE_FOR_VENDOR
-    elif vendor == "llamafirewall":
+    elif vendor in ("llamafirewall", "llamafirewall-combined"):
         vendor_commit_value = NOT_APPLICABLE_FOR_VENDOR
         vendor_pip_version_value = llamafirewall_pip_version(repo_root)
         sifter_model_value = NOT_APPLICABLE_FOR_VENDOR

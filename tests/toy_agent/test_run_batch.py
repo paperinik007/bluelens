@@ -1224,3 +1224,8 @@ def test_main_accepts_max_cost_usd_flag_and_propagates_it(tmp_path, monkeypatch)
 
     run_batch.main([str(dataset_dir), str(run_output_dir), "--vendor", "aidr"])
     assert captured["max_cost_usd"] == run_batch.MAX_COST_USD_DEFAULT
+
+
+def test_api_key_env_var_by_vendor_has_an_entry_for_llamafirewall_combined():
+    from toy_agent.run_batch import API_KEY_ENV_VAR_BY_VENDOR
+    assert API_KEY_ENV_VAR_BY_VENDOR["llamafirewall-combined"] == "LLAMAFIREWALL_OPENROUTER_API_KEY"

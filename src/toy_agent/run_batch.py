@@ -36,6 +36,7 @@ MAX_COST_USD_DEFAULT = 5.00  # Costo reale misurato per LlamaFirewall (Task 17,
 API_KEY_ENV_VAR_BY_VENDOR: dict[str, str] = {
     "aidr": "DETECTOR_OPENROUTER_API_KEY",
     "llamafirewall": "LLAMAFIREWALL_OPENROUTER_API_KEY",
+    "llamafirewall-combined": "LLAMAFIREWALL_OPENROUTER_API_KEY",
 }
 
 

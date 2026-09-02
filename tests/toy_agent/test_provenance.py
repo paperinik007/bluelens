@@ -154,3 +154,20 @@ def test_the_not_applicable_marker_is_distinguishable_from_a_genuinely_failed_re
     text = provenance.format_provenance(prov)
     assert f"vendor_commit={provenance.NOT_APPLICABLE_FOR_VENDOR}" in text
     assert "vendor_commit=unknown" not in text
+
+
+def test_a_llamafirewall_combined_run_gets_the_same_fields_as_plain_llamafirewall():
+    prov = provenance.collect_provenance({}, vendor="llamafirewall-combined")
+    assert prov["vendor_commit"] == provenance.NOT_APPLICABLE_FOR_VENDOR
+    assert prov["sifter_model"] == provenance.NOT_APPLICABLE_FOR_VENDOR
+    assert prov["inspector_model"] == provenance.NOT_APPLICABLE_FOR_VENDOR
+    assert prov["embed_model"] == provenance.NOT_APPLICABLE_FOR_VENDOR
+    assert prov["llamafirewall_model"] == "(default in detector_adapter)"
+
+
+def test_a_llamafirewall_combined_run_reads_the_shared_pip_pin(tmp_path):
+    dockerfile = tmp_path / "docker" / "detector-llamafirewall" / "Dockerfile"
+    dockerfile.parent.mkdir(parents=True)
+    dockerfile.write_text("RUN pip install --no-cache-dir --no-deps llamafirewall==1.0.3\n", encoding="utf-8")
+    prov = provenance.collect_provenance({}, vendor="llamafirewall-combined", repo_root=tmp_path)
+    assert prov["vendor_pip_version"] == "1.0.3"

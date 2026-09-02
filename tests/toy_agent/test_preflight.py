@@ -144,3 +144,14 @@ def test_llamafirewall_vendor_skips_the_tier_when_its_env_var_is_unset():
     assert len(failures) == 1  # only the agent-key-missing failure
     assert "AGENT_OPENROUTER_API_KEY" in failures[0]
     assert calls == []
+
+
+def test_llamafirewall_combined_vendor_checks_the_same_tier_as_plain_llamafirewall():
+    seen_models = []
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen_models.append(json.loads(request.content)["model"])
+        return httpx.Response(200, json={"choices": []})
+
+    env = {"LLAMAFIREWALL_MODEL": "meta-llama/llama-3.3-70b-instruct", "AGENT_MODEL": "vendor/agent"}
+    preflight_check_models(env, "sk-combined", vendor="llamafirewall-combined", agent_api_key="sk-agent", transport=httpx.MockTransport(handler))
+    assert "meta-llama/llama-3.3-70b-instruct" in seen_models
