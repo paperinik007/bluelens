@@ -122,6 +122,29 @@ def test_collect_thin_proxy_log_names_the_output_file_after_the_service(tmp_path
     assert path.name == "detector-llamafirewall.vendor_proxy.jsonl"
 
 
+def test_collect_thin_proxy_log_uses_a_custom_output_suffix_when_given(tmp_path):
+    runner = FakeRunner({
+        ("docker", "compose", "exec", "-T", "detector-llamafirewall", "cat", "/var/log/llamafirewall_promptguard_raw.jsonl"): b"",
+    })
+    path = collect_thin_proxy_log(
+        "case_007", tmp_path, "", service="detector-llamafirewall",
+        log_path="/var/log/llamafirewall_promptguard_raw.jsonl", output_suffix="promptguard_raw.jsonl",
+        run_command=runner,
+    )
+    assert path.name == "detector-llamafirewall.promptguard_raw.jsonl"
+
+
+def test_collect_thin_proxy_log_default_output_suffix_is_unchanged(tmp_path):
+    runner = FakeRunner({
+        ("docker", "compose", "exec", "-T", "detector", "cat", "/var/log/vendor_proxy.jsonl"): b"",
+    })
+    path = collect_thin_proxy_log(
+        "case_008", tmp_path, "", service="detector",
+        log_path="/var/log/vendor_proxy.jsonl", run_command=runner,
+    )
+    assert path.name == "detector.vendor_proxy.jsonl"
+
+
 import json as _json
 
 from toy_agent.evidence import sum_proxy_log_cost

@@ -65,6 +65,7 @@ def collect_thin_proxy_log(
     *,
     service: str,
     log_path: str,
+    output_suffix: str = "vendor_proxy.jsonl",
     run_command: CommandRunner = default_command_runner,
 ) -> Path:
     """Retrieve the thin proxy's request/response log from inside `service`
@@ -73,12 +74,18 @@ def collect_thin_proxy_log(
     `service`/`log_path` are resolved by the caller from the active vendor
     (sequence.py, via orchestrator.VENDOR_DETECTOR_CONFIG) — this function
     has no vendor knowledge of its own (design doc, 'Contratto riusabile
-    del container detector', generalizzato oltre aidr in Fase 2)."""
+    del container detector', generalizzato oltre aidr in Fase 2).
+
+    output_suffix (PromptGuard design doc, 2026-09-01): distinguishes a
+    second call for the same case_id/service from the first — without it,
+    two calls for the same service would both write to
+    '<service>.vendor_proxy.jsonl', the second silently overwriting the
+    first. Default preserves every caller that predates this parameter."""
     case_dir = evidence_dir / case_id
     case_dir.mkdir(parents=True, exist_ok=True)
     raw = run_command(["docker", "compose", "exec", "-T", service, "cat", log_path])
     scrubbed = raw.replace(api_key.encode("utf-8"), b"[REDACTED]") if api_key else raw
-    path = case_dir / f"{service}.vendor_proxy.jsonl"
+    path = case_dir / f"{service}.{output_suffix}"
     path.write_bytes(scrubbed)
     return path
 
