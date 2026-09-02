@@ -161,6 +161,15 @@ class RecordingProxyLogCollector:
         return evidence_dir / case_id / "detector.vendor_proxy.jsonl"
 
 
+class RecordingProxyLogCollectorWithSuffix:
+    def __init__(self):
+        self.calls = []
+
+    def __call__(self, case_id, evidence_dir, api_key, *, service, log_path, output_suffix="vendor_proxy.jsonl"):
+        self.calls.append((case_id, service, log_path, output_suffix))
+        return evidence_dir / case_id / f"{service}.{output_suffix}"
+
+
 def _reused_sequence(case_ids):
     return (
         [OpenStep(containers=("agent", "detector"))]
@@ -757,3 +766,34 @@ def test_cost_breaker_trip_closes_every_still_open_container(tmp_path):
     assert result.cost_breaker_tripped is True
     rm_calls = [c for c in command_runner.calls if c[:6] == ["docker", "compose", "rm", "-f", "-s", "-v"]]
     assert {c[6] for c in rm_calls[2:]} == {"agent", "detector-llamafirewall"}
+
+
+def test_execute_sequence_collects_a_second_log_when_secondary_log_path_is_configured(tmp_path):
+    dataset = {"c1": _ground_truth("c1")}
+    steps = _reused_sequence_llamafirewall(["c1"])  # opens detector-llamafirewall, same service llamafirewall-combined uses
+    runner = ScriptedRunTestCase([_ok_result("c1")])
+    proxy_collector = RecordingProxyLogCollectorWithSuffix()
+
+    execute_sequence(steps, dataset, tmp_path, vendor="llamafirewall-combined", run_test_case_fn=runner,
+                      collect_case_evidence_fn=RecordingEvidenceCollector(),
+                      collect_thin_proxy_log_fn=proxy_collector,
+                      run_command=NoOpCommandRunner())
+
+    assert proxy_collector.calls == [
+        ("c1", "detector-llamafirewall", "/var/log/llamafirewall_proxy.jsonl", "vendor_proxy.jsonl"),
+        ("c1", "detector-llamafirewall", "/var/log/llamafirewall_promptguard_raw.jsonl", "promptguard_raw.jsonl"),
+    ]
+
+
+def test_execute_sequence_does_not_collect_a_second_log_when_secondary_log_path_is_none(tmp_path):
+    dataset = {"c1": _ground_truth("c1")}
+    steps = _reused_sequence(["c1"])  # vendor="aidr" below, secondary_log_path=None
+    runner = ScriptedRunTestCase([_ok_result("c1")])
+    proxy_collector = RecordingProxyLogCollectorWithSuffix()
+
+    execute_sequence(steps, dataset, tmp_path, vendor="aidr", run_test_case_fn=runner,
+                      collect_case_evidence_fn=RecordingEvidenceCollector(),
+                      collect_thin_proxy_log_fn=proxy_collector,
+                      run_command=NoOpCommandRunner())
+
+    assert len(proxy_collector.calls) == 1

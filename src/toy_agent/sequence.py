@@ -243,6 +243,12 @@ def execute_sequence(
             # unreachable container.
             collect_case_evidence_fn(case_id, known_containers, run_output_dir)
             proxy_log_path = collect_thin_proxy_log_fn(case_id, run_output_dir, api_key, service=config.service, log_path=config.proxy_log_path)
+            if config.secondary_log_path is not None:
+                collect_thin_proxy_log_fn(
+                    case_id, run_output_dir, api_key,
+                    service=config.service, log_path=config.secondary_log_path,
+                    output_suffix="promptguard_raw.jsonl",
+                )
             if max_cost_usd is not None:
                 cumulative_cost_usd = evidence.sum_proxy_log_cost(proxy_log_path.read_bytes())
 
