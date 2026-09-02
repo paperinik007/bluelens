@@ -178,6 +178,18 @@ def run_test_case(
         b"",
         10.0,
     )
+    if config.secondary_log_path is not None:
+        # Same attribution mechanism as proxy_log_path above (final
+        # whole-branch review, 2026-09-02): without this, a vendor with a
+        # secondary_log_path (today: only llamafirewall-combined's
+        # PromptGuard raw-scan log) accumulates every case's lines with no
+        # way to attribute a line to the case that produced it, unlike the
+        # primary proxy log. Same marker JSON, written to the second log.
+        run_command(
+            ["docker", "compose", "exec", "-T", config.service, "sh", "-c", f"echo {shlex.quote(marker)} >> {config.secondary_log_path}"],
+            b"",
+            10.0,
+        )
 
     detector_cmd = ["docker", "compose", "exec", "-T", config.service, "python", "-m", config.module]
     detector_result = run_command(detector_cmd, transcript_bytes, detector_timeout_s)

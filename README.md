@@ -69,13 +69,18 @@ Limiti aperti e debito tecnico dichiarati per intero in
 
 - `aidr` (agentic-threat-detection, FareedKhan-dev): `python -m toy_agent.run_batch dataset run_output --vendor aidr`
 - `llamafirewall` (LlamaFirewall/AlignmentCheck, Meta): `python -m toy_agent.run_batch dataset run_output --vendor llamafirewall`
+- `llamafirewall-combined` (LlamaFirewall AlignmentCheck + PromptGuard fusi in un solo
+  Verdict, `tool_name="llamafirewall-combined"`): `python -m toy_agent.run_batch dataset run_output --vendor llamafirewall-combined`
 
 Ogni vendor ha il proprio container Docker isolato (`detector`/
 `detector-llamafirewall`), la propria rete (`detector_net`/
 `detector_llamafirewall_net`, entrambe `internal: true`), il proprio
 `.env.<vendor>` (mai una chiave condivisa tra vendor). `--vendor` è sempre
 un argomento CLI esplicito — mai persistente in `.env` (principio 8,
-SPIRIT.md).
+SPIRIT.md). `llamafirewall-combined` è l'unica eccezione al "un container per
+vendor": riusa lo stesso container/rete/`.env.llamafirewall` di
+`llamafirewall` (stesso modello sottostante, un secondo scanner —
+PromptGuard — attivato nello stesso processo), non un terzo container.
 
 ## Come eseguire
 
@@ -87,6 +92,20 @@ misuratore/misurato). Per `--vendor llamafirewall` serve inoltre una terza chiav
 dedicata, in `.env.llamafirewall` (`LLAMAFIREWALL_OPENROUTER_API_KEY` +
 `LLAMAFIREWALL_MODEL`) — mai la stessa chiave di `DETECTOR_OPENROUTER_API_KEY`, per
 lo stesso principio.
+
+**Solo per `--vendor llamafirewall-combined`**: il container `detector-llamafirewall`
+include anche PromptGuard (86M, modello gated su Hugging Face) — il modello viene
+scaricato **una sola volta, al build dell'immagine**, mai a runtime (design doc
+`docs/design/2026-09-01-llamafirewall-promptguard-design.md`). Serve quindi
+`export HF_TOKEN=<token con accesso concesso a meta-llama/Llama-Prompt-Guard-2-86M>`
+nella shell **prima** di `docker compose build detector-llamafirewall` — build
+secret BuildKit, mai persistito in nessun layer dell'immagine. **Non aggiungere mai
+`HF_TOKEN` a `.env.llamafirewall`**: quel file è caricato come `env_file:` del
+container *a runtime* (per `LLAMAFIREWALL_OPENROUTER_API_KEY`/`LLAMAFIREWALL_MODEL`)
+— metterci anche `HF_TOKEN` lo trasformerebbe in una variabile d'ambiente del
+container finale, esattamente ciò che il build secret esiste per evitare. Se il
+token non è esportato, `docker compose build detector-llamafirewall` fallisce con un
+errore esplicito (nessun fallback silenzioso).
 
 I modelli per i tier del detector (`SIFTER_MODEL`, `INSPECTOR_MODEL`, `EMBED_MODEL`,
 in `.env.aidr`) e per l'agente giocattolo (`AGENT_MODEL`, in `.env`) sono opzionali —
@@ -112,8 +131,11 @@ build`/`up`/`rm` per gli altri servizi. `.env.aidr` invece alimenta il servizio
 `docker-compose.yml`), quindi va creato ed esportato nella shell prima di usare
 `--vendor aidr` (vedi sotto).
 
-Attenzione: `docker compose config` stampa entrambe le chiavi in chiaro — non
-eseguirlo in una sessione di terminale condivisa o loggata.
+Attenzione: `docker compose config` stampa in chiaro tutte le chiavi/i token
+presenti nell'ambiente (`DETECTOR_OPENROUTER_API_KEY`,
+`LLAMAFIREWALL_OPENROUTER_API_KEY`, e — se esportato per un build di
+`detector-llamafirewall` — anche `HF_TOKEN`) — non eseguirlo in una sessione di
+terminale condivisa o loggata.
 
 Con `egress-proxy` sopra, il batch orchestrator si esegue **sull'host**, non dentro un
 container. A differenza di prima, possiede lui stesso il ciclo di vita di `agent`/`detector`

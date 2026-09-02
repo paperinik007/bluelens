@@ -71,6 +71,15 @@ services:
       # even for `agent`/`detector` (--vendor aidr) alone. `.env.*` is
       # gitignored, so a fresh clone has no such file until --vendor
       # llamafirewall is actually used.
+      #
+      # NEVER put HF_TOKEN in this file (final whole-branch review,
+      # 2026-09-02): env_file: injects every key it contains into the
+      # running container — exactly the runtime exposure the `secrets:`
+      # block below exists to avoid. HF_TOKEN belongs only in the
+      # build-time shell environment (`export HF_TOKEN=...` before
+      # `docker compose build detector-llamafirewall`), resolved by the
+      # top-level `secrets: hf_token: environment: HF_TOKEN` declaration
+      # below — never in any file loaded via env_file:.
       - path: .env.llamafirewall
         required: false
     environment:
@@ -93,4 +102,10 @@ networks:
 
 secrets:
   hf_token:
+    # Build-time only (docker/detector-llamafirewall/Dockerfile's `RUN
+    # --mount=type=secret,id=hf_token`) — sourced from the host shell's
+    # HF_TOKEN, never written into any image layer or the running
+    # container's environment. See the env_file comment above on
+    # detector-llamafirewall: never duplicate this value into
+    # .env.llamafirewall.
     environment: HF_TOKEN

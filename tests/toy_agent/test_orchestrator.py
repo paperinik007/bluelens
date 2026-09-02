@@ -68,6 +68,36 @@ def test_thin_proxy_log_is_appended_with_a_json_marker_never_truncated():
     assert "/var/log/vendor_proxy.jsonl" in shell_arg  # aidr's legacy path, unchanged
 
 
+def test_secondary_log_is_also_marked_when_configured():
+    runner = ScriptedRunner([
+        CommandResult(returncode=0, stdout=_TRANSCRIPT_JSON, stderr=b""),
+        _MARKER_OK,
+        _MARKER_OK,
+        CommandResult(returncode=0, stdout=_VERDICT_JSON, stderr=b""),
+    ])
+    run_test_case(_TEST_CASE, command_index=3, vendor="llamafirewall-combined", run_command=runner)
+
+    assert len(runner.calls) == 4
+    secondary_marker_cmd = runner.calls[2][0]
+    shell_arg = secondary_marker_cmd[-1]
+    tokens = shlex.split(shell_arg)
+    marker_json = json.loads(tokens[1])
+    assert marker_json["marker"] is True
+    assert marker_json["case_id"] == "case_001"
+    assert marker_json["command_index"] == 3
+    assert "/var/log/llamafirewall_promptguard_raw.jsonl" in shell_arg
+
+
+def test_no_secondary_marker_when_secondary_log_path_is_none():
+    runner = ScriptedRunner([
+        CommandResult(returncode=0, stdout=_TRANSCRIPT_JSON, stderr=b""),
+        _MARKER_OK,
+        CommandResult(returncode=0, stdout=_VERDICT_JSON, stderr=b""),
+    ])
+    run_test_case(_TEST_CASE, command_index=0, vendor="aidr", run_command=runner)
+    assert len(runner.calls) == 3  # unchanged: no secondary marker for aidr
+
+
 def test_verdict_case_id_is_overwritten_with_the_true_case_id():
     detector_verdict = json.dumps(
         {"case_id": "some-opaque-uuid-the-detector-echoed-back", "tool_name": "x", "status": "ok", "label": "benign"}

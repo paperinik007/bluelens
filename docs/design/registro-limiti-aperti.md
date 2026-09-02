@@ -910,7 +910,7 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   completo in `docs/reports/atlas-6gap-aidr-2026-09-01/NOTE.md` e
   `catalog/vendor_scope_verification.yaml`.
 
-- **PromptGuard attivato in LlamaFirewall (`--vendor llamafirewall-combined`) — 5
+- **PromptGuard attivato in LlamaFirewall (`--vendor llamafirewall-combined`) — 6
   limiti dichiarati, nessuno bloccante**. Design:
   `docs/design/2026-09-01-llamafirewall-promptguard-design.md`. Piano:
   `docs/superpowers/plans/2026-09-01-llamafirewall-promptguard-implementation.md`.
@@ -939,3 +939,16 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
      Non misurato se qualche caso del dataset attuale si avvicina al limite.
   5. **`block_threshold=0.9` è il default del vendor**, non ritarato su questo
      dataset — stesso trattamento già dato al default `gpt-4o-mini` non motivato.
+  6. **Immagine con build CUDA completa di torch (12.6GB), non CPU-only** come
+     dichiarato dal design doc ("Tech Stack: ... torch/transformers/huggingface_hub
+     (CPU-only)"): il Dockerfile installa `torch` senza
+     `--index-url https://download.pytorch.org/whl/cpu`, quindi `pip` risolve la
+     build CUDA di default (~12GB contro le poche centinaia di MB dichiarate).
+     Trovato durante il Task 0 di questo piano (probabile causa del primo timeout
+     di rete incontrato — download multi-GB invece che poche centinaia di MB), non
+     corretto in questa sessione perché il Dockerfile era stato scritto verbatim
+     dal brief e correggerlo avrebbe richiesto un secondo rebuild+riverifica
+     completa (Step 4-8 del gate Task 0). Nessun impatto sui criteri di successo
+     del gate (no-leak, cache presente, load offline) — solo dimensione
+     dell'immagine e tempo di build. Da correggere in un task futuro se la
+     dimensione dell'immagine diventa un problema operativo reale.
