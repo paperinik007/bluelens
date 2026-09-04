@@ -1,7 +1,6 @@
 """Structural checks for catalog/vendor_scope_verification.yaml (Atlas 6-gap batch,
 spec C4-C8). Mirror di tests/test_catalog.py::test_every_entry_has_all_required_fields
-— esercita il path reale (no test che passa senza leggere il file, lezione
-docs/notes/pi-lesson-test-must-exercise-real-path.md)."""
+— esercita il path reale (no test che passa senza leggere il file)."""
 
 from pathlib import Path
 

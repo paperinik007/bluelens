@@ -129,8 +129,8 @@ soggetto misurato — non l'agente sotto test, non l'attaccante simulato, ma il
 "Lens" nomina lo strumento — osserviamo, non costruiamo un prodotto di difesa (scartato
 "Firewall", collide con LlamaFirewall stesso e implica che *siamo* un prodotto),
 non monitoriamo in tempo reale (scartato "Sensor", è il registro del prodotto di
-monitoraggio operativo già scartato per questo progetto, sezione 4 di
-`docs/notes/valutazione-argomenti-poc-monitoraggio.md`), non certifichiamo con
+monitoraggio operativo già scartato per questo progetto — vedi la nota di
+valutazione sugli argomenti della PoC di monitoraggio, sezione 4), non certifichiamo con
 un'autorità che non abbiamo ancora guadagnato (scartati "Cert" e "Stamp" — quest'ultimo
 rischia pure l'idioma inglese "rubber stamp", approvazione acritica, l'opposto di un
 audit rigoroso). Radice dell'immagine: "La finestra sul cortile" di Hitchcock — un

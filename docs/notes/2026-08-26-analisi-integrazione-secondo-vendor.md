@@ -1,6 +1,6 @@
 # Analisi integrazione secondo vendor (AgentDoG) — dove e perché intervenire
 
-> **Fonte viva delle decisioni (supersede il handoff `handoff-prossimo-pi-2026-08-26.md`).**
+> **Fonte viva delle decisioni (supersede il precedente handoff del 26/08).**
 > Se leggi quel handoff, le sue sezioni su modello e architettura sono superate: il modello
 > corretto è la variante **Base 0.8B** (`AgentDoG1.5-Qwen3.5-0.8B`), non "Unified-0.8B" (che
 > non esiste — Unified è solo 4B), e l'architettura è **generativa** (non `pipeline("text-classification")`).
@@ -28,7 +28,7 @@
 > non va riusato come se fosse già quel documento.
 
 Data: 2026-08-26. Scritto da pi (sessione corrente) come follow-up del handoff
-`handoff-prossimo-pi-2026-08-26.md`. Scopo: registrare **dove** (file:riga) e
+del 26/08. Scopo: registrare **dove** (file:riga) e
 **perché** va toccato il codice per integrare AgentDoG come secondo vendor, poi
 sottoporre l'analisi a una review critica.
 
@@ -161,7 +161,7 @@ Decisione presa: **nessun mapping, nessuna tassonomia neutra**. Il metro è il l
 
 #### J. Documentazione
 
-`README.md`, `docs/notes/pi-onboarding-reference.md` (dice "3 container"), `docs/design/registro-limiti-aperti.md` (nuovi limiti: copertura tassonomia non garantita per agentdog; costo per vendor offline = 0 con CPU-time non misurato; eventuale non-determinismo del modello locale) vanno aggiornati quando il servizio `detector-b` è stabile.
+`README.md` e `docs/design/registro-limiti-aperti.md` (nuovi limiti: copertura tassonomia non garantita per agentdog; costo per vendor offline = 0 con CPU-time non misurato; eventuale non-determinismo del modello locale) vanno aggiornati quando il servizio `detector-b` è stabile.
 
 ---
 

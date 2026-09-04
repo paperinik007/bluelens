@@ -49,7 +49,7 @@
 
 ### File da creare
 - `catalog/vendor_scope_verification.yaml` — Passo 5 narrativo (schema fisso dal design v4 righe 221-283: `entries: [{vendor, technique_code, declared_scope, verified_mechanism, verdict, evidence}]`)
-- `tests/test_vendor_scope_verification.py` — mirror di `test_every_entry_has_all_required_fields` (esistente in `tests/test_catalog.py`); esercita il path reale (no test che passa senza leggere il file — lezione `docs/notes/pi-lesson-test-must-exercise-real-path.md`)
+- `tests/test_vendor_scope_verification.py` — mirror di `test_every_entry_has_all_required_fields` (esistente in `tests/test_catalog.py`); esercita il path reale (no test che passa senza leggere il file)
 - `dataset/<case_id_a>.yaml`, `dataset/<case_id_b>.yaml` × 3 cluster produttivi (`atlas-t0077-rendering`, `atlas-t0006-t0084-recon`, `atlas-t0012-valid-accounts`) = 6 nuovi TestCase mirror (2 varianti ciascuno)
 
 ### File da modificare (additivamente)
@@ -188,8 +188,7 @@ Crea `tests/test_vendor_scope_verification.py`:
 ```python
 """Structural checks for catalog/vendor_scope_verification.yaml (Atlas 6-gap batch,
 spec C4-C8). Mirror di tests/test_catalog.py::test_every_entry_has_all_required_fields
-— esercita il path reale (no test che passa senza leggere il file, lezione
-docs/notes/pi-lesson-test-must-exercise-real-path.md)."""
+— esercita il path reale (no test che passa senza leggere il file)."""
 
 from pathlib import Path
 
@@ -1145,7 +1144,7 @@ Per ogni requisito del design v4 + spec (`docs/design/2026-08-30-atlas-6-gap-spe
 - R7: Synthetic target escluso da `per_tech_strict`, presente in `per_tech_primary` → `test_synthetic_target_excluded_from_per_tech_strict` passa
 - R8: Test bridge gestisce sia casi reali sia synthetic → `test_atlas_synthetic_entries_match_dataset_target` + il test esistente passano
 
-Il test deve esercitare il codice che soddisfa il requisito (lezione `docs/notes/pi-lesson-test-must-exercise-real-path.md`).
+Il test deve esercitare il codice che soddisfa il requisito.
 
 - [ ] **Step 2: Run final full suite**
 
@@ -1185,7 +1184,7 @@ git commit -m "docs(atlas-6gap): register AML.T0103+T0108 out_of_scope in regist
 ## Note di esecuzione
 
 - Task 0 è prerequisito per T1-T4 (test bridge + `strict_significant` + `vendor_scope_verification.yaml` esistenti). T1-T3 sono indipendenti tra loro (nessuna sovrapposizione di file se si rispetta la convenzione "ogni cluster → 2 nuovi entry cases.yaml + 2 nuovi file dataset/, append puro in coda"). T4 tocca solo `vendor_scope_verification.yaml` + `dataset/` (no `cases.yaml`).
-- Brief all'implementer sempre scoped al singolo task (lezione `docs/notes/2026-08-27-costi-modelli-openrouter-e-pi-delegato.md` §7).
+- Brief all'implementer sempre scoped al singolo task.
 - Audit indipendente: dopo ogni implementer dispatch, `git show --stat <hash>` + diff completo letto + `python -m pytest tests/ -q` rieseguito.
 - 6 stop conditions specifiche del controller Pi (vedi `docs/notes/2026-08-30-atlas-6-gap-population-plan.md` sezione "6 stop conditions").
 - R=5 breaker con definizione operativa di load-bearing: il finding spezza un requisito del design, viola un Global Constraint, viola `SPIRIT.md`, o cambia il contratto esposto verso l'esterno → fix obbligatorio. Non load-bearing (code quality) → parking lot con ruling, prosegui.

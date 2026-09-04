@@ -819,7 +819,7 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
 
 - **`.env.aidr` non è mai stato creato — la chiave di aidr vive nel `.env` condiviso,
   deviazione silenziosa da una decisione architetturale esplicita.** La decisione presa
-  con l'utente il 2026-08-26 (`docs/notes/handoff-prossimo-pi-2026-08-26.md`, punto 5,
+  con l'utente il 2026-08-26 (nota di handoff del 26/08, punto 5,
   marcata "non ridiscutere") prevedeva `.env` condiviso con **solo** le chiavi
   dell'agente (`AGENT_OPENROUTER_API_KEY`, `AGENT_MODEL`) e un file dedicato per vendor
   (`.env.aidr` / `.env.agentdog` all'epoca), visto **solo** dal container di quel

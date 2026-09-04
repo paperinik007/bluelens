@@ -37,8 +37,8 @@ Quattro punti sostanziali, valutati uno per uno, non recepiti in blocco:
    tre revisioni) va reso esplicito come tale, non lasciato implicito nelle singole
    sezioni. Sezione dedicata aggiunta sotto.
 
-**Decisioni ereditate dalla nota originale e non rimesse in discussione qui** (vedi
-`docs/notes/2026-08-29-atlas-antivirus-metodo-note.md`, §7-8, Nodo A/B/D):
+**Decisioni ereditate dalla nota di analisi preliminare originale (§7-8, Nodo A/B/D)
+e non rimesse in discussione qui**:
 - Nodo A: questo documento tratta **solo il metodo** — il cross-check completo
   T0001-T0014 vs MITRE ATLAS è un research doc separato, e viene **dopo** questo
   documento, usando il metodo già stabile qui.

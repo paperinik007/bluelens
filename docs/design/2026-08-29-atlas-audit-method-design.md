@@ -1,8 +1,7 @@
 # Metodo a 5 passi per audit basati su una tassonomia esterna (ATLAS) — Design
 
-**Risolve**: i 4 nodi aperti in `docs/notes/2026-08-29-atlas-antivirus-metodo-note.md`, §7-8
-(Nodo A, B, C, D). **Decisioni già prese e non rimesse in discussione qui** (vedi quella
-nota per l'analisi completa che ci ha portato a queste conclusioni):
+**Risolve**: i 4 nodi aperti nella nota di analisi preliminare del metodo ATLAS del
+29/08, §7-8 (Nodo A, B, C, D). **Decisioni già prese e non rimesse in discussione qui**:
 - Nodo A: questo documento tratta **solo il metodo** — il cross-check completo
   T0001-T0014 vs MITRE ATLAS è un research doc separato, stesso pattern di
   `docs/research/2026-08-19-taxonomy-cross-check-findings.md`, e viene **dopo** questo

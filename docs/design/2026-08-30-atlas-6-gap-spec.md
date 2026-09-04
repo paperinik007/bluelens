@@ -215,8 +215,7 @@ pragmatist, risk, skeptic) e dalla review di Claude Code:
 ### `tests/test_vendor_scope_verification.py` (nuovo)
 
 - Mirror di `test_every_entry_has_all_required_fields` (reale, `tests/test_catalog.py`)
-- Test esercitano il path reale (no test che passa senza leggere il file — lezione
-  `docs/notes/pi-lesson-test-must-exercise-real-path.md`)
+- Test esercitano il path reale (no test che passa senza leggere il file)
 
 ### `src/toy_agent/schema.py` (modifica additiva)
 
@@ -274,9 +273,9 @@ append-only (`vendor_scope_verification.yaml`) + nuovo test file
 (`tests/test_vendor_scope_verification.py`). Pattern additivo coerente con la
 filosofia del progetto (append-only, mai riscrittura, versioning per data).
 
-L'esecuzione dei nuovi casi usa il flusso SDD canonico del progetto (5 fasi da
-`docs/notes/pi-sdd-execution-procedure.md`), con implementer per-task, task-reviewer
-per-task, final-reviewer per l'intero branch.
+L'esecuzione dei nuovi casi usa il flusso SDD canonico del progetto (procedura a
+5 fasi), con implementer per-task, task-reviewer per-task, final-reviewer per
+l'intero branch.
 
 ## Tech Stack
 
@@ -429,7 +428,6 @@ entro quel gate, invece di restare un debito a scadenza indefinita.
 - `src/toy_agent/metrics.py` (**righe 285-298 oggetto di modifica**, gestione del campo
   `strict_significant` per esclusione dal breakdown strict per-tecnica)
 - `src/toy_agent/dataset.py` (loader di casi — vincolo C1, C10)
-- `docs/notes/pi-sdd-execution-procedure.md` (procedura 5 fasi + integrazioni Pi)
 - `docs/notes/2026-08-30-atlas-6-gap-population-plan.md` (decisioni pending,
   stop conditions, punto aperto judge-targeted)
 - `docs/design/registro-limiti-aperti.md` (Gap 17 = T-code aidr T0009/T0011, pattern di riferimento

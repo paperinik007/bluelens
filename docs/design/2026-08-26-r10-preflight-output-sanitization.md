@@ -106,7 +106,7 @@ progetto abbia scelto come standard per il codice.
 | `tests/toy_agent/test_run_batch.py` | `import httpx` + `from toy_agent import preflight`; riscrittura del test R10 in end-to-end |
 | *(nessun file sorgente)* | — |
 
-Criteri di tiering (`docs/notes/pi-point-1-tiering.md`): nessun `schema.py`, nessun
+Criteri di tiering: nessun `schema.py`, nessun
 confine, nessun nuovo design doc, nessun cambio di comportamento visibile → **Micro**.
 La modifica è un test che rafforza la copertura, non un cambio di codice di produzione.
 

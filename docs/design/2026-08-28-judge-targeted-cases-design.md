@@ -1,8 +1,8 @@
 # Design: casi di test "rivolti al giudice" (judge-targeted)
 
-Data: 2026-08-28. Origine: punto 1 di
-`docs/notes/valutazione-argomenti-poc-monitoraggio.md` (parcheggiato il 17/08,
-riaperto esplicitamente dall'utente il 28/08 dopo che Fase 1 è di fatto conclusa).
+Data: 2026-08-28. Origine: punto 1 di una nota di valutazione sulla PoC di
+monitoraggio (parcheggiato il 17/08, riaperto esplicitamente dall'utente il
+28/08 dopo che Fase 1 è di fatto conclusa).
 Nessun documento requisiti master preesistente per questa feature — è emersa da
 zero in questa sessione di brainstorming, non è la parafrasi di un requisito
 scritto altrove: la Aggiunta 1 (confronto col testo originale) non si applica per

@@ -20,9 +20,9 @@ risk). Advocate ha trovato due lacune di leggibilità (quando si applica la gene
 3 varianti, come clusters e tabella ambito si relazionano). Tutti i punti sono corretti
 in questa revisione — vedi le note puntuali nelle sezioni interessate sotto.
 
-**Decisioni ereditate dalla nota e non rimesse in discussione qui** (vedi
-`docs/notes/2026-08-29-atlas-antivirus-metodo-note.md`, §7-8, Nodo A/B/D — il Nodo C è
-quello corretto in questa revisione, vedi sopra):
+**Decisioni ereditate dalla nota di analisi preliminare (§7-8, Nodo A/B/D) e non
+rimesse in discussione qui — il Nodo C è quello corretto in questa revisione, vedi
+sopra**:
 - Nodo A: questo documento tratta **solo il metodo** — il cross-check completo
   T0001-T0014 vs MITRE ATLAS è un research doc separato, stesso pattern di
   `docs/research/2026-08-19-taxonomy-cross-check-findings.md`, e viene **dopo** questo

@@ -5,7 +5,7 @@ HTML/PDF, official project page, Semantic Scholar citation graph). Written to se
 discrepancy between this project's own market research
 (`docs/research/2026-08-20-vendor-market-agentic-threat-detection.md`, hereafter "the market doc")
 and the later design work (`docs/notes/2026-08-26-analisi-integrazione-secondo-vendor.md` and
-`docs/notes/handoff-prossimo-pi-2026-08-26.md`) that picked AgentDoG anyway without engaging the
+an operator handoff note from the same day) that picked AgentDoG anyway without engaging the
 market doc's own ranking. Dates below are as of 2026-08-27.
 
 ## Verdict

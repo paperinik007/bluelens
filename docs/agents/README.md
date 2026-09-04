@@ -44,7 +44,7 @@ Per ogni design doc, due passaggi che si completano (non si sostituiscono):
 
 Il council esprime opinioni indipendenti e non vincolanti. Il grill fa cross-reference
 meccanico contro i documenti esistenti — non esprime opinioni di merito. Entrambi
-read-only. Vedi `docs/notes/pi-point-1-tiering.md` per i criteri di scelta del tier.
+read-only.
 
 Nota: il `reviewer` di default di pi (`~/.pi/agent/agents/reviewer.md`) ha `model:
 claude-sonnet-4-5` hardcoded — per il nostro flusso serve la variante project-local

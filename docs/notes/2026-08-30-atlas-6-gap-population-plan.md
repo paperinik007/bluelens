@@ -209,8 +209,7 @@ Subagent `final-reviewer` (`agentScope: "both"`), prompt basato su template
 `requesting-code-review/code-reviewer.md`. Categorie di check attese:
 - Struttura di `vendor_scope_verification.yaml` corretta
 - Tutti i 12 casi (o 8-10 realisticamente) eseguiti + verdetto registrato
-- Test mirror `test_vendor_scope_verification.py` passa + esercita il path reale (lezione
-  `pi-lesson-test-must-exercise-real-path.md`)
+- Test mirror `test_vendor_scope_verification.py` passa + esercita il path reale
 - Esplicita documentazione del "limite dichiarato" per T0103/T0108 se è l'esito
 - Nessuna regressione su `cases.yaml` esistente
 
@@ -295,8 +294,6 @@ nessuna nuova dipendenza in `pyproject.toml` root, nessun commit su `main`.
 
 - `docs/research/2026-08-30-atlas-taxonomy-crosscheck.md` (verificato oggi)
 - `docs/design/2026-08-30-atlas-audit-method-design-v4.md` (righe 17, 221-283, 353, 411 specificamente)
-- `docs/notes/pi-sdd-execution-procedure.md` (5 fasi + integrazioni Pi)
-- `docs/notes/pi-operating-model-sprint.md` (agenti da usare)
 - `src/toy_agent/tools.py` (verifica capability — da rileggere in Fase 0)
 - `catalog/cases.yaml` (pattern dei 31 casi esistenti)
 - `catalog/cases.yaml` (campi richiesti per ogni entry + campi opzionali nuovi: `variant_cluster_id`, `variant_round_count`, `per_vendor_concordance`)
