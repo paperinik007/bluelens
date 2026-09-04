@@ -314,6 +314,20 @@ separata, non presa qui.
 
 ## 10. Gate pre-pubblicazione — contenuto da purgare prima che il repo diventi pubblico
 
+**Eseguito il 2026-09-04.** Contenuto spostato verbatim (4 note + le 4 sezioni Nodo D,
+con provenienza file/righe originali) in `paperinik007/private-notes/bluelens/notes/`
+prima della purga — non perso, solo tolto dalla storia pubblica. Riscrittura fatta con
+`git filter-repo` su un clone usa-e-getta (mai sul checkout di lavoro): rimozione
+completa dei 4 file di note (`--path ... --invert-paths`) + un `--blob-callback`
+mirato che toglie solo la sezione Nodo D dai 4 design doc, lasciando intatto il resto.
+Verificato prima del force-push, non solo dopo: confronto degli SHA-1 di ogni blob tra
+storia originale e riscritta (su 1469 path, solo gli 8 previsti differiscono), e
+contenuto dei 4 design doc confermato byte-per-byte uguale all'originale meno
+esattamente le righe della sezione rimossa. Force-push su `origin/master` fatto e
+verificato (`git fetch` + confronto hash), checkout locale riallineato con
+`git reset --hard`. L'unica occorrenza residua della stringa "Nodo D" nella storia è
+questa stessa sezione (meta-documentazione della purga, non il contenuto rimosso).
+
 Deciso il 2026-08-30, discutendo dove deve vivere fisicamente la famiglia di note
 spin-off del `toy_agent` (contesto delle idee stesse al punto 9 sopra). Il fix già fatto
 sulle note (`docs/notes/2026-08-29-famiglia-spinoff-toy-agent.md`, sezione "Dove si
