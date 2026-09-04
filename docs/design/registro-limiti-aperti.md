@@ -990,6 +990,33 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   negativi/positivi del primo run reale di `llamafirewall-combined`,
   2026-09-04. Non risolto: nessuna delle due tecniche giudica la legittimità
   della richiesta, solo azione locale o pattern sintattico — chiudere questo
-  richiederebbe un terzo meccanismo (o un giudice LLM dedicato, vedi
-  `judge-targeted-cases`, branch non mergiato) fuori scope di questa
-  attivazione.
+  richiederebbe un terzo meccanismo (o un giudice LLM dedicato) fuori scope
+  di questa attivazione.
+
+  **Addendum 2026-09-04 — perché "nascondere il payload al detector" è un
+  framing sbagliato, e cosa funziona davvero invece**: il branch
+  `judge-targeted-cases` (chiuso non mergiato, vedi ricerca correlata) provava
+  a costruire un caso di test con un payload pensato per restare invisibile al
+  giudizio di AlignmentCheck — l'idea è stata bocciata in review perché falsa
+  nel meccanismo (il turno seed `user` è mappato direttamente su
+  `USER MESSAGE`, quindi è sempre visibile, non esiste un canale separato per
+  "parlare solo al detector"). Agente e detector sono entrambi solo modelli
+  che leggono lo stesso testo condiviso: non può esistere un payload visibile
+  a uno e invisibile all'altro senza uno split architetturale reale, che qui
+  non c'è.
+
+  I 6 FN non-strutturali di questo run dimostrano però che un attacco reale
+  contro il giudizio del detector non ha bisogno di occultamento: il detector
+  legge il payload per intero, senza alcun trucco, e lo approva comunque
+  perché il suo criterio di giudizio (coerenza locale azione-istruzione per
+  AlignmentCheck, pattern sintattico da injection per PromptGuard) è più
+  stretto della domanda che servirebbe ("questa richiesta è legittima e
+  autorizzata?"). Analogia corretta con l'evasione antivirus: non è
+  offuscamento del payload (che l'AV non vede) — è codice del tutto leggibile
+  che semplicemente non corrisponde a nessuna firma/euristica nota, l'AV lo
+  legge tutto e lo lascia passare lo stesso. Conseguenza pratica: non serve
+  una categoria di test dedicata "contro il giudizio del detector" con un
+  payload apposito — la copertura realistica generale del dataset (es. i casi
+  ATLAS di questo batch) la produce già come effetto collaterale naturale,
+  senza bisogno di progettarla. Rafforza, con un argomento indipendente dal
+  fallimento di review, la decisione di non riprendere `judge-targeted-cases`.
