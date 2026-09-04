@@ -1,0 +1,36 @@
+egress-proxy-1  | 2026/09/04 10:20:21| Processing Configuration File: /etc/squid/squid.conf (depth 0)
+egress-proxy-1  | 2026/09/04 10:20:21| Created PID file (/run/squid.pid)
+egress-proxy-1  | 2026/09/04 10:20:21| Current Directory is /
+egress-proxy-1  | 2026/09/04 10:20:22| Starting Squid Cache version 6.14 for x86_64-pc-linux-gnu...
+egress-proxy-1  | 2026/09/04 10:20:22| Service Name: squid
+egress-proxy-1  | 2026/09/04 10:20:22| Process ID 1
+egress-proxy-1  | 2026/09/04 10:20:22| Process Roles: master worker
+egress-proxy-1  | 2026/09/04 10:20:22| With 1048576 file descriptors available
+egress-proxy-1  | 2026/09/04 10:20:22| Initializing IP Cache...
+egress-proxy-1  | 2026/09/04 10:20:22| DNS IPv6 socket created at [::], FD 10
+egress-proxy-1  | 2026/09/04 10:20:22| DNS IPv4 socket created at 0.0.0.0, FD 11
+egress-proxy-1  | 2026/09/04 10:20:22| Adding nameserver 127.0.0.11 from /etc/resolv.conf
+egress-proxy-1  | 2026/09/04 10:20:22| Adding ndots 1 from /etc/resolv.conf
+egress-proxy-1  | 2026/09/04 10:20:22| Logfile: opening log daemon:/var/log/squid/access.log
+egress-proxy-1  | 2026/09/04 10:20:22| Logfile Daemon: opening log /var/log/squid/access.log
+egress-proxy-1  | 2026/09/04 10:20:22| Local cache digest enabled; rebuild/rewrite every 3600/3600 sec
+egress-proxy-1  | 2026/09/04 10:20:22| Store logging disabled
+egress-proxy-1  | 2026/09/04 10:20:22| Swap maxSize 0 + 262144 KB, estimated 20164 objects
+egress-proxy-1  | 2026/09/04 10:20:22| Target number of buckets: 1008
+egress-proxy-1  | 2026/09/04 10:20:22| Using 8192 Store buckets
+egress-proxy-1  | 2026/09/04 10:20:22| Max Mem  size: 262144 KB
+egress-proxy-1  | 2026/09/04 10:20:22| Max Swap size: 0 KB
+egress-proxy-1  | 2026/09/04 10:20:22| Using Least Load store dir selection
+egress-proxy-1  | 2026/09/04 10:20:22| Current Directory is /
+egress-proxy-1  | 2026/09/04 10:20:22| Finished loading MIME types and icons.
+egress-proxy-1  | 2026/09/04 10:20:22| HTCP Disabled.
+egress-proxy-1  | 2026/09/04 10:20:22| Pinger socket opened on FD 16
+egress-proxy-1  | 2026/09/04 10:20:22| Squid plugin modules loaded: 0
+egress-proxy-1  | 2026/09/04 10:20:22| Adaptation support is off.
+egress-proxy-1  | 2026/09/04 10:20:22| Accepting SSL bumped HTTP Socket connections at conn3 local=[::]:3128 remote=[::] FD 14 flags=9
+egress-proxy-1  |     listening port: 3128
+egress-proxy-1  | 2026/09/04 10:20:23| storeLateRelease: released 0 objects
+time="2026-09-04T12:33:23+02:00" level=warning msg="The \"SIFTER_MODEL\" variable is not set. Defaulting to a blank string."
+time="2026-09-04T12:33:24+02:00" level=warning msg="The \"INSPECTOR_MODEL\" variable is not set. Defaulting to a blank string."
+time="2026-09-04T12:33:24+02:00" level=warning msg="The \"EMBED_MODEL\" variable is not set. Defaulting to a blank string."
+time="2026-09-04T12:33:24+02:00" level=warning msg="The \"DETECTOR_OPENROUTER_API_KEY\" variable is not set. Defaulting to a blank string."

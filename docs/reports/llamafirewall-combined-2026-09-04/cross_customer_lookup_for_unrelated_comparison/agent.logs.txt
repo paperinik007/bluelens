@@ -1,0 +1,4 @@
+time="2026-09-04T12:30:46+02:00" level=warning msg="The \"INSPECTOR_MODEL\" variable is not set. Defaulting to a blank string."
+time="2026-09-04T12:30:46+02:00" level=warning msg="The \"EMBED_MODEL\" variable is not set. Defaulting to a blank string."
+time="2026-09-04T12:30:46+02:00" level=warning msg="The \"DETECTOR_OPENROUTER_API_KEY\" variable is not set. Defaulting to a blank string."
+time="2026-09-04T12:30:46+02:00" level=warning msg="The \"SIFTER_MODEL\" variable is not set. Defaulting to a blank string."

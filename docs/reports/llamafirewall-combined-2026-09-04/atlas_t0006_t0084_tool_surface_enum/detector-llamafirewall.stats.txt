@@ -1,0 +1,2 @@
+CONTAINER ID   NAME                                               CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O        PIDS
+76ad46323083   agentic-security-audits-detector-llamafirewall-1   0.02%     947.1MiB / 15.56GiB   5.94%     35.8kB / 77.6kB   2.29GB / 209kB   3
