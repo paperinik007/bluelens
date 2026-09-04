@@ -10,3 +10,12 @@ venv/
 run_output/
 .pi/
 temp/
+
+# Working notes for Pi (the delegate agent) — kept locally so Pi's own
+# workflow isn't broken, purged from public history (docs/strategy/
+# posizionamento.md §10, second pass): canonical copy lives in
+# paperinik007/private-notes/bluelens/notes/.
+docs/notes/pi-*.md
+docs/notes/handoff-prossimo-pi.md
+docs/notes/handoff-prossimo-pi-2026-08-26.md
+docs/notes/2026-08-27-costi-modelli-openrouter-e-pi-delegato.md
