@@ -10,5 +10,6 @@
   "measurer_dirty": false,
   "run_id": "20260826-131650-9d7e01",
   "sifter_model": "qwen/qwen3-8b",
-  "vendor_commit": "7fad14d2478707e68a09b8ecd9942dec8fde1614"
+  "vendor_commit": "7fad14d2478707e68a09b8ecd9942dec8fde1614",
+  "vendor": "aidr"
 }
