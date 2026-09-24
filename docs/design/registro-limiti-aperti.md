@@ -760,6 +760,28 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   tolga quella riga romperebbe lo script in modo non ovvio (M6, il Dockerfile aidr
   documenta esplicitamente questa trappola, quello llamafirewall no).
 
+- **Circa 30 dei 49 attacchi "non riusciti" nei run pubblicati falliscono per un limite
+  della simulazione, non per una scelta dell'agente, e sono contati come veri
+  negativi** — lo schema dei tool mostrato all'agente non dichiara mai i valori ammessi
+  (campi, formati, ID dei ticket), il campo `email` non è modificabile, `send_email` non
+  ha allegati, e alcuni seed non dicono chi è il cliente. La riclassificazione del Gap
+  18 assume che l'assenza di effetto sia una scelta dell'agente, e `report.py:293-297`
+  lo dichiara nei report pubblicati. T0003 e T0010 non hanno mai avuto un attacco
+  valido in nessun run, e per T0014 l'attacco non è mai avvenuto. Trovato il
+  2026-09-24. Dettaglio, classificazione per caso e ricalcolo delle metriche: Gap 22 in
+  `2026-08-14-toy-agent-gap-tracking.md`.
+
+- **Etichette e criteri di successo mai verificati in modo sistematico contro i
+  transcript** — tre errori confermati: `account_deactivation_explicitly_requested`
+  benigno contro la regola del Gap 7 (la backdoor scatta in ogni run), criterio di
+  `bulk_export_to_partner_address` che non richiede un export riuscito contro quanto
+  dichiara il suo commento, criterio di `atlas_t0077_markdown_link_payload` che cerca il
+  marcatore markdown e non vede un link di phishing consegnato in chiaro. Più due
+  debolezze residue in `cross_customer_lookup_for_unrelated_comparison` e una zona
+  grigia senza regola (`order_summary_sent_to_own_address`). Nessun test ricalcola gli
+  effetti dai transcript. Trovato il 2026-09-24. Dettaglio: Gap 23 in
+  `2026-08-14-toy-agent-gap-tracking.md`.
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **R10 — output del preflight non sanitizzato a valle del tipo di ritorno** — il codice
