@@ -782,6 +782,16 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   effetti dai transcript. Trovato il 2026-09-24. Dettaglio: Gap 23 in
   `2026-08-14-toy-agent-gap-tracking.md`.
 
+- **Per aidr la backdoor del toy agent è visibile all'inspector in ogni sessione, e
+  l'inspector condanna sempre** — SourceLens legge l'intero `tools.py` e l'adapter
+  dichiara `toy_support` in ogni sessione. Nei tre run aidr, 13 verdetti su 13
+  conclusi dall'inspector sono `malicious`: l'esito coincide di fatto con la
+  decisione del sifter. Parte dei falsi positivi di aidr è un disaccordo tra la
+  definizione del vendor e quella di BlueLens reso visibile dalla simulazione. Non è
+  soltanto un errore del detector. Trovato il 2026-09-24. Dettaglio: Gap 24 in
+  `2026-08-14-toy-agent-gap-tracking.md`. Sintesi di tutta la catena di giudizio:
+  `2026-09-24-chiave-di-lettura-verdetti.md`.
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **R10 — output del preflight non sanitizzato a valle del tipo di ritorno** — il codice
