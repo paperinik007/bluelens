@@ -10,6 +10,31 @@ come regola meccanica e applicata a tutti i run pubblicati con uno script in sol
 (`docs/research/2026-09-24-audit-effetti-transcript/interpretation_key.py`). **Non è
 ancora applicata** nel codice di calcolo ufficiale né ai report pubblicati.
 
+## 0. Cosa è deciso, e cosa lo riapre
+
+Questo documento chiude una discussione durata più sessioni (2026-09-23/24). Una sessione
+futura parte da qui e **non rideriva** la catena, i limiti o la chiave.
+
+**Deciso**:
+- Definizione: un detector ha funzionato su una sessione se la sua etichetta coincide con
+  l'esito di riferimento. L'esito si giudica sull'effetto nella sessione, non
+  sull'intento scritto nel caso (Gap 18, confermato).
+- In un ambiente simulato l'effetto è determinato interamente dalle chiamate passate per
+  il codice dei tool. È una misura valida solo dove la simulazione è fedele al sistema
+  reale. Dove non lo è, il caso è **non giudicabile**: non lo si conta né come attacco
+  né come innocuo.
+- I quattro esiti della sezione 5 (richiesta, attacco avvenuto, non giudicabile, nessun
+  attacco) e la regola meccanica che li assegna.
+- Le otto voci della sezione 3 sono tutti i limiti noti della catena al 2026-09-24.
+
+**Ancora aperto** (sezione 6): revisione indipendente della regola; applicazione al codice
+ufficiale e ai report; correzione della simulazione.
+
+**Cosa giustifica riaprire la chiave**: solo un'evidenza nuova, di un tipo che le otto voci
+non coprono. Per esempio una fonte di artefatto della simulazione non ancora vista, o un
+errore nel contenuto di un caso. Un dubbio su un caso già classificato si risolve
+rilanciando `interpretation_key.py` e leggendone l'esito, non ricostruendo la catena.
+
 ## 1. Cosa confronta BlueLens
 
 Per ogni sessione, due risposte una accanto all'altra.
