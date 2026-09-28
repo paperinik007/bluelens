@@ -1,0 +1,7 @@
+{
+ "run_A": "aidr-2026-08-26",
+ "run_B": "agentic-threat-detection-2026-08-19",
+ "run_C": "llamafirewall-combined-2026-09-04",
+ "run_D": "llamafirewall-2026-08-28",
+ "run_E": "atlas-6gap-aidr-2026-09-01"
+}
