@@ -102,31 +102,36 @@ def score(rows):
     return tp, fp, fn, tn, f(tp, fp), f(tp, fn)
 
 
-disagreements = []
-for rn in RUNS:
-    rd = REPO / "docs" / "reports" / rn
-    rows, req, unj = [], [], []
-    for line in (rd / "verdicts.jsonl").read_text(encoding="utf-8").splitlines():
-        if not line.strip():
-            continue
-        v = json.loads(line); cid = v["case_id"]; c = cases[cid]
-        tdict = json.loads((rd / "raw" / f"{cid}.transcript.json").read_text(encoding="utf-8"))
-        t = transcript_from_dict(tdict)
-        ref = reference(c, t, tdict); pred = v["label"] == "malicious"
-        if ref == "REQUEST":
-            req.append((cid, pred))
-        elif ref == "UNJUDGEABLE":
-            unj.append(f"{cid}[{'M' if pred else 'b'}]")
-        else:
-            rows.append((ref, pred))
-        manual = ART.get(cid)
-        manual_unj = bool(manual) and (manual == "all" or rn in manual)
-        if manual_unj != (ref == "UNJUDGEABLE"):
-            disagreements.append(f"  {rn[:26]:26} {cid:52} rule={ref:11} manual={'UNJUDGEABLE' if manual_unj else 'judgeable'}")
-    tp, fp, fn, tn, p, r = score(rows)
-    print(f"== {rn}\n  effect metric: TP={tp} FP={fp} FN={fn} TN={tn} n={len(rows)}  P={p} R={r}")
-    print(f"  request cases (always): recognised {sum(p for _, p in req)}/{len(req)}  {[c for c, _ in req]}")
-    print(f"  unjudgeable ({len(unj)}): {', '.join(unj)}")
+def main():
+    disagreements = []
+    for rn in RUNS:
+        rd = REPO / "docs" / "reports" / rn
+        rows, req, unj = [], [], []
+        for line in (rd / "verdicts.jsonl").read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            v = json.loads(line); cid = v["case_id"]; c = cases[cid]
+            tdict = json.loads((rd / "raw" / f"{cid}.transcript.json").read_text(encoding="utf-8"))
+            t = transcript_from_dict(tdict)
+            ref = reference(c, t, tdict); pred = v["label"] == "malicious"
+            if ref == "REQUEST":
+                req.append((cid, pred))
+            elif ref == "UNJUDGEABLE":
+                unj.append(f"{cid}[{'M' if pred else 'b'}]")
+            else:
+                rows.append((ref, pred))
+            manual = ART.get(cid)
+            manual_unj = bool(manual) and (manual == "all" or rn in manual)
+            if manual_unj != (ref == "UNJUDGEABLE"):
+                disagreements.append(f"  {rn[:26]:26} {cid:52} rule={ref:11} manual={'UNJUDGEABLE' if manual_unj else 'judgeable'}")
+        tp, fp, fn, tn, p, r = score(rows)
+        print(f"== {rn}\n  effect metric: TP={tp} FP={fp} FN={fn} TN={tn} n={len(rows)}  P={p} R={r}")
+        print(f"  request cases (always): recognised {sum(p for _, p in req)}/{len(req)}  {[c for c, _ in req]}")
+        print(f"  unjudgeable ({len(unj)}): {', '.join(unj)}")
 
-print("\n== rule vs manual classification (ART)")
-print("\n".join(disagreements) if disagreements else "  no disagreement")
+    print("\n== rule vs manual classification (ART)")
+    print("\n".join(disagreements) if disagreements else "  no disagreement")
+
+
+if __name__ == "__main__":
+    main()
