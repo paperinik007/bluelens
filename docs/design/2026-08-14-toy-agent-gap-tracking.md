@@ -1749,6 +1749,8 @@ prima di Plan 5a Task 1** — cambia come si autora ogni caso "choice-dependent"
 riaprirlo dopo aver scritto i file di catalogo/dataset costerebbe rifare lavoro (Plan
 5a/5c, commit `a181d50`, non ancora eseguiti).
 
+**Stato aggiornato 2026-09-30**: l'Opzione B (scoring contro `attack_succeeded`, calcolato dall'effetto) è **superata** dalla chiave di lettura (`2026-09-24-chiave-di-lettura-verdetti.md`), sezione D: il 29/9 si giudica il comportamento dell'agente, e dal 30/9 il detector si confronta sia con l'intento dichiarato sia con il risultato, con un confronto principale scelto per vettore e per detector (C1). Non va implementata così com'è.
+
 **Trovato da**: council checkpoint su Plan 5a-5d (`council-skeptic` e `council-risk`,
 convergenza indipendente — nessuno dei due ha visto la risposta dell'altro prima di
 rispondere), 2026-08-19, durante la revisione dei 4 piani di implementazione appena
@@ -2131,6 +2133,8 @@ OpenRouter o di `gpt-4o-mini`.
 
 **Stato**: open. Nessuna decisione presa su come correggere (vedi "Opzioni" sotto).
 
+**Stato aggiornato 2026-09-30**: ancora open sul piano dell'ambiente, ma in parte deciso nella chiave di lettura (`2026-09-24-chiave-di-lettura-verdetti.md`), sezione D: per i detector NON INIZIA e DEVIA non escludono più la sessione ("Non giudicabile riguarda l'agente"); un run nuovo con ambiente corretto e criteri congelati è **necessario** per qualunque affermazione sulla qualità dei detector (riserva 1).
+
 **Trovato da**: sessione utente, 2026-09-24, verificando i fatti di un articolo esterno
 sui run pubblicati. La domanda che l'ha fatto emergere: "in un ambiente simulato, metodo
 ed effetto sono davvero scorrelati?". No: nel toy agent l'effetto è interamente
@@ -2243,6 +2247,8 @@ spostando i numeri senza che nessun detector sia cambiato.
 
 **Stato**: open.
 
+**Stato aggiornato 2026-09-30**: ancora open. Fatto nella chiave di lettura (`2026-09-24-chiave-di-lettura-verdetti.md`), sezione D: intenti ri-dichiarati con il vettore (`status_update_triggers_hidden_admin_escalation`, `refund_without_authorization`, `account_deactivation_explicitly_requested`), da riportare nel registro delle modifiche; T0014 resta malevolo con vettore "agente"; controllo della backdoor esteso a tutte le sessioni (6 su 138). Non ancora applicate le correzioni tecniche ai criteri (registro dei limiti).
+
 **Trovato da**: stessa sessione del Gap 22, 2026-09-24. Controllo in sola lettura su 38
 casi × 5 run (138 coppie): per ogni transcript, gli effetti ricavati dalle chiamate
 riuscite (backdoor scattata, dati di altri clienti letti, email a indirizzi non
@@ -2321,6 +2327,8 @@ casi specifici sono contingenti.
 ## Gap 24 — Anche il detector vede la simulazione: per aidr la backdoor è visibile in ogni sessione, e l'inspector condanna sempre
 
 **Stato**: open.
+
+**Stato aggiornato 2026-09-30**: scelta fatta, non applicata. Nella chiave di lettura (`2026-09-24-chiave-di-lettura-verdetti.md`), sezione D lo strumento avvelenato in ogni sessione è un **errore di progettazione**: run futuri con il tool avvelenato in un server separato (opzione 3); nei run pubblicati i verdetti motivati dalla backdoor, su sessioni il cui intento non prevede l'attacco nell'ambiente, escono dal numero filtrato (C2).
 
 **Trovato da**: stessa sessione dei Gap 22/23, 2026-09-24, chiedendo se la chiave di
 lettura dei verdetti tenesse conto dei limiti dell'ambiente giocattolo *anche dal lato
