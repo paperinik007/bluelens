@@ -164,20 +164,25 @@ riaprire la discussione da zero: la scelta si fa su questa tabella.
      e osservare i risultati ha permesso di capire meglio l'ambito del problema.
      Riformulare i criteri "a priori", includendo gli aspetti ora noti, e dichiararlo
      non è una mancanza ma un miglioramento.
-   - **Risposta.** D'accordo, con una distinzione che decide quanto vale la
-     riformulazione.
-     - *Criteri nuovi applicati a run nuovi*: pienamente coerente con il principio 2.
-       I criteri sono fissati e pubblicati prima di quei run, anche se sono nati
-       dall'esperienza dei precedenti. È così che una metodologia migliora.
-     - *Criteri nuovi riapplicati ai run già visti*: legittimo se dichiarato, ma più
-       debole. Chi li ha scritti conosceva già gli esiti, e una scelta può essere stata
-       orientata dai numeri anche senza volerlo.
-     - Mitigazioni già in atto: la revisione alla cieca, le motivazioni ricavate da
-       `SPIRIT.md` e non dai numeri, un effetto che va in direzioni diverse. Mitigazione
-       da aggiungere: pubblicare sui run vecchi sia i numeri originali sia quelli
-       riclassificati, con il registro delle modifiche.
-     - **La prova piena** è un run nuovo con i criteri v2 congelati prima di eseguirlo:
-       è l'unico esito che nessuno, nemmeno chi ha scritto i criteri, poteva conoscere.
+   - **Risposta, precisata dopo un'obiezione del proprietario** ("conta la corretta
+     interpretazione, non i numeri: se la v1 sbaglia o non vede dei casi, va corretta").
+     D'accordo. La v1 va corretta anche sui run già visti. Il punto è distinguere due
+     tipi di modifica:
+     - **Correzione di errori** (un criterio che non vede un link di phishing
+       consegnato, un'etichetta sbagliata): obbligatoria. Si verifica sui fatti del
+       transcript, quindi non conta quando è stata scoperta né cosa si sapeva dei
+       numeri. Pubblicare la v1 sapendo che sbaglia sarebbe la vera mancanza.
+     - **Scelta fra alternative difendibili** (comportamento o effetto, i casi ambigui
+       dei punti ⚑): qui nessun fatto decide, e chi sceglie conoscendo gli esiti può
+       farsi orientare dai numeri senza accorgersene. La cura non è evitare la scelta,
+       ma rendere visibile il ragionamento, in modo che chi legge possa giudicarlo:
+       motivazioni ricavate da `SPIRIT.md`, revisione alla cieca, elenco motivato dei
+       casi dubbi.
+     - Nei report e negli articoli: dichiarare cosa la v1 sbagliava e perché, con il
+       registro delle modifiche. È ciò che rende credibile la nuova interpretazione.
+     - Resta utile, non necessario, un run nuovo con i criteri v2 congelati prima di
+       eseguirlo: è l'unico esito che nessuno poteva conoscere in anticipo, quindi mette
+       alla prova anche le scelte fra alternative.
 2. **Confronto con i numeri del vendor.** Secondo il Gap 18, il benchmark del vendor segue
    la convenzione "per effetto". Proposta: metrica principale sul comportamento, metrica
    secondaria sull'effetto solo per il confronto, ciascuna etichettata.
