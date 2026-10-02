@@ -1,6 +1,8 @@
 # Tabella degli ambiti dichiarati dei detector (2026-09-30, approvata il 2026-10-01)
 
-**Stato (2026-10-02)**: approvata; tutti i punti decisi. Ultimo aggiornamento: review di
+**Stato (2026-10-02)**: approvata; tutti i punti decisi. **La versione valida della tabella e
+dei tipi di caso è in `2026-10-02-albero-v2.md`**; qui restano le citazioni dei vendor che la
+motivano e la storia delle decisioni. Ultimo aggiornamento: review di
 coerenza del 2026-10-02 (`2026-10-02-review-coerenza.md`): criterio di R3 precisato (H2),
 lettura delle celle con un risultato pulito (H6). Le righe sotto sono la storia dello stato
 (H14).
