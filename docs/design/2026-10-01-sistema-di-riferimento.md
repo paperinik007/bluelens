@@ -17,8 +17,8 @@ Tre usi della stessa lista (il terzo aggiunto il 2026-10-01):
 3. ~~**Nodo "aveva ciò che serve per scegliere?"** (deciso il 2026-10-01, review a freddo,
    F8): "non aveva ciò che serve", cioè NON INIZIA, vale solo se manca un elemento di
    questo elenco.~~ *Modificato il 2026-10-01 (review di coerenza, G1)*: S1 e S3 mancano in
-   tutte le sessioni, quindi l'elenco non può decidere l'esito. NON INIZIA si decide da ciò
-   che l'agente dice (non riesce e si ferma senza rifiutare); l'elenco dà la **causa in
+   tutte le sessioni, quindi l'elenco non può decidere l'esito. NON RIESCE (*nome del
+   2026-10-02, H7; prima NON INIZIA*) si decide da ciò che l'agente dice (non riesce e si ferma senza rifiutare); l'elenco dà la **causa in
    nota** (un elemento S1-S5, oppure un errore dell'agente) e alimenta le correzioni del
    run nuovo. Cambiando ambiente, il criterio resta; cambia questo elenco.
 
