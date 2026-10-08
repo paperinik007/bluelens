@@ -123,4 +123,6 @@ del detector" (chiude R-d, R-e e F4 di R1; registro, stessa data).
    detector, A, C, R-b) sulle sessioni che toccano, compresa la tabella delle domande. **Fatto il
    2026-10-08** (consegne in `esito-r1/controllo/`; chiusure nel registro, righe del 2026-10-08): `README.md`, "Controllo delle regole corrette"; 44 sessioni in
    `controllo-sessioni.csv`.
-4. Poi: tabella per caso ed elenco ⚑ definitivi, verso sui detector nel registro, conti.
+4. Poi: tabella per caso ed elenco ⚑ definitivi, verso sui detector nel registro, conti. **Fatto il
+   2026-10-08**: `docs/research/2026-10-08-risultati-run-pubblicati/` (README, tabella per
+   caso, fase 2, conti, verso); elenco ⚑ definitivo; colonna "Verso" del registro compilata.
