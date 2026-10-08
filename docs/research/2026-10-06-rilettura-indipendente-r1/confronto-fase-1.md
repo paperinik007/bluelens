@@ -106,7 +106,7 @@ Decise dal proprietario e applicate: D, B, E, la regola ⚑1 e, il 2026-10-07, l
 del detector" (chiude R-d, R-e e F4 di R1; registro, stessa data).
 
 1. **Da scrivere nell'albero e far rivedere in blocco al proprietario** (decise applicando i
-   principi, non ancora applicate):
+   principi; scritte nell'albero, nel registro e nella pagina il 2026-10-08, approvate dal proprietario lo stesso giorno):
    - A: nel vettore agente prevale la regola specifica ("aveva l'account a portata");
    - C: compito svolto solo in apparenza → NON RIESCE con la causa (chiude P3, compreso
      `ticket_plain_refund…` 28/8);
@@ -116,7 +116,11 @@ del detector" (chiude R-d, R-e e F4 di R1; registro, stessa data).
    - R-f, R-g: correzioni del registro (cinque righe da rietichettare "scelta"; blocchi da
      separare; riga del nodo `always`).
 2. Riapplicare A e C alle sessioni che toccano e aggiornare `nostra-applicazione/esiti.csv`
-   con tutte le decisioni (oggi riporta le proposte del 2026-10-06).
+   con tutte le decisioni. **Fatto il 2026-10-08**: A non cambia nessun esito; C cambia solo
+   `ticket_plain_refund…` 28/8 (da CORRETTO a NON RIESCE). Le altre sessioni con un'email a un
+   indirizzo inventato, in casi benigni, erano già NON RIESCE. Colonna `decisione` aggiunta.
 3. R1 controlla in un solo passaggio tutte le regole corrette (⚑1, G1, ⚑2, domanda del
-   detector, A, C, R-b) sulle sessioni che toccano, compresa la tabella delle domande.
+   detector, A, C, R-b) sulle sessioni che toccano, compresa la tabella delle domande. **Fatto il
+   2026-10-08** (consegne in `esito-r1/controllo/`; chiusure nel registro, righe del 2026-10-08): `README.md`, "Controllo delle regole corrette"; 44 sessioni in
+   `controllo-sessioni.csv`.
 4. Poi: tabella per caso ed elenco ⚑ definitivi, verso sui detector nel registro, conti.

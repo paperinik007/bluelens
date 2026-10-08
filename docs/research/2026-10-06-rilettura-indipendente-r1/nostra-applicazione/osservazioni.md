@@ -12,6 +12,10 @@ File:
 - Le sessioni con `giudizi_dubbi` non vuoto sono tutte proposte in
   `docs/design/2026-10-02-elenco-casi-flag.md`, sezione "Proposte dall'applicazione del
   2026-10-06", in attesa di decisione del proprietario. In `esiti.csv` c'è la proposta.
+- **Aggiornato il 2026-10-08**: `esiti.csv` riporta le decisioni prese dopo la rilettura
+  indipendente (regola ⚑1, modifica G1, ⚑2 del 2026-10-06; regole A e C del 2026-10-08, approvate). La colonna `decisione`, aggiunta in fondo, dice da quale decisione viene ogni
+  riga cambiata o confermata; `giudizi_dubbi` e `confidenza` restano quelli della proposta.
+  La proposta originale è nel commit `7a8e5d0`.
 
 ## Differenze di condizione rispetto a R1
 

@@ -148,3 +148,41 @@ verdetti.
 - avviare la fase 1 di R1 in un agente separato, con cartella di lavoro `fase-1/`;
 - avviare la nostra applicazione in una sessione nuova, con lo stesso formato di uscita
   (`FASE-1-ISTRUZIONI.md`, "Cosa consegnare").
+
+## Controllo delle regole corrette (preparato e fatto il 2026-10-08)
+
+Chiude il passo 3 di "Cosa resta da fare" in `confronto-fase-1.md`: R1 controlla, in un solo
+passaggio, le regole corrette dopo la sua rilettura (⚑1, G1, ⚑2, domanda del detector, A, C,
+R-b) sulle sessioni che toccano, compresa la tabella delle domande dei detector. Istruzioni:
+`CONTROLLO-ISTRUZIONI.md`. Avviato con il via del proprietario; consegne in
+`esito-r1/controllo/` (copiate senza modifiche: R1 ha scritto solo i due file chiesti,
+verificato con le impronte md5 del pacchetto); chiusure nel registro, righe del 2026-10-08.
+
+**Chi.** "Lo stesso revisore" (tabella "Confronto e chiusura") in pratica è un agente nuovo,
+con lo stesso modello e lo stesso ruolo, che riceve come proprio il lavoro di R1 (`fase-1/`,
+`fase-2/critica.md`): l'agente della fase 1 non si può riprendere e il suo registro di lavoro
+è vuoto. **Limite da dichiarare**, accanto a quello sull'indipendenza.
+
+**Quali sessioni.** Una regola tocca una sessione se lì la regola vecchia e quella corretta
+danno risposte diverse (esito o causa), oppure se una delle due applicazioni l'aveva segnata
+dubbia proprio su quel giudizio. Per ⚑1 si aggiungono le sessioni in cui decide la parte
+"contenuto" della regola (`atlas_t0077_*`, `ticket_false_prior…` 26/8 e 4/9). Elenco, con il
+motivo per ogni sessione: `controllo-sessioni.csv`. Una definizione larga ("dove la regola
+potrebbe entrare") ne dava 113 su 138, cioè una seconda rilettura completa, che la regola di
+arresto esclude. Per la domanda del detector e per R-b il controllo è sulla tabella e sui
+verdetti, non su sessioni.
+
+**Cosa riceve** (cartella `controllo/`, costruita con `python costruisci_pacchetto.py
+--controllo C:/Users/salva/Documents/bluelens-r1`, che non tocca `fase-1/` e `fase-2/`):
+l'albero di oggi completo, S1-S5, le sole sessioni da rileggere con gli stessi run rinominati,
+dataset e codice come nella fase 1, i verdetti di tutti i run, il nostro collegamento ai
+detector (`code-detector/`), le citazioni dei vendor e la proposta della domanda del detector.
+
+**Cosa non riceve**: `nostra-applicazione/esiti.csv`, l'elenco ⚑ e il registro di oggi, il
+confronto. Contengono le nostre decisioni sulle stesse sessioni: le confrontiamo noi dopo,
+come nella fase 1. Gli esiti che i documenti ricevuti già mostrano sono elencati nelle
+istruzioni ("Esiti noti") e si contano a parte.
+
+**Chiusura.** Ogni differenza fra il suo esito e il nostro si chiude come nella tabella
+"Confronto e chiusura". Poi: tabella per caso ed elenco ⚑ definitivi, verso sui detector nel
+registro, conti.
