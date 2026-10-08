@@ -1,6 +1,11 @@
 # Tabella degli ambiti dichiarati dei detector (2026-09-30, approvata il 2026-10-01)
 
-**Stato (2026-10-02)**: approvata; tutti i punti decisi. **La versione valida della tabella e
+**Stato (2026-10-07)**: le celle ora discendono da una regola sola, la "domanda del detector"
+(decisa dal proprietario il 2026-10-07, `2026-10-07-proposta-ambito-per-domanda.md`): la
+tabella sotto e la regola RC12/H6 ("con un risultato pulito tutti dentro") sono storia.
+Restano valide le citazioni dei vendor, da cui si ricava la domanda di ogni detector.
+
+*Stato precedente (2026-10-02)*: approvata; tutti i punti decisi. **La versione valida della tabella e
 dei tipi di caso è in `2026-10-02-albero-v2.md`**; qui restano le citazioni dei vendor che la
 motivano e la storia delle decisioni. Ultimo aggiornamento: review di
 coerenza del 2026-10-02 (`2026-10-02-review-coerenza.md`): criterio di R3 precisato (H2),
