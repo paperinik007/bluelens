@@ -194,6 +194,10 @@ Riferimenti di calcolo:
   esecuzioni 58%, 5 esecuzioni 76%, 8 esecuzioni 90%;
 - errore della maggioranza dei verdetti, dato l'errore di un verdetto singolo: 10% → 2,8%
   (3) e 0,9% (5); 20% → 10% (3) e 6% (5); 30% → 22% (3) e 16% (5).
+Nota (2026-10-11, specialista di metodologia, verificata): il secondo riferimento assume errori
+indipendenti; sulla stessa sessione gli errori di un giudice sono correlati, quindi quei
+numeri sono il caso migliore. Conta l'instabilità misurata nella prova pilota
+(`2026-10-11-piano-run-v3.md`, parte 9).
 Partenza di riserva, se la prova non si potesse fare: 5 esecuzioni per caso, 3 verdetti per
 aidr e AlignmentCheck, 1 per PromptGuard (da verificare deterministico).
 
