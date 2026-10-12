@@ -120,7 +120,8 @@ degli strumenti (`LlamaFirewall/src/llamafirewall/llamafirewall.py:90-96`, commi
 risultati degli strumenti, quindi i mancati rilevamenti non cambiano; i falsi allarmi sui
 risultati degli strumenti non sono stati misurati ("0 falsi allarmi" vale solo per i
 messaggi dell'utente). Proposta, nel blocco da rivedere: dichiararlo come limite dei run
-pubblicati in `registro-limiti-aperti.md`, senza toccare i numeri. Anche la fusione OR dei
+pubblicati in `registro-limiti-aperti.md`, senza toccare i numeri (fatto il 2026-10-12, con il
+via del proprietario). Anche la fusione OR dei
 due verdetti è nostra (dichiarata). AlignmentCheck è collegato come l'esempio ufficiale
 (verificato il 2026-08-29); aidr legge l'intera conversazione.
 

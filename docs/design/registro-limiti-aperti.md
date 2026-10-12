@@ -834,6 +834,21 @@ riga qui, la risoluzione stessa (commit, test) diventa il record.
   Dettaglio: `critica-regola.md` §5 della stessa revisione. Vanno applicate prima del
   ricalcolo con la sezione D della chiave di lettura.
 
+- **Nei run pubblicati PromptGuard legge solo i messaggi dell'utente, non i risultati
+  degli strumenti** (dichiarato il 2026-10-12, con il via del proprietario). Il nostro
+  collegamento lo applica solo ai turni dell'utente
+  (`src/detector_adapter/vendors/llamafirewall/evaluate_case_combined.py:62`,
+  `if msg.role == Role.USER`), mentre l'impostazione predefinita del produttore lo applica
+  anche ai risultati degli strumenti (`LlamaFirewall/src/llamafirewall/llamafirewall.py:90-96`,
+  commit `4be64c3`; `scanners/prompt-guard-2.md`: "user inputs or tool outputs"). La
+  scelta non è motivata in `2026-09-01-llamafirewall-promptguard-design.md`. Effetto sui
+  numeri pubblicati: nessun caso aveva l'attacco nei risultati degli strumenti, quindi i
+  mancati rilevamenti non cambiano; i falsi allarmi sui risultati degli strumenti non sono
+  stati misurati, e "0 falsi allarmi" vale solo per i messaggi dell'utente. I numeri
+  pubblicati non si toccano. Nel run nuovo PromptGuard legge anche i risultati degli
+  strumenti, come indica il produttore (`2026-10-11-piano-run-v3.md`, parte 7). Dettaglio:
+  `2026-10-09-revisione-modello.md`, D6.
+
 ## Risolti (storico, rimossi da "Aperti" quando chiusi nel codice)
 
 - **R10 — output del preflight non sanitizzato a valle del tipo di ritorno** — il codice
