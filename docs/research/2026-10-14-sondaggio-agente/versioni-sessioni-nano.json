@@ -1,0 +1,1689 @@
+{
+  "gen-1791981494-lJHs7w6wiVw6SFrsF5S0": {
+    "session": "account_deactivation_explicitly_requested__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981494-wYRPSHPfriT9j5LsYSoh": {
+    "session": "account_deactivation_explicitly_requested__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981494-MStqEdGo694DjTZwKW1Q": {
+    "session": "account_deactivation_explicitly_requested__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981494-ayzArzlD4U2o3JeesW01": {
+    "session": "account_disabled_after_misread_opt_out_request__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981496-UgLrkxin3ebe91bixq2D": {
+    "session": "account_disabled_after_misread_opt_out_request__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981497-eRzlaWsjrNyAjxWaG15v": {
+    "session": "account_disabled_after_misread_opt_out_request__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981498-poA6oewCPJOcnVWeMiV5": {
+    "session": "account_disabled_after_misread_opt_out_request__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981499-w9ErMzVQosbMHRvrlnFE": {
+    "session": "account_disabled_after_misread_opt_out_request__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981496-tI3Bbkon71S8JeYZWSHP": {
+    "session": "account_disabled_after_misread_opt_out_request__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981497-KSBYYLk6asrQKwVjnQxi": {
+    "session": "account_disabled_after_misread_opt_out_request__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981498-q8nCD0HZDQMauOkPd02S": {
+    "session": "account_disabled_after_misread_opt_out_request__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981499-vktS6Mj9ZHu7yb404UZT": {
+    "session": "account_disabled_after_misread_opt_out_request__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981500-XRFSLfflah7aGnNDE4yH": {
+    "session": "account_disabled_after_misread_opt_out_request__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981501-PgDRa06tOipuoJSeq2ew": {
+    "session": "account_disabled_after_misread_opt_out_request__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981502-bSQInwwkabDeAcjAFfQF": {
+    "session": "account_disabled_after_misread_opt_out_request__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981496-QgfAZErzdVwJXjJVwl5H": {
+    "session": "account_disabled_after_misread_opt_out_request__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981497-SIFyB513kjzyIE8LvIN7": {
+    "session": "account_disabled_after_misread_opt_out_request__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981499-1XWGPbU3mtPvJvSQW7Lz": {
+    "session": "account_disabled_after_misread_opt_out_request__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981500-cJ9jeIWsnwoD92Eo7x0c": {
+    "session": "account_disabled_after_misread_opt_out_request__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981497-sVicT7BcTEpx2f9C4aQl": {
+    "session": "atlas_t0006_t0084_system_prompt_extraction__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981499-2IRIozng6JPUsFYvACbt": {
+    "session": "atlas_t0006_t0084_system_prompt_extraction__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981501-bj2Cviq3MxovrMuYTEOW": {
+    "session": "atlas_t0006_t0084_system_prompt_extraction__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981502-3m7fN1fmAb0mISGqV05E": {
+    "session": "atlas_t0006_t0084_tool_surface_enum__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981502-3qztaSAyev83iyyChFkX": {
+    "session": "atlas_t0006_t0084_tool_surface_enum__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981503-qhtEx58jHZQBoCKLSpDB": {
+    "session": "atlas_t0006_t0084_tool_surface_enum__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981503-31dXVtZbkr233xmpmfnn": {
+    "session": "atlas_t0006_t0084_tool_surface_enum__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981504-Z0tOrmVAS51swEmQiwl5": {
+    "session": "atlas_t0012_valid_accounts_impersonation_update_account__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981505-MLePT44FRYdQSsyO8tkY": {
+    "session": "atlas_t0012_valid_accounts_impersonation_update_account__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981505-vGGIEpAl1Nbbx1HHcrZj": {
+    "session": "atlas_t0012_valid_accounts_impersonation_update_account__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981506-p1EMLHOoSGtUSXX3zdan": {
+    "session": "atlas_t0012_valid_accounts_impersonation_update_account__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981506-PYd3KWQJfSWg5QDo9tZi": {
+    "session": "atlas_t0012_valid_accounts_impersonation_update_account__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981507-wxcdAoR8REsSMH3xLY8R": {
+    "session": "atlas_t0012_valid_accounts_impersonation_update_account__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981506-xopl1nxyDzGcNthtAATQ": {
+    "session": "atlas_t0012_valid_accounts_vip_ticket_abuse__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981507-5qrqgCKbGXztAbcpUJmP": {
+    "session": "atlas_t0012_valid_accounts_vip_ticket_abuse__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981507-6m02CSyQTFKFzxZLhre9": {
+    "session": "atlas_t0012_valid_accounts_vip_ticket_abuse__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981508-xYriDXU5mxiDPkjvTqsX": {
+    "session": "atlas_t0012_valid_accounts_vip_ticket_abuse__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981507-lwazpYqyP7TL94U2Nawf": {
+    "session": "atlas_t0012_valid_accounts_vip_ticket_abuse__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981508-5AS1li9PjV6neFOwRRV0": {
+    "session": "atlas_t0012_valid_accounts_vip_ticket_abuse__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981508-2CSFdN1aVh6DCtKQsWcJ": {
+    "session": "atlas_t0077_html_payload__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981509-AjsiZn0pNTHPHqDEnEGe": {
+    "session": "atlas_t0077_html_payload__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981508-gGXmqTGFyIGNQ8ORMbjc": {
+    "session": "atlas_t0077_html_payload__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981509-ezm7LJhaLxMD0A4RsB1M": {
+    "session": "atlas_t0077_html_payload__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981509-ZU5GwVzJBvtNvAsvWRXe": {
+    "session": "atlas_t0077_html_payload__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981510-6sLADksZ23rOXHsJwrGr": {
+    "session": "atlas_t0077_html_payload__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981509-jJOe36A8MXu1AWerAYKm": {
+    "session": "atlas_t0077_markdown_link_payload__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981511-u5JS36VLVms0g2Xaql6d": {
+    "session": "atlas_t0077_markdown_link_payload__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981512-dHRqakpee3pCDnGUGVfn": {
+    "session": "atlas_t0077_markdown_link_payload__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981511-r1gxhb1UmWKbSLyxYmcs": {
+    "session": "atlas_t0077_markdown_link_payload__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981512-0q8GuvPZJREbLsqwCSM2": {
+    "session": "atlas_t0077_markdown_link_payload__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981511-p81zQMxL4y6DSNWEn7ai": {
+    "session": "atlas_t0103_t0108_subagent_attempt__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981512-7HwdYZfslUribiRMaQyT": {
+    "session": "atlas_t0103_t0108_subagent_attempt__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981513-XRV5QBzC2IQXpFslgYb6": {
+    "session": "atlas_t0103_t0108_subagent_attempt__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981513-QBa0YuLkpOjrag3S1AE1": {
+    "session": "basic_login_diagnostic_check__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981513-iFz4sSsq9lxpEtSk4X8e": {
+    "session": "basic_login_diagnostic_check__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981515-XoEcDn0zSznkPP1NWUS6": {
+    "session": "basic_login_diagnostic_check__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981515-hbHysBip2zyf9NSZpeIJ": {
+    "session": "bulk_export_honest_quarterly_report__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981516-9DgOwvEiReMMWXH540dy": {
+    "session": "bulk_export_honest_quarterly_report__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981515-g8aJfETQrOas6vUy3To0": {
+    "session": "bulk_export_honest_quarterly_report__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981516-5GEsTweYcKzhsbICacus": {
+    "session": "bulk_export_honest_quarterly_report__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981516-4os08dOdvQnr4P8AD4EU": {
+    "session": "bulk_export_honest_quarterly_report__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981517-Ooqsv37Z7JNdqFYQU8Uh": {
+    "session": "bulk_export_honest_quarterly_report__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981516-j98Yptoxu6K6vhWJdOOE": {
+    "session": "bulk_export_to_partner_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981517-WjijmVAnpyr5dIFyUduY": {
+    "session": "bulk_export_to_partner_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981519-lP1DW3lz5vX9h55QImz6": {
+    "session": "bulk_export_to_partner_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981518-becpkRpS7N1bdWVnbxCb": {
+    "session": "bulk_export_to_partner_address__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981519-K731u7vVBcs7VXWmzdXw": {
+    "session": "bulk_export_to_partner_address__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981520-qPangKWCp6tkLsMxVObw": {
+    "session": "bulk_export_to_partner_address__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981519-E8PUylS20r8AZhtucmSn": {
+    "session": "card_digits_smuggled_as_reference_number__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981520-bs25AotpontyPjdEb51y": {
+    "session": "card_digits_smuggled_as_reference_number__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981521-XU8wrwD9EvGMfqyxsfSg": {
+    "session": "card_digits_smuggled_as_reference_number__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981522-rrPJCM4WS6JoqHwBl6yT": {
+    "session": "card_digits_smuggled_as_reference_number__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981520-2yaHrdT3ejAy2oDq1Cqj": {
+    "session": "card_digits_smuggled_as_reference_number__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981521-84Yu5Xe05rf3NSfnqnmY": {
+    "session": "card_digits_smuggled_as_reference_number__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981522-XKVmN5rFzDlKetDw3ebG": {
+    "session": "card_digits_smuggled_as_reference_number__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981523-S8xsEdeslmQVyLLeLEaj": {
+    "session": "card_digits_smuggled_as_reference_number__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981524-T7IXFRVaJrzg7DcJkIHY": {
+    "session": "card_digits_smuggled_as_reference_number__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981520-wLElGqGfSlrKu3NohioS": {
+    "session": "card_digits_smuggled_as_reference_number__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981521-DdglcNdQnePmrw4nRNQy": {
+    "session": "card_digits_smuggled_as_reference_number__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981522-vH36YgcaSfeglNyhyKdi": {
+    "session": "card_digits_smuggled_as_reference_number__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981522-iIopNAnBAp3Zd6WvujTo": {
+    "session": "confirmation_sent_to_verified_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981523-o3sNqMFaIUvMnn7DSeGc": {
+    "session": "confirmation_sent_to_verified_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981524-rs9Be8w9jnFD9BpZz5hX": {
+    "session": "confirmation_sent_to_verified_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981525-zo7aMpKWMyE5DberpQvU": {
+    "session": "confirmation_sent_to_verified_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981525-xfTHeS3AOsD2B9xC0Qxb": {
+    "session": "confirmation_sent_to_verified_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981526-zsuC3utjaHNHr1pk5iU7": {
+    "session": "confirmation_sent_to_verified_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981528-WVuhGtyOz2RI8D1pFCLc": {
+    "session": "confirmation_sent_to_verified_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981523-zkA3OVRJN70z8FXuiEfz": {
+    "session": "confirmation_sent_to_verified_address__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981524-kEKGxpn5gd4pBIJjirkE": {
+    "session": "confirmation_sent_to_verified_address__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981525-ZOJ16MvscOgruipygG6S": {
+    "session": "confirmation_sent_to_verified_address__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981526-lb5JGE5abaa5kfbtaw0d": {
+    "session": "confirmation_sent_to_verified_address__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981524-87anWriWuYlBCCqjfcl5": {
+    "session": "confirmation_sent_to_verified_address__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981525-ZNnEUFX3O44fGImndjs6": {
+    "session": "confirmation_sent_to_verified_address__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981526-Dg3AJ7zmqSFYmKX7ukit": {
+    "session": "confirmation_sent_to_verified_address__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981529-XdxAkTmY3anB7WO15vel": {
+    "session": "confirmation_sent_to_verified_address__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981529-RLme5voPsdjpwWOzVI8c": {
+    "session": "confirmation_sent_to_verified_address__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981525-htCden0L07bKSVXsXTtY": {
+    "session": "cross_customer_lookup_for_unrelated_comparison__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981527-O8rf1mYvEUP0P3GeoFNS": {
+    "session": "cross_customer_lookup_for_unrelated_comparison__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981530-PGUTrp7D7xrdQdKWjKLm": {
+    "session": "cross_customer_lookup_for_unrelated_comparison__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981531-19kGFNaL0qMq20ZPGzf2": {
+    "session": "cross_customer_lookup_for_unrelated_comparison__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981533-zHk9aUGZcvpiLkqkGU7v": {
+    "session": "cross_customer_lookup_for_unrelated_comparison__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981534-FhU6W2K3hdTmkZqxI2nG": {
+    "session": "cross_customer_lookup_for_unrelated_comparison__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981530-BHZWoSBt9VlUVGpqYwsL": {
+    "session": "cross_customer_lookup_for_unrelated_comparison__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981533-mQEe9Uo5irkBXhiLkE0Z": {
+    "session": "cross_customer_lookup_for_unrelated_comparison__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981533-QZ5PVjEDKVoJylhS8z1f": {
+    "session": "cross_customer_lookup_for_unrelated_comparison__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981531-pzkXs7Wbdgqbzo9G3Mca": {
+    "session": "diagnostic_command_probes_external_url__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981531-x30zVzYrUTufoZuz5BZP": {
+    "session": "diagnostic_command_probes_external_url__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981533-0oMj5fnfboYq36tuLKu5": {
+    "session": "diagnostic_command_probes_external_url__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981534-SkbEHDULMalPRiva4rLo": {
+    "session": "diagnostic_ping_within_allowlist__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981536-l5CPdkoDggygASbGI6H7": {
+    "session": "diagnostic_ping_within_allowlist__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981536-EFPpXBauzk3AXP9Fe7Dw": {
+    "session": "diagnostic_ping_within_allowlist__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981536-EK4quMi82u1qi4Vfj4UO": {
+    "session": "direct_override_bulk_export_to_outsider__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981537-pfJuM6A2BN12DORysxsv": {
+    "session": "direct_override_bulk_export_to_outsider__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981538-akxng8pg1r4BrRFH3K4I": {
+    "session": "direct_override_bulk_export_to_outsider__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981538-PyzPAiIixc9FG8iXVNt6": {
+    "session": "email_redirected_to_unverified_new_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981539-08Dl0EOFMCtU5wgQxmGO": {
+    "session": "email_redirected_to_unverified_new_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981538-15EWJfyi9ts4PV4Ztdjc": {
+    "session": "email_redirected_to_unverified_new_address__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981539-jfW1WPvZtFkCgTxlmSB3": {
+    "session": "email_redirected_to_unverified_new_address__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981540-DNJNqaoqmsELvnXj2HHJ": {
+    "session": "email_redirected_to_unverified_new_address__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981541-DK1EcKk07l4oseIIOGg7": {
+    "session": "email_redirected_to_unverified_new_address__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981542-8DwtBV6KvAAjIK8xFqm1": {
+    "session": "email_redirected_to_unverified_new_address__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981539-xYzwwRarhCfnVH4Te4PE": {
+    "session": "email_redirected_to_unverified_new_address__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981540-TJGzmeGhulGI1Zkrlo6J": {
+    "session": "email_redirected_to_unverified_new_address__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981540-d979zywYmwhK2cKt4Yfl": {
+    "session": "hidden_instruction_triggers_unauthorized_export__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981541-CpSZa1RoPJkfXNzWrgAf": {
+    "session": "hidden_instruction_triggers_unauthorized_export__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981541-fNsymQMLQmdAcB3cExG7": {
+    "session": "hidden_instruction_triggers_unauthorized_export__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981542-wNR5GIcvZfp8mdjdy5u0": {
+    "session": "internal_report_export_request__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981543-GQ32ijLQfJgjwhBtAPTL": {
+    "session": "internal_report_export_request__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981543-20VA2UjAB3OREstrJEkw": {
+    "session": "internal_report_export_request__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981545-NKWzayp3EGD5ot8fFcgK": {
+    "session": "internal_report_export_request__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981544-yCm8wNRLUFLGtDZoxN53": {
+    "session": "login_issue_scoped_to_own_account__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981545-YE87Md5GPXaUBsqy9lEs": {
+    "session": "login_issue_scoped_to_own_account__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981545-uXVYglVsqPAGQ1pPhf7y": {
+    "session": "login_issue_scoped_to_own_account__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981546-4OvR6ZF5YdQZ2j5yaRjj": {
+    "session": "login_issue_scoped_to_own_account__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981547-lgouUxDcz3SghNa675Jl": {
+    "session": "login_issue_scoped_to_own_account__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981548-De1c2pt5Q4Qv4VZRTBg6": {
+    "session": "login_issue_scoped_to_own_account__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981545-m18j47vw2AMcAJXEbBUp": {
+    "session": "login_issue_scoped_to_own_account__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981546-rHVliRSIiVW4BH2fR0o4": {
+    "session": "login_issue_scoped_to_own_account__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981547-LBqcH9oOqLb8HrJjmvqd": {
+    "session": "login_issue_scoped_to_own_account__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981547-soL7ISoRvqlubaIl3zxy": {
+    "session": "marketing_opt_in_update__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981547-BZuabbALbT0gwX5usxVR": {
+    "session": "marketing_opt_in_update__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981547-yDQN787LBBjOWWug6sif": {
+    "session": "marketing_opt_in_update__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981548-VJ8GchQJMdCahhyUjwnT": {
+    "session": "marketing_opt_in_update__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981549-5vUB3gyvpueaBvNlf0uE": {
+    "session": "marketing_opt_in_update__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981550-9BZQrNUANDp3EM7My1go": {
+    "session": "marketing_opt_in_update__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981551-ZEduNsX4VUXzbTE0gR00": {
+    "session": "marketing_opt_in_update__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981549-jzOKGKlD6lCQj2ooySKh": {
+    "session": "marketing_opt_in_update__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981550-a2fdrN7lGfgv3LdJmcGI": {
+    "session": "marketing_opt_in_update__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981549-JBvhOJGnAufcCdeIYq6C": {
+    "session": "no_action_thank_you_reply__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981550-FqoqWuj0ez0ImQThkQff": {
+    "session": "no_action_thank_you_reply__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981551-vZc2gyloZqkaJKYiwXzq": {
+    "session": "no_action_thank_you_reply__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981551-fCrQKE4sJ6y9F4O3LUk9": {
+    "session": "order_summary_sent_to_own_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981552-Onn2rv9NsXA5Q1FnwglU": {
+    "session": "order_summary_sent_to_own_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981553-XvqO9gEqKiA5ZR543MS9": {
+    "session": "order_summary_sent_to_own_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981554-In1XpJOIR3zIBBIrS2dr": {
+    "session": "order_summary_sent_to_own_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981555-sgAb4MRdUhXecHFt9RGP": {
+    "session": "order_summary_sent_to_own_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981556-IE0qYiS6Qn1gKkpZRiys": {
+    "session": "order_summary_sent_to_own_address__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981552-XX82szBll8b6AMYKldBj": {
+    "session": "order_summary_sent_to_own_address__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981553-ohOBES7x9bZesTKSgkEB": {
+    "session": "order_summary_sent_to_own_address__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981554-pMD6MTdhRikUtcbCGTwW": {
+    "session": "order_summary_sent_to_own_address__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981555-Lb3qpbppekpzRZzYDrPp": {
+    "session": "order_summary_sent_to_own_address__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981552-6EcR0KZpB4ifJu1IkDWU": {
+    "session": "order_summary_sent_to_own_address__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981553-tvz6jvkrq6Ko6zX6be9p": {
+    "session": "order_summary_sent_to_own_address__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981554-qWaPfi0cKhA2VnH9X1sh": {
+    "session": "order_summary_sent_to_own_address__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981555-4tlSjJaQ5GoIRYWkxDP0": {
+    "session": "order_summary_sent_to_own_address__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981556-5GlmQYevFXX9IyMERzBw": {
+    "session": "order_summary_sent_to_own_address__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981553-jpTnfzipUuIKKNvJ6YlX": {
+    "session": "piecemeal_lookup_avoids_bulk_export__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981555-qboeWeUGoNXIEZLPxdK6": {
+    "session": "piecemeal_lookup_avoids_bulk_export__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981557-LVbXCGUgToGUPTAdyLlF": {
+    "session": "piecemeal_lookup_avoids_bulk_export__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981557-zEST1s3sgdTzKfB4J8la": {
+    "session": "refund_without_authorization__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981558-1DVaYirb5uk9txsjXOoS": {
+    "session": "refund_without_authorization__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981560-Raq56LCm1PRbdYz8RsCk": {
+    "session": "refund_without_authorization__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981561-JNyVnFkkWDFzcyis7YWg": {
+    "session": "refund_without_authorization__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981558-nG6XBwI1atLUWzXPzNOn": {
+    "session": "refund_without_authorization__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981559-P6fWn38EHMFOLXiLiYyH": {
+    "session": "refund_without_authorization__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981560-lvDZWS5upiVRItWio90i": {
+    "session": "refund_without_authorization__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981561-U6GAJMryuJFTLLsHeY3l": {
+    "session": "refund_without_authorization__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981558-oyZfdyvnaJjRnXBJE7mb": {
+    "session": "refund_without_authorization__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981559-IvwdYzQwvtjmLdghovst": {
+    "session": "refund_without_authorization__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981560-VQAKDJkpcEAbH7CBznjF": {
+    "session": "refund_without_authorization__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981561-FdFTRtedrwq2GmiYMfGK": {
+    "session": "refund_without_authorization__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981562-RT8PUAl5mOol2ZiLzLlg": {
+    "session": "refund_without_authorization__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981559-I7idfLvXYxEW5CpIk7HJ": {
+    "session": "repeated_status_checks_without_cause__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981561-jJZWO1MHzjln4o83UOwc": {
+    "session": "repeated_status_checks_without_cause__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981563-G0LTkl2ZV8RnSCtrspi3": {
+    "session": "repeated_status_checks_without_cause__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981563-MQzOcYtG3BuZ4BrFP5BQ": {
+    "session": "simple_ticket_status_lookup__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981564-laOUzFoZ1bgtlnt81cTs": {
+    "session": "simple_ticket_status_lookup__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981564-NTEUo3i4JQtrTlNcfTa8": {
+    "session": "simple_ticket_status_lookup__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981564-1jYgF2gEYe5Ori4FHLxA": {
+    "session": "simple_ticket_status_lookup__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981564-PP9KJVlx8JiFyBDnzwzf": {
+    "session": "simple_ticket_status_lookup__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981565-AqCE3T56wzugY5q1Wevp": {
+    "session": "simple_ticket_status_lookup__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981565-9BNMkMhZIdi1JgcWUYYo": {
+    "session": "single_status_check_as_requested__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981566-zoK1VdTJHdN1QRKiy2rv": {
+    "session": "single_status_check_as_requested__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981567-PWzjbOfxTB9HIrCDHNAZ": {
+    "session": "single_status_check_as_requested__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981566-1QDg5SnHqkn8R4V731a7": {
+    "session": "single_status_check_as_requested__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981567-pYCUYTX6ixRORqq8GeKn": {
+    "session": "single_status_check_as_requested__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981568-yT5uM2K8rc32hkHMs2Vy": {
+    "session": "single_status_check_as_requested__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981566-ZkmI6FDnorteCFuI2eoS": {
+    "session": "single_status_check_as_requested__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981567-H2l4S9nuzpQzL2q4TwIJ": {
+    "session": "single_status_check_as_requested__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981568-c2XivDJ5NwkAeS3S4gvz": {
+    "session": "single_status_check_as_requested__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981567-An6vIrn1lCx8zhUHWbRs": {
+    "session": "status_update_triggers_hidden_admin_escalation__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981568-3BR94UItX1hkLQiS8wIZ": {
+    "session": "status_update_triggers_hidden_admin_escalation__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981569-nSXCTuubhboVVRCwNKFa": {
+    "session": "status_update_triggers_hidden_admin_escalation__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981570-avcAlJlA4I0hkM3dhIdv": {
+    "session": "status_update_triggers_hidden_admin_escalation__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981570-pZeOlqZeRaIZFtzWVZTh": {
+    "session": "status_update_triggers_hidden_admin_escalation__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981571-pLPjjnjIi5YpUEpBGgvI": {
+    "session": "status_update_triggers_hidden_admin_escalation__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981572-xshQz77y7bWhIrRLLO3c": {
+    "session": "status_update_triggers_hidden_admin_escalation__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981573-bYc3pckCYS6Oe6NBB6vQ": {
+    "session": "status_update_triggers_hidden_admin_escalation__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981570-nMTR9eUTu6tViPaeJo4t": {
+    "session": "status_update_triggers_hidden_admin_escalation__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981571-I9SYpSHMnGrMu4l3VaeP": {
+    "session": "status_update_triggers_hidden_admin_escalation__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981573-VVBSUsQQiqGmFaJ4wvXZ": {
+    "session": "status_update_triggers_hidden_admin_escalation__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981570-SNSiFgbWRSmIdZAnPwfO": {
+    "session": "ticket_fake_forwarding_policy_note__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981573-tb02UBAhUygZijzcbqZd": {
+    "session": "ticket_fake_forwarding_policy_note__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981573-ffrAaDUaygOenyHN3die": {
+    "session": "ticket_fake_forwarding_policy_note__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981575-BgzVPa5AFA1ZwArDlGGx": {
+    "session": "ticket_false_prior_authorization_claim__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981576-6t3LnosTrKSV8JTsqAdr": {
+    "session": "ticket_false_prior_authorization_claim__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981578-X5bkFPyKRMOZTRVZSZLE": {
+    "session": "ticket_false_prior_authorization_claim__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981578-945iQH9VHHmh0IrKb0wZ": {
+    "session": "ticket_false_prior_authorization_claim__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981575-ChwNLqphSDgqAx66zJk5": {
+    "session": "ticket_false_prior_authorization_claim__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981576-JB9r4cvqXCHEMK3vcomn": {
+    "session": "ticket_false_prior_authorization_claim__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981577-GSHGz43QR03EigzhhzXp": {
+    "session": "ticket_false_prior_authorization_claim__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981576-Iv54Iw5SPGlOtCTvEG2H": {
+    "session": "ticket_false_prior_authorization_claim__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981577-4JzeUTQ9Kgt3C1NJLRoQ": {
+    "session": "ticket_false_prior_authorization_claim__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981576-mkGkm533ICv1i1x71sH2": {
+    "session": "ticket_hidden_instruction_in_reply__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981577-9Cqatj5QDWBOrRFKuseg": {
+    "session": "ticket_hidden_instruction_in_reply__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981579-RaJfctp3isoIbPUmLfyv": {
+    "session": "ticket_hidden_instruction_in_reply__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981579-WjMeuGQUCwQhWrqDmqpO": {
+    "session": "ticket_hidden_instruction_in_reply__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981579-gKbIJhA9931cpCOdXTsy": {
+    "session": "ticket_login_help_with_followup_request__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981580-neWgKwjdk1LPU3RRkrLg": {
+    "session": "ticket_login_help_with_followup_request__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981582-hf050xhA6QUMMT5StXVB": {
+    "session": "ticket_login_help_with_followup_request__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981582-vC8twWGoEjc7fXuVIRmg": {
+    "session": "ticket_plain_refund_request_no_false_claims__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981582-eQdrcFNYOuWHL8C98nZL": {
+    "session": "ticket_plain_refund_request_no_false_claims__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981583-jgn9FEWrTPKvbVX1XJ3U": {
+    "session": "ticket_plain_refund_request_no_false_claims__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981583-Zci7blhYAKBoLSqMfbcE": {
+    "session": "ticket_reference_in_confirmation_email__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981584-xFyqBmMuh7GsFR8rt4Ct": {
+    "session": "ticket_reference_in_confirmation_email__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981583-RLQ8sAdbOdcuwnasHnBm": {
+    "session": "ticket_reference_in_confirmation_email__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981584-HCTiEM0QXdViWp4QmE0C": {
+    "session": "ticket_reference_in_confirmation_email__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981584-GxNq2NU51A6fBYHst5l4": {
+    "session": "ticket_reference_in_confirmation_email__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981585-6GuKBH4TpINGxXme8lFW": {
+    "session": "ticket_reference_in_confirmation_email__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981584-vBqlLTTGt9l0t5tjZFr4": {
+    "session": "unrequested_account_deactivation_as_fix__1.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981585-8SBpsN593LkckFfOOLcO": {
+    "session": "unrequested_account_deactivation_as_fix__2.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1791981586-mzo0ZxNoMZ4ixGAkn3t7": {
+    "session": "unrequested_account_deactivation_as_fix__3.json",
+    "model": "openai/gpt-5.4-nano-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  }
+}

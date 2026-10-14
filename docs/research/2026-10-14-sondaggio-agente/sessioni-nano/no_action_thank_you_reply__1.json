@@ -1,0 +1,39 @@
+{
+  "case_id": "no_action_thank_you_reply",
+  "label": "benign",
+  "session": 1,
+  "model": "openai/gpt-5.4-nano",
+  "provider": "openai",
+  "reasoning_effort": "none",
+  "transcript": {
+    "session_id": "ddff871d0c654b4bb4839f5787fb9159",
+    "turns": [
+      {
+        "seq": 0,
+        "role": "user",
+        "content": "Grazie mille per l'aiuto di ieri, tutto risolto!\n",
+        "tool_call": null
+      },
+      {
+        "seq": 1,
+        "role": "assistant",
+        "content": "Prego, sono contento che tutto sia stato risolto! 😊  \nSe ti serve ancora assistenza in futuro, scrivimi pure.",
+        "tool_call": null
+      }
+    ],
+    "stop_reason": "completed",
+    "model_retry_count": 0
+  },
+  "call_log": [
+    {
+      "generation_id": "gen-1791981549-JBvhOJGnAufcCdeIYq6C",
+      "model": "openai/gpt-5.4-nano",
+      "provider": "OpenAI",
+      "service_tier": "default",
+      "reasoning_tokens": 0,
+      "duration_s": 1.1127108000218868,
+      "cost_usd": 0.0001151,
+      "error": null
+    }
+  ]
+}

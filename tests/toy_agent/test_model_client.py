@@ -230,3 +230,95 @@ class TestRetryLogic:
         # One more call attempt (no retries)
         assert create.calls == 4
         assert client.retry_count == 2
+
+
+# ---------------------------------------------------------------------------
+# Agent model of the new run: reasoning effort, pinned provider, per-call log
+# (piano-run-v3, parte 8, "Sondaggio dell'agente sui casi vecchi")
+# ---------------------------------------------------------------------------
+
+
+def _capturing_client(monkeypatch, **client_kwargs):
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    client = OpenRouterModelClient(api_key="sk-test-not-real", **client_kwargs)
+    captured = {}
+
+    def capture_create(**kwargs):
+        captured.update(kwargs)
+        return _fake_response("ok", None, 10, 5, cost=0.001)
+
+    client._client.chat.completions.create = capture_create
+    return client, captured
+
+
+def test_a_client_without_the_new_options_sends_the_same_request_as_before(monkeypatch):
+    client, captured = _capturing_client(monkeypatch)
+    client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
+    assert "extra_body" not in captured
+    assert captured["timeout"] == 20.0
+
+
+def test_the_reasoning_effort_is_sent_explicitly(monkeypatch):
+    client, captured = _capturing_client(monkeypatch, reasoning_effort="none")
+    client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
+    assert captured["extra_body"]["reasoning"] == {"effort": "none"}
+
+
+def test_the_provider_is_pinned_without_fallbacks(monkeypatch):
+    client, captured = _capturing_client(monkeypatch, provider="openai")
+    client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
+    assert captured["extra_body"]["provider"] == {"order": ["openai"], "allow_fallbacks": False}
+
+
+def test_the_per_call_timeout_can_be_raised(monkeypatch):
+    client, captured = _capturing_client(monkeypatch, request_timeout_s=90.0)
+    client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
+    assert captured["timeout"] == 90.0
+
+
+class _Clock:
+    def __init__(self, *ticks):
+        self._ticks = list(ticks)
+
+    def __call__(self):
+        return self._ticks.pop(0)
+
+
+def test_every_call_records_returned_model_provider_duration_and_cost(monkeypatch):
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    client = OpenRouterModelClient(api_key="sk-test-not-real", clock=_Clock(10.0, 12.5))
+    response = _fake_response("ok", None, 10, 5, cost=0.002)
+    # OpenRouter returns the alias, not the exact version; the exact version is
+    # in its generation record, looked up later by the generation id.
+    response.id = "gen-123"
+    response.model = "openai/gpt-5.4-mini"
+    response.provider = "OpenAI"
+    response.service_tier = "default"
+    response.usage.completion_tokens_details = SimpleNamespace(reasoning_tokens=0)
+    client._client.chat.completions.create = lambda **kwargs: response
+
+    client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
+
+    assert client.call_log == [
+        {
+            "generation_id": "gen-123", "model": "openai/gpt-5.4-mini", "provider": "OpenAI",
+            "service_tier": "default", "reasoning_tokens": 0,
+            "duration_s": 2.5, "cost_usd": 0.002, "error": None,
+        }
+    ]
+
+
+def test_a_failed_attempt_is_recorded_with_its_duration_and_error_class(monkeypatch):
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    client = OpenRouterModelClient(api_key="sk-test-not-real", clock=_Clock(0.0, 4.0, 5.0, 6.0))
+    client._client.chat.completions.create = _FailThenSucceed(1, _rate_limit_error)
+    client._sleep = lambda s: None
+
+    client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
+
+    assert client.call_log[0] == {
+        "generation_id": None, "model": None, "provider": None, "service_tier": None, "reasoning_tokens": None,
+        "duration_s": 4.0, "cost_usd": None, "error": "RateLimitError",
+    }
+    assert client.call_log[1]["error"] is None
+    assert client.call_log[1]["duration_s"] == 1.0
