@@ -1,7 +1,8 @@
 # Sfere dei giudici sui tre assi (2026-10-11)
 
-**Stato**: bozza di Claude, da verificare con il revisore alla cieca (DeepSeek, via OpenRouter)
-e da rivedere con il proprietario, una sfera alla volta.
+**Stato**: chiuso. Le tre sfere sono approvate dal proprietario il 2026-10-11, dopo due
+revisori alla cieca (DeepSeek, Gemini) e la revisione indipendente del modello v3; i punti
+sotto "Punti da guardare con il proprietario" sono stati decisi con le sfere.
 **Parte da**: `2026-10-09-revisione-modello.md`, decisioni "Tre assi del segnale e della
 sfera", "Ambito e zero", "Elenco delle azioni".
 **Regola**: la sfera si scrive dalla dichiarazione del produttore, mai dal comportamento
@@ -94,7 +95,7 @@ stretta dalle istruzioni del secondo stadio).
 Confronto in testa: come nella v2, con l'intento dove c'è un attaccante, con il risultato per
 il valore "agente". Ambito per "contenuto": dentro (T0002).
 
-## Punti da guardare con il proprietario
+## Punti da guardare con il proprietario (decisi il 2026-10-11, con le sfere)
 
 1. **aidr, lettura stretta nuova.** La v2 usava le due letture di aidr solo per l'appartenenza
    al catalogo (i casi ATLAS). Il testo del suo secondo stadio restringe il verdetto al

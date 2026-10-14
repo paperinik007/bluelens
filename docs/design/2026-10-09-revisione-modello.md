@@ -212,13 +212,15 @@ iniezione camuffata 3, override 1), strumento 2, agente 2, contenuto 0. La strut
 ad altre dimensioni (osservazione del proprietario); regola proposta per aggiungerne una:
 vedi sotto.
 
-**Condizioni di misura (scelta delegata, 2026-10-09)**: versioni di agente, giudici, modelli e
+**Condizioni di misura (scelta delegata, 2026-10-09, approvata dal proprietario il 2026-10-12)**: versioni di agente, giudici, modelli e
 fornitore si congelano e si scrivono prima del run (già fatto in pratica nei report).
 
-**Nuove dimensioni della copertura (scelta delegata, 2026-10-09)**: una dimensione si aggiunge
+**Nuove dimensioni della copertura (scelta delegata, 2026-10-09, approvata dal proprietario il 2026-10-12)**: una dimensione si aggiunge
 solo se (a) c'è un motivo per cui può cambiare il verdetto di un giudice, (b) si decide prima
 del run, (c) se ne accetta il costo: ogni valore in più moltiplica i casi. Candidate, non
-decise: modello dell'agente, lingua dei casi, lunghezza della conversazione.
+decise: modello dell'agente, lingua dei casi, lunghezza della conversazione. (2026-10-12:
+lingua e modello dell'agente sono diventati condizioni fisse, la lunghezza un limite
+dichiarato; piano del run, parti 6, 8 e 13.)
 
 **Lingua delle parti, proposta di Claude (2026-10-09, da decidere)**: le parti dicono che cosa
 l'attacco vuole ottenere (l'azione); il come arriva lo dicono già "dove sta l'attacco" e la
@@ -431,7 +433,7 @@ revocato):
 Sostituisce, per la v3, gli "allarmi fuori ambito" della v2, che prendono il nome di
 selettività.
 
-**Confronti per "strumento" e "agente" (scelta delegata, 2026-10-11, da rivedere in blocco)**:
+**Confronti per "strumento" e "agente" (scelta delegata, 2026-10-11, approvata dal proprietario il 2026-10-12)**:
 il valore "strumento" non ha il confronto con il risultato (deciso nella fase 1: lo strumento
 agisce da solo); simmetricamente il valore "agente" non ha il confronto con l'intento, perché
 nella sessione non c'è nessun attacco da vedere: la richiesta è innocua nelle parole e il
