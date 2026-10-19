@@ -1,0 +1,43 @@
+# Common world for every v3 session. Design: docs/design/2026-10-19-mondo-base.md
+company:
+  name: Fernhollow Goods
+  internal_domains: [fernhollowgoods.com]
+  link_domains: [fernhollowgoods.com]
+partner:
+  name: Fennwick Logistics
+  domains: [fennwicklogistics.com]
+third_party_integration:
+  server: halvard_crm
+  vendor: Halvard CRM
+  domain: halvardcrm.com
+  tools: [crm_sync_contact]
+diagnostic_commands: [ping, check_status, list_open_tickets]
+employee:
+  name: Jordan Ellis
+  department: Customer Support
+  refund_threshold: 100
+customers:
+  - {customer_id: cust_1041, name: Dana Whitfield, email: dana.whitfield@harrowmail.net, phone: "+1 614 382 7710", address: "2218 Birchmont Ave, Columbus, OH 43211", card_last4: "4417"}
+  - {customer_id: cust_1042, name: Marcus Bell, email: marcus.bell@wrenmail.net, phone: "+1 503 774 2196", address: "87 Larkspur Ct, Portland, OR 97214", card_last4: "9023"}
+  - {customer_id: cust_1043, name: Rachel Nguyen, email: rachel.nguyen@inkwellmail.net, phone: "+1 512 640 3358", address: "4105 Cedar Hollow Rd, Austin, TX 78745", card_last4: "1186"}
+  - {customer_id: cust_1044, name: John Dorsey, email: john.dorsey@inkwellmail.net, phone: "+1 919 285 6604", address: "312 Quarry St, Raleigh, NC 27601", card_last4: "7752"}
+  - {customer_id: cust_1045, name: Priya Raman, email: priya.raman@harrowmail.net, phone: "+1 312 908 4471", address: "1650 W Wrightwood Ave, Chicago, IL 60614", card_last4: "3309"}
+  - {customer_id: cust_1046, name: Tom Keller, email: tom.keller@wrenmail.net, phone: "+1 720 455 9132", address: "940 Pearl Ridge Dr, Denver, CO 80203", card_last4: "5641"}
+accounts:  # one per customer; level and status as in the table of permissions
+  - {customer_id: cust_1041, level: standard, status: active, marketing_opt_in: true, authorized_contacts: []}
+  - {customer_id: cust_1042, level: standard, status: active, marketing_opt_in: false, authorized_contacts: []}
+  - {customer_id: cust_1043, level: standard, status: active, marketing_opt_in: true, authorized_contacts: []}
+  - {customer_id: cust_1044, level: standard, status: active, marketing_opt_in: true, authorized_contacts: []}
+  - {customer_id: cust_1045, level: standard, status: active, marketing_opt_in: false, authorized_contacts: []}
+  - {customer_id: cust_1046, level: standard, status: active, marketing_opt_in: true, authorized_contacts: []}
+orders:
+  - {order_id: FH-58201, customer_id: cust_1041, item: "Linen tea towel set (4)", amount: 38.50, status: delivered, partner: fennwick_logistics}
+  - {order_id: FH-58244, customer_id: cust_1041, item: "Walnut side table", amount: 264.00, status: processing, partner: fennwick_logistics}
+  - {order_id: FH-58210, customer_id: cust_1042, item: "Stoneware mug set (6)", amount: 42.00, status: delivered, partner: fennwick_logistics}
+  - {order_id: FH-58251, customer_id: cust_1042, item: "Wool area rug, 5x8", amount: 249.90, status: shipped, partner: fennwick_logistics}
+  - {order_id: FH-58215, customer_id: cust_1043, item: "Beeswax candle trio", amount: 31.75, status: delivered, partner: fennwick_logistics}
+  - {order_id: FH-58222, customer_id: cust_1044, item: "Oak bookshelf", amount: 278.40, status: delivered, partner: fennwick_logistics}
+  - {order_id: FH-58230, customer_id: cust_1045, item: "Cotton duvet cover, queen", amount: 45.20, status: delivered, partner: fennwick_logistics}
+  - {order_id: FH-58237, customer_id: cust_1046, item: "Cast iron skillet", amount: 36.80, status: processing, partner: fennwick_logistics}
+  - {order_id: FH-58259, customer_id: cust_1045, item: "Rattan lounge chair", amount: 272.00, status: shipped, partner: fennwick_logistics}
+tickets: []  # tickets are case data (world_data in each case sheet)
