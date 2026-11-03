@@ -1,0 +1,38 @@
+{
+  "gen-1792678786-1PRdmvpCSKfXNnxiKzyh": {
+    "session": "sessioni\\v3_n09_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1792678788-PxoZEP1pdAD8meWWS4sv": {
+    "session": "sessioni\\v3_n09_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1792678789-vsmd9E2ZMJ1uP03AoYv3": {
+    "session": "sessioni\\v3_n09_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1792678790-ObddWflK7SpDAsmkRCk0": {
+    "session": "sessioni\\v3_n09_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1792678792-Fu23dNRnrLX0ElHfbtax": {
+    "session": "sessioni\\v3_n09_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1792678793-6ikdSQVACkK9aBY4WMhc": {
+    "session": "sessioni\\v3_n09_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "native_tokens_reasoning": 0
+  }
+}
