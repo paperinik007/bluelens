@@ -8,12 +8,36 @@ import pytest
 
 from detector_adapter.vendors.aidr.vendor_proxy import (
     DEFAULT_TIER_TO_MODEL,
+    DEFAULT_TIER_TO_PROVIDER,
     TIER_TO_MODEL,
     build_forwarder,
     build_tier_to_model,
+    build_tier_to_provider,
     remap_tier,
     serve_forever,
 )
+
+
+def test_every_request_is_pinned_to_one_provider_without_fallback():
+    # plan part 7, 2026-10-27: in the pilot 8 invalid tool-call arguments, all from SiliconFlow (0 of 252 on Nebius);
+    # one fp8 provider for the two chat tiers, the only embedding provider for the third, no fallback.
+    assert DEFAULT_TIER_TO_PROVIDER == {"sifter": "nebius/fp8", "inspector": "nebius/fp8", "embed": "deepinfra/us"}
+    body = {"model": "inspector", "messages": []}
+    remapped = remap_tier(body)
+    assert remapped["provider"] == {"order": ["nebius/fp8"], "allow_fallbacks": False, "require_parameters": True}
+    assert remapped["messages"] == [] and "provider" not in body
+
+
+def test_the_provider_of_a_tier_can_be_set_from_the_environment_and_an_empty_value_means_the_default():
+    assert build_tier_to_provider({"SIFTER_PROVIDER": "siliconflow/fp8"})["sifter"] == "siliconflow/fp8"
+    assert build_tier_to_provider({"SIFTER_PROVIDER": ""}) == DEFAULT_TIER_TO_PROVIDER
+    assert build_tier_to_provider({}) == DEFAULT_TIER_TO_PROVIDER
+
+
+def test_the_first_stage_uses_a_model_that_exists_on_openrouter():
+    # qwen/qwen3-8b, the substitute of the published runs, is no longer in OpenRouter's listing (checked
+    # 2026-10-26); plan part 7: the first stage runs on the second stage's model, the deviation is declared.
+    assert DEFAULT_TIER_TO_MODEL["sifter"] == "qwen/qwen3-30b-a3b-instruct-2507"
 
 
 def test_build_tier_to_model_uses_defaults_when_env_is_empty():
@@ -103,6 +127,50 @@ def test_serve_forever_binds_loopback_and_serves_stubbed_response():
     finally:
         for server in servers:
             server.shutdown()
+
+
+def _sequence(statuses, ok_body=None):
+    """A transport answering with the given HTTP statuses in turn; the last one repeats."""
+    calls = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        status = statuses[min(len(calls), len(statuses) - 1)]
+        calls.append(status)
+        return httpx.Response(status, json=ok_body if status == 200 else {"error": "x"})
+    return httpx.MockTransport(handler), calls
+
+
+def test_a_rate_limit_or_a_server_error_is_retried_with_the_same_request_after_a_pause():
+    transport, calls = _sequence([429, 502, 200], {"data": [1]})
+    pauses = []
+    forward = build_forwarder(api_key="sk", transport=transport, sleep=pauses.append)
+    assert forward(8102, {"model": "embed", "input": "x"}) == {"data": [1]}
+    assert calls == [429, 502, 200] and pauses == [1.0, 2.0]  # doubling pauses
+
+
+def test_it_gives_up_after_four_attempts_and_raises():
+    transport, calls = _sequence([429])
+    forward = build_forwarder(api_key="sk", transport=transport, sleep=lambda s: None)
+    with pytest.raises(httpx.HTTPStatusError):
+        forward(8102, {"model": "embed", "input": "x"})
+    assert len(calls) == 4
+
+
+def test_a_client_error_that_is_not_a_rate_limit_is_not_retried():
+    transport, calls = _sequence([400])
+    forward = build_forwarder(api_key="sk", transport=transport, sleep=lambda s: None)
+    with pytest.raises(httpx.HTTPStatusError):
+        forward(8100, {"model": "sifter", "messages": []})
+    assert calls == [400]
+
+
+def test_every_failed_attempt_is_logged_with_its_attempt_number(tmp_path):
+    transport, _ = _sequence([429, 200], {"data": [1]})
+    log = tmp_path / "log.jsonl"
+    forward = build_forwarder(api_key="sk", transport=transport, log_path=log, sleep=lambda s: None)
+    forward(8102, {"model": "embed", "input": "x"})
+    entries = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
+    assert [(("error" in e), e.get("attempt")) for e in entries] == [(True, 1), (False, 2)]
 
 
 def test_build_forwarder_logs_request_and_response(tmp_path):

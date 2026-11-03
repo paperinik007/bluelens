@@ -6,6 +6,7 @@ import time
 import pytest
 
 import detector_adapter.vendors.aidr.evaluate_case as evaluate_case_module
+from detector_adapter.vendors.aidr.adapter import HALVARD_VERSIONS
 from detector_adapter.vendors.aidr.evaluate_case import run_evaluate_case
 
 
@@ -57,6 +58,52 @@ def test_run_evaluate_case_returns_the_adapter_result_unchanged():
     assert result == fake_verdict
 
 
+@pytest.fixture(autouse=True)
+def third_party_paths(tmp_path, monkeypatch):
+    """main() puts the session's version of the integration at the registered path; here that is a temp dir."""
+    versions = tmp_path / "versions"
+    versions.mkdir()
+    for version in HALVARD_VERSIONS:
+        (versions / f"{version}.py").write_bytes(f"# code of {version}\n".encode())
+    target = tmp_path / "servers" / "halvard_crm" / "halvard_crm.py"
+    monkeypatch.setattr(evaluate_case_module, "HALVARD_VERSIONS_DIR", versions)
+    monkeypatch.setattr(evaluate_case_module, "HALVARD_TARGET", target)
+    return target
+
+
+def test_main_installs_the_sessions_version_before_evaluating_and_reports_which_in_the_verdict(
+        monkeypatch, capsys, third_party_paths):
+    import hashlib
+
+    seen = {}
+
+    class Reading(FakeAdapter):
+        def evaluate(self, transcript):
+            seen["code_when_evaluated"] = third_party_paths.read_text(encoding="utf-8")
+            return super().evaluate(transcript)
+
+    session = {"session_id": "c1", "turns": [], "third_party_version": "compromised_data"}
+    monkeypatch.setattr(evaluate_case_module.sys, "stdin", io.StringIO(json.dumps(session)))
+    monkeypatch.setattr(evaluate_case_module, "AgenticThreatDetectionAdapter",
+                        lambda: Reading(result={"case_id": "c1", "tool_name": "aidr", "status": "ok", "label": "benign"}))
+    evaluate_case_module.main()
+    verdict = json.loads(capsys.readouterr().out)
+    assert seen["code_when_evaluated"] == "# code of compromised_data\n"
+    assert verdict["third_party_version"] == "compromised_data"
+    assert verdict["third_party_sha256"] == hashlib.sha256(b"# code of compromised_data\n").hexdigest()
+
+
+def test_main_exits_nonzero_if_the_version_cannot_be_installed_never_evaluating_with_the_wrong_code(
+        monkeypatch, capsys):
+    session = {"session_id": "c1", "turns": [], "third_party_version": "backdoored"}
+    monkeypatch.setattr(evaluate_case_module.sys, "stdin", io.StringIO(json.dumps(session)))
+    monkeypatch.setattr(evaluate_case_module, "AgenticThreatDetectionAdapter",
+                        lambda: FakeAdapter(result={"case_id": "c1", "status": "ok", "label": "benign"}))
+    with pytest.raises(SystemExit) as exc_info:
+        evaluate_case_module.main()
+    assert exc_info.value.code == 1 and capsys.readouterr().out == ""
+
+
 def test_main_writes_only_the_verdict_json_to_stdout(monkeypatch, capsys):
     fake_verdict = {"case_id": "c1", "tool_name": "x", "status": "ok", "label": "malicious"}
     monkeypatch.setattr(evaluate_case_module.sys, "stdin", io.StringIO(json.dumps({"session_id": "c1", "turns": []})))
@@ -64,7 +111,7 @@ def test_main_writes_only_the_verdict_json_to_stdout(monkeypatch, capsys):
     evaluate_case_module.main()
     captured = capsys.readouterr()
     assert captured.err == ""
-    assert json.loads(captured.out) == fake_verdict
+    assert fake_verdict.items() <= json.loads(captured.out).items()  # the verdict, plus which version of the integration
 
 
 def test_main_isolates_vendor_stdout_noise_from_the_verdict_json(monkeypatch, capsys):
@@ -73,7 +120,7 @@ def test_main_isolates_vendor_stdout_noise_from_the_verdict_json(monkeypatch, ca
     monkeypatch.setattr(evaluate_case_module, "AgenticThreatDetectionAdapter", lambda: NoisyFakeAdapter(result=fake_verdict))
     evaluate_case_module.main()
     captured = capsys.readouterr()
-    assert json.loads(captured.out) == fake_verdict
+    assert fake_verdict.items() <= json.loads(captured.out).items()  # the verdict, plus which version of the integration
     assert "tool_use" in captured.err
 
 

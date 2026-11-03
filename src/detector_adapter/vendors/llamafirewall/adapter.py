@@ -153,6 +153,149 @@ def combined_error_verdict(case_id: str, source: str, exception_class: str | Non
     }
 
 
+TOOL_NAME_PROMPTGUARD = "llamafirewall-promptguard"
+
+
+def promptguard_inputs(transcript: dict) -> list[dict]:
+    """The texts the vendor's default configuration has PromptGuard scan: the user's messages and the
+    results of the tools (llamafirewall.py:90-96, pinned 1.0.3: Role.USER and Role.TOOL). The assistant's own
+    messages and the arguments of its calls are not scanned, and an empty result carries nothing to scan."""
+    inputs = []
+    for turn in transcript["turns"]:
+        if turn["role"] == "user":
+            text, source, tool_name = turn["content"], "user", None
+        elif turn["role"] == "tool":
+            call = turn["tool_call"]
+            text, source, tool_name = call.get("result") or "", "tool", call["tool_name"]
+        else:
+            continue
+        if text:
+            inputs.append({"turn": turn["seq"], "source": source, "tool_name": tool_name, "text": text})
+    return inputs
+
+
+def _where(item: dict) -> str:
+    what = "the user message" if item["source"] == "user" else f"the result of {item['tool_name']}"
+    return f"{what} (turn {item['turn']})"
+
+
+def promptguard_verdict(case_id: str, scans: list, latency_s: float | None) -> dict:
+    """One verdict for a whole session from the scan of each input (item, ScanResult): malicious if any input
+    reaches the vendor's threshold, confidence the highest score. `inputs_scanned` keeps every score (no text)
+    so the input that fired can be found afterwards."""
+    decisions = [getattr(r.decision, "value", r.decision) for _, r in scans]
+    is_malicious = "block" in decisions
+    best_item, best = max(scans, key=lambda pair: pair[1].score) if scans else (None, None)
+    if not scans:
+        rationale = "PromptGuard: no input to scan"
+    elif is_malicious:
+        fired = sum(d == "block" for d in decisions)
+        rationale = (f"PromptGuard: block (score {best.score:.2f}) on {_where(best_item)}; "
+                     f"{fired} of {len(scans)} inputs over the threshold")
+    else:
+        rationale = (f"PromptGuard: allow (highest score {best.score:.2f}, on {_where(best_item)}); "
+                     f"{len(scans)} inputs scanned")
+    return {
+        "case_id": case_id,
+        "tool_name": TOOL_NAME_PROMPTGUARD,
+        "status": "ok",
+        "label": "malicious" if is_malicious else "benign",
+        "confidence": best.score if scans else 0.0,
+        "technique_detected": None,
+        "rationale": rationale,
+        "cost_usd": None,
+        "latency_s": latency_s,
+        "in_tokens": None,
+        "out_tokens": None,
+        "inputs_scanned": [
+            {"turn": item["turn"], "source": item["source"], "tool_name": item["tool_name"],
+             "decision": getattr(r.decision, "value", r.decision), "score": r.score}
+            for item, r in scans
+        ],
+    }
+
+
+def promptguard_error_verdict(case_id: str, exception_class: str | None) -> dict:
+    """The local classifier failed (model files, torch): status='error', label=None, excluded from the counts."""
+    detail = f"local dependency error: {exception_class}" if exception_class else "local dependency error"
+    return {
+        "case_id": case_id,
+        "tool_name": TOOL_NAME_PROMPTGUARD,
+        "status": "error",
+        "label": None,
+        "confidence": None,
+        "technique_detected": None,
+        "rationale": f"PromptGuard: {detail}",
+        "cost_usd": None,
+        "latency_s": None,
+        "in_tokens": None,
+        "out_tokens": None,
+    }
+
+
+def alignmentcheck_steps(transcript: dict) -> list[dict]:
+    """The session as the vendor's trace: the user's messages, each tool call as an action of the assistant
+    ("ACTION: ... ACTION INPUT: ...", the format its prompt describes) followed by the tool's result, and the
+    assistant's own messages. `turn` is the session's turn number, `kind` what the step is. Plain data: the
+    caller turns each step into the vendor's message class."""
+    steps = []
+    for turn in transcript["turns"]:
+        role, seq = turn["role"], turn["seq"]
+        if role == "user":
+            steps.append({"turn": seq, "role": "user", "kind": "user", "tool_name": None, "content": turn["content"]})
+        elif role == "assistant":
+            steps.append({"turn": seq, "role": "assistant", "kind": "reply", "tool_name": None, "content": turn["content"]})
+        elif role == "tool":
+            call = turn["tool_call"]
+            name = call["tool_name"]
+            action = f"ACTION: {name}\nACTION INPUT: {call['arguments']}"
+            steps.append({"turn": seq, "role": "assistant", "kind": "action", "tool_name": name, "content": action})
+            steps.append({"turn": seq, "role": "tool", "kind": "result", "tool_name": name, "content": call.get("result") or ""})
+        else:
+            raise ValueError(f"unknown turn role: {role!r}")
+    return steps
+
+
+def _what(step: dict) -> str:
+    what = f"the call to {step['tool_name']}" if step["kind"] == "action" else "the assistant's reply"
+    return f"{what} (turn {step['turn']})"
+
+
+def alignmentcheck_verdict(case_id: str, scans: list, latency_s: float | None) -> dict:
+    """One verdict for a whole session from the judgement of each action of the assistant (step, ScanResult), in
+    order, up to the first one judged misaligned (the vendor's replay stops there). Malicious if any action was
+    judged misaligned; confidence the highest score. `actions_scanned` keeps the outcome of each action (no text)
+    so the one that fired can be found afterwards."""
+    decisions = [getattr(r.decision, "value", r.decision) for _, r in scans]
+    is_malicious = "human_in_the_loop_required" in decisions
+    fired = next(((s, r) for (s, r), d in zip(scans, decisions) if d == "human_in_the_loop_required"), None)
+    if fired:
+        step, result = fired
+        rationale = f"AlignmentCheck: misaligned on {_what(step)}. {result.reason}"
+    elif scans:
+        rationale = f"AlignmentCheck: no action judged misaligned; {len(scans)} actions scanned"
+    else:
+        rationale = "AlignmentCheck: no action to scan"
+    return {
+        "case_id": case_id,
+        "tool_name": TOOL_NAME,
+        "status": "ok",
+        "label": "malicious" if is_malicious else "benign",
+        "confidence": max((r.score for _, r in scans), default=0.0),
+        "technique_detected": None,
+        "rationale": rationale,
+        "cost_usd": None,
+        "latency_s": latency_s,
+        "in_tokens": None,
+        "out_tokens": None,
+        "actions_scanned": [
+            {"turn": s["turn"], "kind": s["kind"], "tool_name": s["tool_name"],
+             "decision": getattr(r.decision, "value", r.decision), "score": r.score}
+            for s, r in scans
+        ],
+    }
+
+
 try:
     from llamafirewall import register_llamafirewall_scanner
     from llamafirewall.scanners.custom_check_scanner import CustomCheckScanner
@@ -168,7 +311,9 @@ else:
     # implementation time, not only at pre-design falsification — a
     # third-party model catalog ages (Gap 10, same lesson already applied to
     # aidr's SIFTER_MODEL/INSPECTOR_MODEL).
-    DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct"
+    # The vendor's own model (custom_check_scanner.py, 1.0.3: Llama-4-Maverick-17B-128E-Instruct-FP8); on
+    # OpenRouter the only Maverick, served in fp8 only by Parasail (listing of 2026-10-26; plan part 7).
+    DEFAULT_MODEL = "meta-llama/llama-4-maverick"
     API_BASE_URL = "http://127.0.0.1:8200/v1"  # local proxy (a later task), single port — no tier remap needed
     API_KEY_ENV_VAR = "LLAMAFIREWALL_OPENROUTER_API_KEY"
 

@@ -58,11 +58,15 @@ COPY src/detector_adapter/vendors/aidr /opt/detector_adapter/src/detector_adapte
 WORKDIR /opt/detector_adapter
 RUN pip install --no-cache-dir -e .
 
-# SourceLens registry entry for toy_support (Gap 1/Gap 4/Gap 8): single-file
-# COPY of the real tool source — toy_agent is never installed as a package
+# SourceLens registry entries for the support server and the third-party integration (Gap 1/Gap 4/Gap 8):
+# single-file COPY of the real tool source — toy_agent is never installed as a package
 # here (Gap 9: detector must never import toy_agent), this is plain data.
-RUN mkdir -p /opt/aidr-vendor/aidr/gauntlet/servers/toy_support
-COPY src/toy_agent/tools.py /opt/aidr-vendor/aidr/gauntlet/servers/toy_support/toy_support.py
+# halvard_crm has one registry entry; its four versions are kept apart from the servers directory and the
+# adapter copies the session's version to the registered path before each session
+# (detector_adapter.vendors.aidr.adapter.install_server_version).
+RUN mkdir -p /opt/aidr-vendor/aidr/gauntlet/servers/support /opt/aidr-vendor/aidr/gauntlet/servers/halvard_crm
+COPY src/toy_agent/tools.py /opt/aidr-vendor/aidr/gauntlet/servers/support/support.py
+COPY dataset_v3/servers/halvard_crm /opt/halvard_versions
 COPY docker/detector/source_registry.yaml /opt/aidr-vendor/aidr/data/source_registry.yaml
 
 COPY docker/detector/entrypoint.sh /opt/entrypoint.sh

@@ -28,15 +28,27 @@ def _append_log(log_path: Path, entry: dict, api_key: str) -> None:
         f.write(scrubbed + "\n")
 
 
+def provider_from_env() -> str | None:
+    """The OpenRouter provider to pin (slug with its tag, e.g. "parasail/fp8"), or None to leave the choice to
+    OpenRouter."""
+    return os.environ.get("LLAMAFIREWALL_PROVIDER") or None
+
+
 def build_forwarder(
     api_key: str,
     proxy_url: str | None = None,
     transport: httpx.BaseTransport | None = None,
     log_path: Path | None = None,
+    provider: str | None = None,
 ) -> Forwarder:
     """Build a Forwarder that POSTs the request body verbatim to OpenRouter's
     chat completions endpoint — no tier remap (unlike aidr's
-    vendor_proxy.py): LLMClient already sends a real OpenRouter model id."""
+    vendor_proxy.py): LLMClient already sends a real OpenRouter model id.
+
+    With `provider`, the request is pinned to that one provider: no fallback to another (a different host or
+    precision would be a silent deviation) and every parameter of the request must be supported (the vendor's
+    scanner asks for a structured answer)."""
+    pinning = {"order": [provider], "allow_fallbacks": False, "require_parameters": True} if provider else None
     client = httpx.Client(
         base_url=OPENROUTER_BASE_URL,
         headers={"Authorization": f"Bearer {api_key}"},
@@ -46,6 +58,8 @@ def build_forwarder(
     )
 
     def forward(body: dict) -> dict:
+        if pinning:
+            body = {**body, "provider": pinning}
         try:
             response = client.post(CHAT_PATH, json=body)
             response.raise_for_status()
@@ -107,7 +121,7 @@ def main() -> None:
     proxy_url = os.environ.get("HTTPS_PROXY")
     log_path_str = os.environ.get("LLAMAFIREWALL_PROXY_LOG_PATH")
     log_path = Path(log_path_str) if log_path_str else None
-    forward = build_forwarder(api_key, proxy_url, log_path=log_path)
+    forward = build_forwarder(api_key, proxy_url, log_path=log_path, provider=provider_from_env())
     serve_forever(PROXY_PORT, forward)
     threading.Event().wait()  # keep the process alive; server runs on a daemon thread
 

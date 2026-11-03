@@ -15,6 +15,12 @@ def test_zero_arg_construction_matches_create_scanner_contract(monkeypatch):
     assert scanner.name == TOOL_NAME
 
 
+def test_default_model_is_the_vendors_own_model_on_openrouter():
+    # The vendor's scanner uses Llama-4-Maverick-17B-128E-Instruct-FP8 (custom_check_scanner.py, 1.0.3); on
+    # OpenRouter it is the only Maverick, "meta-llama/llama-4-maverick" (listing of 2026-10-26).
+    assert DEFAULT_MODEL == "meta-llama/llama-4-maverick"
+
+
 def test_default_model_is_used_when_env_var_is_unset(monkeypatch):
     monkeypatch.delenv("LLAMAFIREWALL_MODEL", raising=False)
     monkeypatch.setenv("LLAMAFIREWALL_OPENROUTER_API_KEY", "sk-test-not-real")

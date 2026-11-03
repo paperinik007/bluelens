@@ -1,10 +1,48 @@
 from __future__ import annotations
 
+import hashlib
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
-SERVER_NAME = "toy_support"
+# Two servers in every session (plan part 2, correction 1): the clean support tools and the third-party
+# integration. SourceLens reads each one's code by name from the registry (docker/detector/source_registry.yaml).
+SERVER_NAME = "support"
+THIRD_PARTY_SERVER = "halvard_crm"
+THIRD_PARTY_TOOLS = frozenset({"crm_sync_contact"})
+# The four versions of the integration's code (dataset_v3/servers/halvard_crm/<version>.py), copied into the
+# image; a session reads the one it used. The registry has ONE entry for the integration, with one path.
+HALVARD_VERSIONS = ("honest", "compromised_data", "compromised_permissions", "compromised_persistence")
+HALVARD_VERSIONS_DIR = Path("/opt/halvard_versions")
+HALVARD_REGISTRY_PATH = "halvard_crm/halvard_crm.py"
+HALVARD_TARGET = Path("/opt/aidr-vendor/aidr/gauntlet/servers") / HALVARD_REGISTRY_PATH
+
+
+def server_for_tool(tool_name: str) -> str:
+    return THIRD_PARTY_SERVER if tool_name in THIRD_PARTY_TOOLS else SERVER_NAME
+
+
+def third_party_version(data: dict) -> str:
+    """The version of the integration the session ran against; saved sessions that name none (the sessions of the
+    old cases) ran against the honest one."""
+    version = data.get("third_party_version", "honest")
+    if version not in HALVARD_VERSIONS:
+        raise ValueError(f"unknown third-party version: {version!r}, expected one of {list(HALVARD_VERSIONS)}")
+    return version
+
+
+def install_server_version(version: str, versions_dir: Path, target: Path) -> str:
+    """Put the code of one version of the integration at the path the registry points to, replacing whatever was
+    there, and return its sha256 so the verdict can say which code aidr could read. SourceLens reads the file on
+    every request, so this must be done before the session is evaluated, one session at a time per container."""
+    if version not in HALVARD_VERSIONS:
+        raise ValueError(f"unknown third-party version: {version!r}, expected one of {list(HALVARD_VERSIONS)}")
+    # LF always: git stores these files with LF but a Windows checkout has CRLF, and the hash must not depend on that
+    code = (Path(versions_dir) / f"{version}.py").read_bytes().replace(b"\r\n", b"\n")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(code)
+    return hashlib.sha256(code).hexdigest()
 # Identifies which detector produced a Verdict (design doc, "Schema di misura")
 # — a constant today (one detector active per audit, design doc, "Limiti
 # dichiarati"), populated so a future second-vendor Verdict is distinguishable
@@ -30,9 +68,10 @@ def _build_messages(turns: list[dict]) -> list[Any]:
             messages.append(ChatMessage(seq=seq, role="assistant", message_type="agent_response", content=turn["content"]))
         elif role == "tool":
             call = turn["tool_call"]
+            server = server_for_tool(call["tool_name"])
             usage = ToolUsage(
-                tool_name=f"{SERVER_NAME}.{call['tool_name']}",
-                server_name=SERVER_NAME,
+                tool_name=f"{server}.{call['tool_name']}",
+                server_name=server,
                 arguments=call["arguments"],
                 result=call.get("result"),
                 status=call.get("status", "ok"),
@@ -60,7 +99,7 @@ def transcript_dict_to_agent_event(transcript: dict):
         # real integration instead.
         source="agent",
         timestamp=datetime.now(timezone.utc),
-        declared_servers=[SERVER_NAME],
+        declared_servers=[SERVER_NAME, THIRD_PARTY_SERVER],
         messages=_build_messages(transcript["turns"]),
     )
 

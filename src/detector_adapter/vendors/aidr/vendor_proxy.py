@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 import os
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -28,7 +29,10 @@ DEFAULT_TIER_TO_MODEL: dict[str, str] = {
     # vicina della stessa famiglia confermata raggiungibile (probe live: 200 OK,
     # servito da Alibaba) — sostituisce il precedente deepseek/deepseek-v4-flash,
     # che era un salto di famiglia non necessario.
-    "sifter": "qwen/qwen3-8b",
+    # 2026-10-26: qwen/qwen3-8b non è più nell'elenco di OpenRouter (verificato); il primo stadio gira sul
+    # modello del secondo, stessa famiglia e stessa uscita (2507) del modello del produttore, più grande
+    # (piano del run v3, parte 7; deviazione dichiarata).
+    "sifter": "qwen/qwen3-30b-a3b-instruct-2507",
     "inspector": "qwen/qwen3-30b-a3b-instruct-2507",
     "embed": "qwen/qwen3-embedding-4b",
 }
@@ -57,6 +61,34 @@ def build_tier_to_model(env: Mapping[str, str] | None = None) -> dict[str, str]:
 
 TIER_TO_MODEL: dict[str, str] = build_tier_to_model()
 
+# One OpenRouter provider per tier, no fallback to another (a different host or precision would be a silent
+# deviation). Plan part 7, 2026-10-27: in the pilot every one of the 8 invalid tool-call arguments came from
+# SiliconFlow (0 of 252 chat calls on Nebius); Nebius serves the model in fp8; DeepInfra is the only embedding
+# provider. The choice rests on parse errors, not on the judge's labels; a confirmation run on Nebius comes
+# before the freeze.
+DEFAULT_TIER_TO_PROVIDER: dict[str, str] = {
+    "sifter": "nebius/fp8",
+    "inspector": "nebius/fp8",
+    "embed": "deepinfra/us",
+}
+TIER_TO_PROVIDER_ENV_VAR: dict[str, str] = {
+    "sifter": "SIFTER_PROVIDER",
+    "inspector": "INSPECTOR_PROVIDER",
+    "embed": "EMBED_PROVIDER",
+}
+
+
+def build_tier_to_provider(env: Mapping[str, str] | None = None) -> dict[str, str]:
+    """The provider tag per tier from env vars, the default where absent or empty (as build_tier_to_model)."""
+    source = env if env is not None else os.environ
+    return {
+        tier: source.get(TIER_TO_PROVIDER_ENV_VAR[tier]) or default
+        for tier, default in DEFAULT_TIER_TO_PROVIDER.items()
+    }
+
+
+TIER_TO_PROVIDER: dict[str, str] = build_tier_to_provider()
+
 # Port -> OpenRouter path, matching model_client.py's hardcoded ports:
 # 8100=sifter, 8101=inspector (both chat completions), 8102=embed (embeddings).
 PORT_TO_PATH: dict[int, str] = {
@@ -68,6 +100,14 @@ PORT_TO_PATH: dict[int, str] = {
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 Forwarder = Callable[[int, dict], dict]
+
+# A transient failure of the upstream (rate limit, server error, dropped connection) is answered by the same
+# request again after a pause: nothing the model says is changed. Found in the confirmation run on Nebius
+# (2026-10-27): three 429 on the embeddings of one session, which each aidr session sends in a burst of 15-28,
+# with the provider pinned and no fallback to another.
+RETRY_STATUS = frozenset({429, 500, 502, 503, 504})
+MAX_ATTEMPTS = 4
+FIRST_PAUSE_S = 1.0
 
 
 def _scrub(text: str, secret: str) -> str:
@@ -86,12 +126,13 @@ def _append_log(log_path: Path, entry: dict, api_key: str) -> None:
 
 
 def remap_tier(body: dict) -> dict:
-    """Return a copy of body with body['model'] rewritten tier -> OpenRouter model id."""
+    """Return a copy of body with body['model'] rewritten tier -> OpenRouter model id, pinned to the tier's provider."""
     tier = body.get("model")
     if tier not in TIER_TO_MODEL:
         raise ValueError(f"unknown tier in request body: {tier!r}")
     remapped = dict(body)
     remapped["model"] = TIER_TO_MODEL[tier]
+    remapped["provider"] = {"order": [TIER_TO_PROVIDER[tier]], "allow_fallbacks": False, "require_parameters": True}
     return remapped
 
 
@@ -100,6 +141,7 @@ def build_forwarder(
     proxy_url: str | None = None,
     transport: httpx.BaseTransport | None = None,
     log_path: Path | None = None,
+    sleep: Callable[[float], None] = time.sleep,
 ) -> Forwarder:
     """Build a Forwarder that POSTs a tier-remapped body to OpenRouter.
 
@@ -128,17 +170,22 @@ def build_forwarder(
         if path is None:
             raise ValueError(f"no OpenRouter path configured for port {port}")
         remapped = remap_tier(body)
-        try:
-            response = client.post(path, json=remapped)
-            response.raise_for_status()
-            result = response.json()
-        except Exception as exc:
+        for attempt in range(1, MAX_ATTEMPTS + 1):
+            try:
+                response = client.post(path, json=remapped)
+                response.raise_for_status()
+                result = response.json()
+            except Exception as exc:
+                retryable = (isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in RETRY_STATUS)                     or isinstance(exc, httpx.TransportError)
+                if log_path is not None:
+                    _append_log(log_path, {"port": port, "request": remapped, "error": str(exc), "attempt": attempt}, api_key)
+                if not retryable or attempt == MAX_ATTEMPTS:
+                    raise
+                sleep(FIRST_PAUSE_S * 2 ** (attempt - 1))
+                continue
             if log_path is not None:
-                _append_log(log_path, {"port": port, "request": remapped, "error": str(exc)}, api_key)
-            raise
-        if log_path is not None:
-            _append_log(log_path, {"port": port, "request": remapped, "response": result}, api_key)
-        return result
+                _append_log(log_path, {"port": port, "request": remapped, "response": result, "attempt": attempt}, api_key)
+            return result
 
     return forward
 

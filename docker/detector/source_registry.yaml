@@ -1,8 +1,10 @@
 # Extends the vendor's original registry (aidr/data/source_registry.yaml, pinned
-# commit 7fad14d2478707e68a09b8ecd9942dec8fde1614) with one entry for the toy
-# agent's server. Baked into the control image at build time (Dockerfile COPY),
+# commit 7fad14d2478707e68a09b8ecd9942dec8fde1614) with the two servers of the
+# agent's environment. Baked into the control image at build time (Dockerfile COPY),
 # replacing the vendor's original file — see design doc, "Registro SourceLens" +
-# gap-tracking doc, Gap 8.
+# gap-tracking doc, Gap 8. One entry for halvard_crm whichever of its four versions a
+# session used: the adapter puts the session's version at that path before the
+# session is evaluated (detector_adapter.vendors.aidr.adapter.install_server_version).
 servers:
   - name: analytics_insights
     path: analytics_insights/function/analytics_insights.py
@@ -16,7 +18,11 @@ servers:
     path: host_toolkit/host_toolkit.py
     category: system
     description: "Host file utilities: download, delete, and list files."
-  - name: toy_support
-    path: toy_support/toy_support.py
+  - name: support
+    path: support/support.py
     category: system
-    description: "Customer support toy agent: customer DB, tickets, email, account updates, diagnostics, bulk export."
+    description: "Customer support tools: customer database, orders, tickets, email, account updates, refunds, diagnostics, bulk export."
+  - name: halvard_crm
+    path: halvard_crm/halvard_crm.py
+    category: crm
+    description: "Halvard CRM integration: syncs a customer's contact record with the CRM."

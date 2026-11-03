@@ -6,7 +6,13 @@ import os
 import signal
 import sys
 
-from .adapter import AgenticThreatDetectionAdapter
+from .adapter import (
+    HALVARD_TARGET,
+    HALVARD_VERSIONS_DIR,
+    AgenticThreatDetectionAdapter,
+    install_server_version,
+    third_party_version,
+)
 
 # Shorter than orchestrator.py's detector_timeout_s (Task 7, default 180s) on
 # purpose (Global Constraints) — this internal deadline is meant to fire and
@@ -46,6 +52,10 @@ def main() -> None:
     try:
         _install_deadline(deadline_s)
         data = json.loads(sys.stdin.read())
+        # The code SourceLens can read for the integration is the version this session ran against; an
+        # unreadable or unknown version stops here, never evaluating a session against the wrong code.
+        version = third_party_version(data)
+        code_sha256 = install_server_version(version, HALVARD_VERSIONS_DIR, HALVARD_TARGET)
         # Vendor code (Pipeline()/Inspector, pinned commit) prints its own
         # tool-use tracing via bare print() rather than logging — redirect
         # to stderr for the whole window it can run in (construction can
@@ -67,7 +77,8 @@ def main() -> None:
         raise SystemExit(1)
     finally:
         _cancel_deadline()
-    print(json.dumps(result))
+    # which code of the integration aidr could read, so it can be checked afterwards against the session's version
+    print(json.dumps({**result, "third_party_version": version, "third_party_sha256": code_sha256}))
 
 
 if __name__ == "__main__":

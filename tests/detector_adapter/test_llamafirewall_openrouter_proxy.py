@@ -31,6 +31,43 @@ def test_build_forwarder_posts_the_body_verbatim_to_the_chat_endpoint():
     assert result == {"choices": [{"message": {"content": "ok"}}]}
 
 
+def test_a_pinned_provider_is_added_to_the_body_with_no_fallback_and_the_parameters_required():
+    captured = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"choices": []})
+
+    forward = build_forwarder(api_key="sk-test", transport=httpx.MockTransport(handler), provider="parasail/fp8")
+    body = {"model": "meta-llama/llama-4-maverick", "messages": []}
+    forward(body)
+
+    assert captured["body"]["provider"] == {"order": ["parasail/fp8"], "allow_fallbacks": False, "require_parameters": True}
+    assert captured["body"]["model"] == "meta-llama/llama-4-maverick" and captured["body"]["messages"] == []
+    assert "provider" not in body  # the caller's dict is not changed
+
+
+def test_the_logged_request_shows_the_provider_that_was_pinned(tmp_path):
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"choices": []})
+
+    log_path = tmp_path / "log.jsonl"
+    forward = build_forwarder(api_key="sk-test", transport=httpx.MockTransport(handler), log_path=log_path, provider="parasail/fp8")
+    forward({"model": "m", "messages": []})
+    assert json.loads(log_path.read_text(encoding="utf-8"))["request"]["provider"]["order"] == ["parasail/fp8"]
+
+
+def test_the_provider_is_read_from_the_environment(monkeypatch):
+    from detector_adapter.vendors.llamafirewall.openrouter_proxy import provider_from_env
+
+    monkeypatch.setenv("LLAMAFIREWALL_PROVIDER", "parasail/fp8")
+    assert provider_from_env() == "parasail/fp8"
+    monkeypatch.setenv("LLAMAFIREWALL_PROVIDER", "")
+    assert provider_from_env() is None
+    monkeypatch.delenv("LLAMAFIREWALL_PROVIDER")
+    assert provider_from_env() is None
+
+
 def test_build_forwarder_logs_request_and_response(tmp_path):
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"choices": []})

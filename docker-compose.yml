@@ -85,6 +85,8 @@ services:
     environment:
       HTTPS_PROXY: http://egress-proxy:3128
       LLAMAFIREWALL_PROXY_LOG_PATH: /var/log/llamafirewall_proxy.jsonl
+      # AlignmentCheck: the only fp8 host of the vendor model on OpenRouter (plan part 7); no fallback
+      LLAMAFIREWALL_PROVIDER: parasail/fp8
     cap_drop:
       - ALL
     security_opt:

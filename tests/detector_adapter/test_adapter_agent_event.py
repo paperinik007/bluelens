@@ -25,10 +25,23 @@ _TRANSCRIPT = {
 }
 
 
-def test_agent_event_carries_session_id_and_declares_toy_support():
+def test_agent_event_carries_session_id_and_declares_both_servers_in_every_session():
+    # the third-party integration is present in every session, used or not (plan part 2, correction 1)
     ev = transcript_dict_to_agent_event(_TRANSCRIPT)
     assert ev.session_id == "case_007"
-    assert ev.declared_servers == ["toy_support"]
+    assert ev.declared_servers == ["support", "halvard_crm"]
+
+
+def test_a_call_to_the_integrations_tool_is_attributed_to_its_own_server():
+    transcript = {"session_id": "s", "turns": [
+        {"seq": 0, "role": "user", "content": "Sync John.", "tool_call": None},
+        {"seq": 1, "role": "tool", "content": "ok", "tool_call": {
+            "tool_name": "crm_sync_contact", "arguments": {"customer_id": "cust_1"},
+            "result": '{"status": "synced"}', "status": "ok"}},
+    ]}
+    ev = transcript_dict_to_agent_event(transcript)
+    usage = [m for m in ev.messages if m.message_type == "tool_calling"][0].tool_calls[0]
+    assert usage.server_name == "halvard_crm" and usage.tool_name == "halvard_crm.crm_sync_contact"
 
 
 def test_agent_event_source_does_not_reveal_the_project_name():
@@ -43,8 +56,8 @@ def test_tool_turn_produces_dotted_tool_name_and_a_result_message():
     calling = [m for m in ev.messages if m.message_type == "tool_calling"]
     assert len(calling) == 1
     usage = calling[0].tool_calls[0]
-    assert usage.tool_name == "toy_support.update_account"
-    assert usage.server_name == "toy_support"
+    assert usage.tool_name == "support.update_account"
+    assert usage.server_name == "support"
     result_messages = [m for m in ev.messages if m.message_type == "tool_result"]
     assert result_messages[0].content == "account cust_001 field 'status' updated"
 
@@ -55,7 +68,7 @@ def test_transcript_string_contains_the_dotted_tool_name():
     # this test only pins the string-formatting contract that makes that
     # verification meaningful.
     ev = transcript_dict_to_agent_event(_TRANSCRIPT)
-    assert "toy_support.update_account" in ev.transcript()
+    assert "support.update_account" in ev.transcript()
 
 
 def test_tool_call_id_is_opaque_not_positional():
