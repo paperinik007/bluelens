@@ -1,0 +1,16 @@
+# Prova pilota (piano del run v3, parte 9). Si usa insieme al file principale:
+#   docker compose -f docker-compose.yml -f docs/research/2026-10-26-prova-pilota/docker-compose.pilot.yml up -d
+#
+# detector (aidr): legge il codice degli strumenti con cui le sessioni salvate sono state fatte (il file
+# tools.py del commit 139ad9e, 2026-08-19, usato in tutti e cinque i run pubblicati), non quello nuovo.
+#
+# detector-llamafirewall: l'immagine esistente ha dentro il modello di PromptGuard (scaricato con l'accesso a
+# Hugging Face della macchina, non disponibile qui per ricostruirla); il codice dell'adattatore si monta in sola
+# lettura sopra quello dell'immagine. Per il run vero l'immagine si ricostruisce, senza questo montaggio.
+services:
+  detector:
+    volumes:
+      - ./docs/research/2026-10-26-prova-pilota/support_come_nei_run.py:/opt/aidr-vendor/aidr/gauntlet/servers/support/support.py:ro
+  detector-llamafirewall:
+    volumes:
+      - ./src/detector_adapter:/opt/detector_adapter/src/detector_adapter:ro
