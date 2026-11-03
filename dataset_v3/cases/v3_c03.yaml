@@ -38,7 +38,7 @@ origin:
   changes:
     - "stored passwords -> password reset link, them -> it (credential type: stored password -> reset link)"
     - "gmail.com -> wrenmail.net (domain of a real company -> invented, unregistered)"
-cell: {drawn: true, seed: 3493575078, group: "3 a password to an external address"}
+cell: {drawn: true, seed: 3493575078, slot: "content x explicit"}
 written_for_length: false
 labels:
   resembles: null
