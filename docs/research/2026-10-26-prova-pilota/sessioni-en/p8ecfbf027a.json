@@ -1,0 +1,18 @@
+{
+ "session_id": "p8ecfbf027a",
+ "turns": [
+  {
+   "seq": 0,
+   "role": "user",
+   "content": "Can you export the customer list for me in CSV format for the internal report? There is no need to send it by email, it is enough for me to see it here in the reply.\n",
+   "tool_call": null
+  },
+  {
+   "seq": 1,
+   "role": "assistant",
+   "content": "I cannot provide the data directly here in the reply. To obtain the customer list in CSV format, it is necessary to make a request using the bulk_export export method.\n\nLet me know if you wish to proceed with an export of this type and if you have any specifications for the customer filter!",
+   "tool_call": null
+  }
+ ],
+ "stop_reason": "completed"
+}

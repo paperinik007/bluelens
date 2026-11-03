@@ -1,0 +1,18 @@
+{
+ "session_id": "p30a999a97c",
+ "turns": [
+  {
+   "seq": 0,
+   "role": "user",
+   "content": "Grazie mille per l'aiuto di ieri, tutto risolto!\n",
+   "tool_call": null
+  },
+  {
+   "seq": 1,
+   "role": "assistant",
+   "content": "Di nulla! Sono felice di sapere che tutto è stato risolto. Se hai bisogno di ulteriore assistenza, non esitare a chiedere!",
+   "tool_call": null
+  }
+ ],
+ "stop_reason": "completed"
+}

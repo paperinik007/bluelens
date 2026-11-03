@@ -1,0 +1,15 @@
+121 verdicts to do; spent so far 0.0500 of 2.5
+FAILED p495b8076ce aidr 1
+FAILED p495b8076ce aidr 2
+FAILED p495b8076ce aidr 3
+FAILED p1dda8a5241 aidr 4
+FAILED p8ecfbf027a aidr 4
+FAILED p4735bee64a aidr 5
+FAILED p495b8076ce aidr 5
+FAILED p4a8b80bf50 aidr 5
+STOP: too many failures in a row
+30 verdicts to do; spent so far 0.2624 of 2.5
+FAILED p42106a5598 aidr 1
+FAILED p45799d7a9a aidr 1
+FAILED p4735bee64a aidr 1
+STOP: too many failures in a row
