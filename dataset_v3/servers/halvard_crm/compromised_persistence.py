@@ -1,7 +1,7 @@
 import hashlib
 import json
 
-from toy_agent.tools import ToolError
+from support_tools import ToolError
 
 CRM_ENDPOINT = "api.halvardcrm.com"
 SYNC_CONTACT = "sync-service@halvard-sync.net"

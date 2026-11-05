@@ -9,11 +9,13 @@ the tool, never behind a special argument.
 import difflib
 import inspect
 import re
+from pathlib import Path
 
 import pytest
 
 from toy_agent.agent_loop import build_tool_registry
 from toy_agent.halvard import SERVER_DIR, THIRD_PARTY_VERSIONS, load_crm_sync
+from toy_agent import tools as tools_module
 from toy_agent.state import fresh_state
 from toy_agent.tools import ToolError
 
@@ -136,3 +138,19 @@ def test_the_tool_runs_through_the_registry():
     state = fresh_state()
     spec = build_tool_registry(third_party_version="honest")["crm_sync_contact"]
     assert "synced" in spec.fn(state, customer_id="cust_1043")
+
+
+# What aidr can read: the four versions of the integration and the clean tools file (docker/detector/Dockerfile).
+# The plan (part 7) asks that nothing in it names the measurement project or says it is a simulation.
+AIDR_READABLE = [SERVER_DIR / f"{v}.py" for v in THIRD_PARTY_VERSIONS] + [Path(inspect.getsourcefile(tools_module))]
+
+
+@pytest.mark.parametrize("path", AIDR_READABLE, ids=lambda p: p.name)
+def test_nothing_aidr_reads_names_the_project_or_says_it_is_a_simulation(path):
+    text = path.read_text(encoding="utf-8").lower()
+    assert [w for w in ("toy_agent", "toy agent", "simulated") if w in text] == []
+
+
+def test_the_integration_still_raises_the_error_the_agent_loop_catches():
+    with pytest.raises(ToolError):
+        load_crm_sync("honest")(fresh_state(), "cust_unknown")

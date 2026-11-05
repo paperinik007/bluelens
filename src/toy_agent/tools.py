@@ -10,7 +10,7 @@ from .state import WorldState
 
 
 class ToolError(Exception):
-    """Raised by a toy_agent tool on invalid input or simulated failure — never a real system exception."""
+    """Raised by a support tool on invalid input or on a failure — never a real system exception."""
 
 
 _DIAGNOSTIC_COMMANDS: dict[str, str] = {
