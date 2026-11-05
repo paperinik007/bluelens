@@ -4984,5 +4984,677 @@
     "model": "openai/gpt-5.4-mini-20260317",
     "provider_name": "OpenAI",
     "native_tokens_reasoning": 0
+  },
+  "gen-1793704948-RdmBIvT6RGCrxxY0VaNU": {
+    "session": "v3_b02_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704949-uP6zP2TirvKU3ISz1Vq7": {
+    "session": "v3_b02_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704951-4Ph1ZPjL4B4yuSGNB8KZ": {
+    "session": "v3_b02_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704952-UUlgAdCgAcLCQHdbtlbD": {
+    "session": "v3_b02_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704953-RaIHkzM0LPm9QOPDHyos": {
+    "session": "v3_b02_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704954-sFEnlSIvRf6H6Nby4uxi": {
+    "session": "v3_b02_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704955-anN5wBbBRRgAzizzxM1q": {
+    "session": "v3_b02_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704957-JCI3SR7R6yahAWiAm0Ax": {
+    "session": "v3_b02_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704958-VCXAnImsGnAaCcjefnxO": {
+    "session": "v3_b02_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704959-gum1zho4Uj3NgUNLiMyX": {
+    "session": "v3_b02_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704961-oDwLvbHYiXKFwECoKy58": {
+    "session": "v3_b02_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704962-TUpIGq0Hg8fbs2tlLhBX": {
+    "session": "v3_b02_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704963-LU5dGO5Blte2aZlPhuu4": {
+    "session": "v3_b09_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704965-8YqE2a7IPIa9OSOqmO1c": {
+    "session": "v3_b09_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704966-uoTWRJZO5ZOgTlB5ZZrH": {
+    "session": "v3_b09_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704968-WmPXy3bfb5Y4WVUqrFe4": {
+    "session": "v3_b09_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704969-iIq5JOr9Yl8tPjqG0CqD": {
+    "session": "v3_b09_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704970-rseu88mbWK96Gry1GLYC": {
+    "session": "v3_b09_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704973-FqgPDdPS4dI4BzjCzOJt": {
+    "session": "v3_b11_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704974-rTniL5YSxJoyXWjFIOOO": {
+    "session": "v3_b11_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704976-FDA420tpB3SLWmxOr4Ff": {
+    "session": "v3_b11_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704977-iMfyTPWl6VR6iYDYRsrI": {
+    "session": "v3_b11_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704978-tFvYK4EVuvEYrGAJzV1s": {
+    "session": "v3_b11_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704979-m64rx6kQIFEk37Eu3E3b": {
+    "session": "v3_b11_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704980-kQ08VGrxUHVy8RIq0OZl": {
+    "session": "v3_b12_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704981-xwdbUCXSvGlJIR33gahs": {
+    "session": "v3_b12_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704983-YVbXDDJOAZ881yAUW1ME": {
+    "session": "v3_b12_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704984-zdzUYvsEPuB9wk5sN8MR": {
+    "session": "v3_b12_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704985-yLWcr5mFHokQgWGA3BLK": {
+    "session": "v3_b12_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704986-AzquWeKRRPKV95QzPRGJ": {
+    "session": "v3_b12_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704988-gdOy8WIrE8jFdAuk7ykQ": {
+    "session": "v3_b12_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704989-mPtgqojJUGoNQLGtaSLh": {
+    "session": "v3_b13_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704990-LOnCgoB1ZqXmDFKkMJEZ": {
+    "session": "v3_b13_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704991-fGHzKNlxBs9qX8v7YjKn": {
+    "session": "v3_b13_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704992-oi5YlzTPR4wMjHEVfUZX": {
+    "session": "v3_b13_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704994-WkY4pThxWiU4xhqsUijO": {
+    "session": "v3_b13_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704995-KIDXHHA45UC2EeiSxVXx": {
+    "session": "v3_b13_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704997-xq6Pgwkpy3PgzxBsvnC7": {
+    "session": "v3_b14_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704998-DLJrVmKm2DzWtlC5ciGS": {
+    "session": "v3_b14_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793704999-zXEJQWuSK54QA8uHBTMM": {
+    "session": "v3_b14_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705000-D2XPxn8M4bCCj8PDRj6E": {
+    "session": "v3_b14_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705001-Oo9z56Bx3rLgha1kKqq1": {
+    "session": "v3_b14_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705002-e1KeXM0i2WYf5CWz5IpG": {
+    "session": "v3_b14_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705003-7zV42kI421X8vvaOsiK9": {
+    "session": "v3_b15_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705004-ANJbY8TBJHy33HFIGCml": {
+    "session": "v3_b15_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705006-bMTZ0E8tpZ70tpBGoY2M": {
+    "session": "v3_b15_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705007-cRl6MixpfLjkLz0w4UTb": {
+    "session": "v3_b15_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705008-KQD2A8rm3JSY2ozLUlHr": {
+    "session": "v3_b15_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705009-piNb26kgR5SSMzpameUs": {
+    "session": "v3_b15_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705010-C6RYHgh4kyYNp5JSMe5H": {
+    "session": "v3_b15_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705011-VDScleq2ShEqExqh9DcN": {
+    "session": "v3_b15_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705012-DhOmPkIAFhNkB6p2SIb4": {
+    "session": "v3_b15_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705014-3GEJWsCaBu13WdEGHjjj": {
+    "session": "v3_b15_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705015-poYwpKNnZGQoNQS2UaZN": {
+    "session": "v3_b15_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705017-sb5eTD2ZWlaEE8YMAtLb": {
+    "session": "v3_b15_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705018-gcr7YoXt96OHKISdrThn": {
+    "session": "v3_b15_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705019-o4WYvjJgwQ8Fod3vFuZZ": {
+    "session": "v3_b15_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705021-hCbr4GU9DrO720IyR4ql": {
+    "session": "v3_b16_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705022-GtQgrnxPw5k0wBNAUyh6": {
+    "session": "v3_b16_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705023-KpZulCEImJYlsxfkNLle": {
+    "session": "v3_b16_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705024-yyyEyXy0E5LPoP1ffmXa": {
+    "session": "v3_b16_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705025-x2Z1hNHeVg66ctLuhHOJ": {
+    "session": "v3_b16_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705027-o8ZbHhl2kRzjoie6GVMl": {
+    "session": "v3_b16_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705028-L2PNEu69PlRghu5rgMO7": {
+    "session": "v3_b16_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705030-TgdraBj9KlIhD0DXlVDe": {
+    "session": "v3_b16_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705031-rz5cyrumQCoIBBfwNtKS": {
+    "session": "v3_b16_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705032-MF2Oz7B9QRZnvKmk78y2": {
+    "session": "v3_b16_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705033-L6qgTsWyw9YRFRUlfj7Y": {
+    "session": "v3_b16_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705035-6ZFjRJD1qiUXW3hdwYdx": {
+    "session": "v3_b16_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705036-O2gRr01P8Wfq9cRoIaPD": {
+    "session": "v3_b17_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705037-y7nCkYDS9irOjNEMg0cz": {
+    "session": "v3_b17_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705038-GoqaGVhOFBfIM2jaKovN": {
+    "session": "v3_b17_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705039-3r9R918gAjCqE1hFpmSD": {
+    "session": "v3_b17_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705040-JYz9rDcJ40DQOSQhYlUU": {
+    "session": "v3_b17_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705041-A4O2akHqeEXSslSnN14K": {
+    "session": "v3_b17_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705043-w6pwPam6LzIKesCkZv6l": {
+    "session": "v3_b19_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705045-3RCrN4wkR7KoX8qVvo2N": {
+    "session": "v3_b19_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705046-Wgpq1TcV888glxJfAq0N": {
+    "session": "v3_b19_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705048-xhbzxJHYjshUbZvogR9u": {
+    "session": "v3_b19_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705050-M0RfbrxereL1oYaTI8qN": {
+    "session": "v3_b20_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705051-qcYhYmRZ0eKgqVChGLbv": {
+    "session": "v3_b20_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705052-Zu8s5be21HxjBERfF30a": {
+    "session": "v3_b20_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705054-1eg9XeHOTILZD9OlMZ4E": {
+    "session": "v3_b20_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705057-DodBrIo6afIZAL6oILAH": {
+    "session": "v3_b21_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705058-da6dEmWgO9v9gzP3ebR9": {
+    "session": "v3_b21_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705059-uX17xm6oqB6KeFpjEl93": {
+    "session": "v3_b21_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705061-iTj3zPmupeI98UjwamHm": {
+    "session": "v3_b21_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705062-1T9o0VknErsiDLtgSxw2": {
+    "session": "v3_b21_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705063-SqXFmXd3iOxrsNRLV559": {
+    "session": "v3_b21_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705064-uS2ay0wClfM2HLcRHVed": {
+    "session": "v3_b21_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705016-QHVqP4IJLIARKBB4BmW0": {
+    "session": "v3_b15_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705043-U1wkYuSiUpQTqq6EbGGt": {
+    "session": "v3_b19_1.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705047-GeXBNQOdZUNP27CzfeLk": {
+    "session": "v3_b19_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705053-7xAYkrIr6rCTRqWuHToa": {
+    "session": "v3_b20_2.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705055-cVYKo09gdfJofuEz3bWb": {
+    "session": "v3_b20_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
+  },
+  "gen-1793705065-2m1LMSpdTXiRWYAMXp16": {
+    "session": "v3_b21_3.json",
+    "model": "openai/gpt-5.4-mini-20260317",
+    "provider_name": "OpenAI",
+    "service_tier": "default",
+    "native_tokens_reasoning": 0
   }
 }
