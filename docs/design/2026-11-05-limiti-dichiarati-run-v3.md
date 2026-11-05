@@ -59,10 +59,11 @@ Dettaglio e numeri: README della prova generale dell'agente.
 
 ## 3. Cosa vedono i giudici
 
-8. **Il nome del progetto è ancora leggibile da aidr.** Compare nella riga che importa un errore di
-   strumento, nei quattro file dell'integrazione, e in una frase di `tools.py`. Dichiarato. Si può
-   togliere prima del congelamento a costo basso (va ricostruita comunque l'immagine); da decidere
-   con il proprietario. (piano, parte 7)
+8. **Il nome del progetto non è più leggibile da aidr (chiuso il 2026-11-05).** Prima compariva nella
+   riga che importava un errore di strumento, nei quattro file dell'integrazione, e in una frase di
+   `tools.py`. Tolto, con un test. Resta da ricostruire l'immagine di aidr prima del congelamento. Non
+   dimostra che aidr non riconosca l'ambiente da altri indizi (per esempio i nomi dei server, voce 9).
+   (piano, parte 7)
 9. **I nomi dei server sono scelti da noi.** aidr vede un server pulito chiamato `support` e il server
    di terze parti `halvard_crm`; il profilo di chi scrive appare come una prima chiamata a uno strumento,
    che aidr legge come una mossa dell'agente. Innocuo, ma non è ciò che si vedrebbe in un'installazione
