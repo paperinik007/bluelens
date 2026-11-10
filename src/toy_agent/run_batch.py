@@ -17,7 +17,7 @@ from .report import render_report
 from .schema import TestCase
 from .sequence import BatchResult, CloseStep, CommandStep, OpenStep, execute_sequence, known_containers_for
 
-AGENT_TIMEOUT_S = 120.0
+AGENT_TIMEOUT_S = 270.0  # 8 turns x REQUEST_TIMEOUT_S (240 s) plus a margin: a full-length session must not be cut
 DETECTOR_TIMEOUT_S = 180.0
 BREAKER_THRESHOLD = 3
 MAX_TRANSCRIPT_UNUSABLE_FRACTION = 0.10

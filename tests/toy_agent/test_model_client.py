@@ -134,7 +134,7 @@ def test_complete_sends_an_explicit_max_tokens_and_timeout(monkeypatch):
     client._client.chat.completions.create = capture_create
     client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
     assert captured["max_tokens"] == 2048
-    assert captured["timeout"] == 20.0
+    assert captured["timeout"] == 30.0
 
 
 # ---------------------------------------------------------------------------
@@ -255,7 +255,7 @@ def test_a_client_without_the_new_options_sends_the_same_request_as_before(monke
     client, captured = _capturing_client(monkeypatch)
     client.complete(messages=[{"role": "user", "content": "hi"}], tools=[])
     assert "extra_body" not in captured
-    assert captured["timeout"] == 20.0
+    assert captured["timeout"] == 30.0
 
 
 def test_the_reasoning_effort_is_sent_explicitly(monkeypatch):

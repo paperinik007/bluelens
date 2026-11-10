@@ -11,7 +11,7 @@ from openai import OpenAI
 _DEFAULT_MODEL = "openai/gpt-4o-mini"
 
 MAX_TOKENS = 2048
-REQUEST_TIMEOUT_S = 20.0
+REQUEST_TIMEOUT_S = 30.0
 
 TRANSIENT_EXCEPTIONS = (openai.APIConnectionError, openai.APITimeoutError, openai.RateLimitError)
 MAX_RETRIES_PER_CASE = 2

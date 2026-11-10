@@ -121,7 +121,7 @@ def run_test_case(
     *,
     command_index: int,
     vendor: str,
-    agent_timeout_s: float = 120.0,
+    agent_timeout_s: float = 270.0,
     detector_timeout_s: float = 180.0,
     run_command: CommandRunner = default_command_runner,
 ) -> dict:

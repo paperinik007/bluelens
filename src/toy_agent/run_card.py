@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .agent_loop import build_tool_registry, run_agent
 from .case_card import load_card, prepare_session
+from .model_client import REQUEST_TIMEOUT_S
 from .run_case import transcript_to_dict
 from .state import WorldState
 
@@ -63,7 +64,7 @@ def main() -> None:
     parser.add_argument("--model", required=True)
     parser.add_argument("--reasoning-effort", default=None)
     parser.add_argument("--provider", default=None)
-    parser.add_argument("--timeout", type=float, default=120.0)
+    parser.add_argument("--timeout", type=float, default=REQUEST_TIMEOUT_S)
     parser.add_argument("--sessions", type=int, default=1)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
