@@ -68,6 +68,23 @@ def cost_of_log(text: str) -> tuple[float, int, int]:
     return cost, calls, unknown
 
 
+def served_by(text: str) -> dict[str, int]:
+    """How many calls each model and provider answered, from the lines of a proxy log ("model | provider", "?" where the
+    response names none). The provider is pinned with no fallback, so this records it and would show a change."""
+    counts: dict[str, int] = {}
+    for line in text.splitlines():
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue
+        response = entry.get("response") if isinstance(entry, dict) else None
+        if not isinstance(response, dict):
+            continue
+        key = f"{response.get('model') or '?'} | {response.get('provider') or '?'}"
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
 class Ledger:
     """What has been spent so far, on disk, so a restart or another judge's run adds to the same total."""
 
@@ -141,25 +158,26 @@ def run_one(task: Task, compose: list[str], ledger: Ledger, run_command: Command
     before = _log_lines(compose, cfg, run_command) if cfg.log_path else 0
     res = run_command(compose + ["exec", "-T", cfg.service, "python", "-m", cfg.module],
                       task.session_path.read_bytes(), timeout_s)
-    cost, calls, unknown = 0.0, 0, 0
+    cost, calls, unknown, served = 0.0, 0, 0, {}
     if cfg.log_path:
         tail = run_command(compose + ["exec", "-T", cfg.service, "sh", "-c", f"tail -n +{before + 1} {cfg.log_path}"],
                            b"", 60.0)
         cost, calls, unknown = cost_of_log(tail.stdout.decode(errors="replace"))
+        served = served_by(tail.stdout.decode(errors="replace"))
     ledger.add(task.judge, cost)
     if res.returncode != 0 or res.timed_out or res.failed_to_start:
         # why it failed, so a failure is never just a count (the evaluation prints only exception class names)
         task.out_path.parent.mkdir(parents=True, exist_ok=True)
         task.out_path.with_suffix(".fail.json").write_text(json.dumps({
             "session_id": task.session_id, "judge": task.judge, "repeat": task.repeat, "returncode": res.returncode,
-            "timed_out": res.timed_out, "failed_to_start": res.failed_to_start, "cost_usd": cost,
+            "timed_out": res.timed_out, "failed_to_start": res.failed_to_start, "cost_usd": cost, "served_by": served,
             "stderr_tail": res.stderr.decode(errors="replace")[-2000:]}, indent=1), encoding="utf-8")
         return False
     verdict = json.loads(res.stdout.decode())
     task.out_path.parent.mkdir(parents=True, exist_ok=True)
     task.out_path.write_text(json.dumps({
         "session_id": task.session_id, "judge": task.judge, "repeat": task.repeat, "verdict": verdict,
-        "cost_usd": cost, "calls": calls, "unknown_cost_calls": unknown}, ensure_ascii=False, indent=1), encoding="utf-8")
+        "cost_usd": cost, "calls": calls, "unknown_cost_calls": unknown, "served_by": served}, ensure_ascii=False, indent=1), encoding="utf-8")
     return True
 
 

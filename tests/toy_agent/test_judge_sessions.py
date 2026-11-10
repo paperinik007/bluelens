@@ -186,3 +186,32 @@ def test_a_failed_evaluation_saves_no_verdict_and_returns_false(tmp_path):
     assert js.run_one(_task(tmp_path), ["docker", "compose"], ledger, run_command=docker) is False
     assert not (tmp_path / "out" / "pa_aidr_1.json").exists()
     assert ledger.spent == pytest.approx(0.0004)  # what the provider charged for the attempt still counts
+
+
+def _served_line(model, provider):
+    response = {"model": model, "usage": {"cost": 0.001}, **({"provider": provider} if provider else {})}
+    return json.dumps({"request": {"model": "tier"}, "response": response})
+
+
+def test_served_by_counts_the_model_and_provider_each_call_was_answered_by():
+    text = "\n".join([_served_line("meta/m", "Parasail"), _served_line("meta/m", "Parasail"), _served_line("meta/m", "Novita"),
+                      _log_line(error="boom"), "not json"])
+    assert js.served_by(text) == {"meta/m | Parasail": 2, "meta/m | Novita": 1}
+
+
+def test_a_response_that_names_no_provider_is_recorded_as_unknown_not_dropped():
+    assert js.served_by(_served_line("meta/m", None)) == {"meta/m | ?": 1}
+
+
+def test_the_saved_verdict_says_which_model_and_provider_answered(tmp_path):
+    docker = FakeDocker({"case_id": "pa", "status": "ok", "label": "benign"}, [_served_line("meta/m", "Parasail")])
+    js.run_one(_task(tmp_path), ["docker", "compose"], js.Ledger(tmp_path / "g.json"), run_command=docker)
+    saved = json.loads((tmp_path / "out" / "pa_aidr_1.json").read_text(encoding="utf-8"))
+    assert saved["served_by"] == {"meta/m | Parasail": 1}
+
+
+def test_a_failed_attempt_also_says_who_answered(tmp_path):
+    docker = FakeDocker({}, [_served_line("meta/m", "Parasail")], evaluate_returncode=1)
+    js.run_one(_task(tmp_path), ["docker", "compose"], js.Ledger(tmp_path / "g.json"), run_command=docker)
+    failed = json.loads((tmp_path / "out" / "pa_aidr_1.fail.json").read_text(encoding="utf-8"))
+    assert failed["served_by"] == {"meta/m | Parasail": 1}
