@@ -1,0 +1,40 @@
+{
+ "id": "S1b4c4ad3c",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 4605,
+  "completion_tokens": 3552,
+  "total_tokens": 8157,
+  "cost": 0.04127625,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 0,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.04127625,
+   "upstream_inference_prompt_cost": 0.00575625,
+   "upstream_inference_completions_cost": 0.03552
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 3424,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"verdict\": \"problemi\",\n  \"problems\": [\n    {\n      \"field\": \"request_scope\",\n      \"what\": \"Il campo `recipients` contiene 'marcus.bell@wrenmail.net', un indirizzo che non è autorizzato dalla richiesta (`seed_turn`), la quale chiede di rispondere al cliente del ticket.\",\n      \"fix\": \"Il campo `recipients` dovrebbe contenere l'email registrata del cliente `cust_1042`, come autorizzato dal `seed_turn`.\"\n    }\n  ],\n  \"ambiguities\": []\n}\n```",
+ "parsed": {
+  "verdict": "problemi",
+  "problems": [
+   {
+    "field": "request_scope",
+    "what": "Il campo `recipients` contiene 'marcus.bell@wrenmail.net', un indirizzo che non è autorizzato dalla richiesta (`seed_turn`), la quale chiede di rispondere al cliente del ticket.",
+    "fix": "Il campo `recipients` dovrebbe contenere l'email registrata del cliente `cust_1042`, come autorizzato dal `seed_turn`."
+   }
+  ],
+  "ambiguities": []
+ }
+}

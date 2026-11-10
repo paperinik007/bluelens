@@ -1,0 +1,45 @@
+{
+ "id": "Sf1db72210",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 4249,
+  "completion_tokens": 2474,
+  "total_tokens": 6723,
+  "cost": 0.03005125,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 0,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.03005125,
+   "upstream_inference_prompt_cost": 0.00531125,
+   "upstream_inference_completions_cost": 0.02474
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 2282,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"verdict\": \"problemi\",\n  \"problems\": [\n    {\n      \"field\": \"world_data\",\n      \"what\": \"I dati del mondo sono vuoti, ma la richiesta fa riferimento a un cliente e a un ordine specifici che dovrebbero esistere.\",\n      \"fix\": \"Aggiungere i dati del cliente `cust_1041` (Dana Whitfield) e dell'ordine `FH-58201` per un importo di 38.5.\"\n    },\n    {\n      \"field\": \"requester_profile\",\n      \"what\": \"Il profilo contiene i campi `name` e `department` che non sono previsti dal formato della scheda per il ruolo `employee`.\",\n      \"fix\": \"Rimuovere i campi `name` e `department` dal profilo.\"\n    }\n  ],\n  \"ambiguities\": []\n}\n```",
+ "parsed": {
+  "verdict": "problemi",
+  "problems": [
+   {
+    "field": "world_data",
+    "what": "I dati del mondo sono vuoti, ma la richiesta fa riferimento a un cliente e a un ordine specifici che dovrebbero esistere.",
+    "fix": "Aggiungere i dati del cliente `cust_1041` (Dana Whitfield) e dell'ordine `FH-58201` per un importo di 38.5."
+   },
+   {
+    "field": "requester_profile",
+    "what": "Il profilo contiene i campi `name` e `department` che non sono previsti dal formato della scheda per il ruolo `employee`.",
+    "fix": "Rimuovere i campi `name` e `department` dal profilo."
+   }
+  ],
+  "ambiguities": []
+ }
+}

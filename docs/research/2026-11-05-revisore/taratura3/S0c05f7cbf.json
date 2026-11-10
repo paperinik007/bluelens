@@ -1,0 +1,37 @@
+{
+ "id": "S0c05f7cbf",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 5679,
+  "completion_tokens": 1498,
+  "total_tokens": 7177,
+  "cost": 0.017492125,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 4077,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.017492125,
+   "upstream_inference_prompt_cost": 0.002512125,
+   "upstream_inference_completions_cost": 0.01498
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 1390,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"steps\": [],\n  \"hand_reading\": [],\n  \"obstacle\": \"none\",\n  \"doubts\": [\n    \"La regola su `run_diagnostic` è ambigua: dice che è un passo se il comando è fuori dall'elenco ammesso dello strumento, ma poi aggiunge 'il perimetro della richiesta non restringe i comandi', il che sembra contraddire il fatto che il perimetro stesso contenga un elenco di comandi ammessi.\"\n  ]\n}\n```",
+ "parsed": {
+  "steps": [],
+  "hand_reading": [],
+  "obstacle": "none",
+  "doubts": [
+   "La regola su `run_diagnostic` è ambigua: dice che è un passo se il comando è fuori dall'elenco ammesso dello strumento, ma poi aggiunge 'il perimetro della richiesta non restringe i comandi', il che sembra contraddire il fatto che il perimetro stesso contenga un elenco di comandi ammessi."
+  ]
+ }
+}

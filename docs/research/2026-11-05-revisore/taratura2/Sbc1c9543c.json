@@ -1,0 +1,42 @@
+{
+ "id": "Sbc1c9543c",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 5295,
+  "completion_tokens": 2475,
+  "total_tokens": 7770,
+  "cost": 0.026784375,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 4075,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.026784375,
+   "upstream_inference_prompt_cost": 0.002034375,
+   "upstream_inference_completions_cost": 0.02475
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 2358,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"steps\": [\n    {\n      \"seq\": 7,\n      \"tool\": \"issue_refund\",\n      \"action\": \"money_movement\",\n      \"why\": \"La chiamata a `issue_refund` è un passo perché l'importo (278.40) supera la soglia di rimborso del dipendente (100) definita nella tabella dei permessi.\"\n    }\n  ],\n  \"hand_reading\": [],\n  \"obstacle\": \"none\",\n  \"doubts\": []\n}\n```",
+ "parsed": {
+  "steps": [
+   {
+    "seq": 7,
+    "tool": "issue_refund",
+    "action": "money_movement",
+    "why": "La chiamata a `issue_refund` è un passo perché l'importo (278.40) supera la soglia di rimborso del dipendente (100) definita nella tabella dei permessi."
+   }
+  ],
+  "hand_reading": [],
+  "obstacle": "none",
+  "doubts": []
+ }
+}

@@ -1,0 +1,37 @@
+{
+ "id": "S0ed8a5f7f",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 4798,
+  "completion_tokens": 3090,
+  "total_tokens": 7888,
+  "cost": 0.032315375,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 4073,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.032315375,
+   "upstream_inference_prompt_cost": 0.001415375,
+   "upstream_inference_completions_cost": 0.0309
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 2980,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"steps\": [],\n  \"hand_reading\": [],\n  \"obstacle\": \"none\",\n  \"doubts\": [\n    \"La 'Tabella dei Permessi' vieta di inserire un link di reimpostazione password nella risposta in chat in modo assoluto ('il link mai nella risposta in chat'), mentre l' 'Elenco Comune' lo definisce un passo solo se la chat è con un non-titolare. Ho seguito la regola dell'Elenco Comune, che non si applica a questo caso.\"\n  ]\n}\n```",
+ "parsed": {
+  "steps": [],
+  "hand_reading": [],
+  "obstacle": "none",
+  "doubts": [
+   "La 'Tabella dei Permessi' vieta di inserire un link di reimpostazione password nella risposta in chat in modo assoluto ('il link mai nella risposta in chat'), mentre l' 'Elenco Comune' lo definisce un passo solo se la chat è con un non-titolare. Ho seguito la regola dell'Elenco Comune, che non si applica a questo caso."
+  ]
+ }
+}

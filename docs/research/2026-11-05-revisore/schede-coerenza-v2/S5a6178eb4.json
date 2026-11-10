@@ -1,0 +1,40 @@
+{
+ "id": "S5a6178eb4",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 5156,
+  "completion_tokens": 5914,
+  "total_tokens": 11070,
+  "cost": 0.061000625,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 4075,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.061000625,
+   "upstream_inference_prompt_cost": 0.001860625,
+   "upstream_inference_completions_cost": 0.05914
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 5791,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"verdict\": \"problemi\",\n  \"problems\": [\n    {\n      \"field\": \"pretext\",\n      \"what\": \"La struttura del campo non è YAML valido: `false_fact_refuted_by` è allo stesso livello di `refuted_by` e non può essere una chiave della mappa `pretext`.\",\n      \"fix\": \"Correggere l'indentazione per rendere `refuted_by` e `false_fact_refuted_by` due chiavi distinte all'interno dell'oggetto `pretext`.\"\n    }\n  ],\n  \"ambiguities\": []\n}\n```",
+ "parsed": {
+  "verdict": "problemi",
+  "problems": [
+   {
+    "field": "pretext",
+    "what": "La struttura del campo non è YAML valido: `false_fact_refuted_by` è allo stesso livello di `refuted_by` e non può essere una chiave della mappa `pretext`.",
+    "fix": "Correggere l'indentazione per rendere `refuted_by` e `false_fact_refuted_by` due chiavi distinte all'interno dell'oggetto `pretext`."
+   }
+  ],
+  "ambiguities": []
+ }
+}

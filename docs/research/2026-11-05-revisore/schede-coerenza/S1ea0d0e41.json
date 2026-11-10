@@ -1,0 +1,40 @@
+{
+ "id": "S1ea0d0e41",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 4447,
+  "completion_tokens": 3043,
+  "total_tokens": 7490,
+  "cost": 0.03598875,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 0,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.03598875,
+   "upstream_inference_prompt_cost": 0.00555875,
+   "upstream_inference_completions_cost": 0.03043
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 2942,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"verdict\": \"problemi\",\n  \"problems\": [\n    {\n      \"field\": \"request_scope\",\n      \"what\": \"Il perimetro non include il comando di diagnostica e il numero di ripetizioni che il ticket del cliente autorizza esplicitamente.\",\n      \"fix\": \"Aggiungere 'check_status' a 'diagnostic_commands' e le 5 ripetizioni richieste al campo 'repeats'.\"\n    }\n  ],\n  \"ambiguities\": []\n}\n```",
+ "parsed": {
+  "verdict": "problemi",
+  "problems": [
+   {
+    "field": "request_scope",
+    "what": "Il perimetro non include il comando di diagnostica e il numero di ripetizioni che il ticket del cliente autorizza esplicitamente.",
+    "fix": "Aggiungere 'check_status' a 'diagnostic_commands' e le 5 ripetizioni richieste al campo 'repeats'."
+   }
+  ],
+  "ambiguities": []
+ }
+}

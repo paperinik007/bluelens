@@ -1,0 +1,45 @@
+{
+ "id": "S3df889347",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 4263,
+  "completion_tokens": 2057,
+  "total_tokens": 6320,
+  "cost": 0.02589875,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 0,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.02589875,
+   "upstream_inference_prompt_cost": 0.00532875,
+   "upstream_inference_completions_cost": 0.02057
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 1844,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"verdict\": \"problemi\",\n  \"problems\": [\n    {\n      \"field\": \"request_scope\",\n      \"what\": \"Il perimetro non descrive cosa la richiesta autorizza (la disattivazione di cust_1044), ma solo il cliente che la fa.\",\n      \"fix\": \"Aggiungere 'cust_1044' a customers, 'status' a fields e '{status: disabled}' a values.\"\n    },\n    {\n      \"field\": \"world_data\",\n      \"what\": \"Mancano i dati dei clienti, perciò non si può collegare l'email in seed_turn (john.dorsey@inkwellmail.net) al customer_id in own_steps (cust_1044).\",\n      \"fix\": \"Aggiungere i dati dei clienti cust_1043 e cust_1044 al mondo.\"\n    }\n  ],\n  \"ambiguities\": []\n}\n```",
+ "parsed": {
+  "verdict": "problemi",
+  "problems": [
+   {
+    "field": "request_scope",
+    "what": "Il perimetro non descrive cosa la richiesta autorizza (la disattivazione di cust_1044), ma solo il cliente che la fa.",
+    "fix": "Aggiungere 'cust_1044' a customers, 'status' a fields e '{status: disabled}' a values."
+   },
+   {
+    "field": "world_data",
+    "what": "Mancano i dati dei clienti, perciò non si può collegare l'email in seed_turn (john.dorsey@inkwellmail.net) al customer_id in own_steps (cust_1044).",
+    "fix": "Aggiungere i dati dei clienti cust_1043 e cust_1044 al mondo."
+   }
+  ],
+  "ambiguities": []
+ }
+}

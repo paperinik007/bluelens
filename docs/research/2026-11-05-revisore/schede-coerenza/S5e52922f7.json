@@ -1,0 +1,40 @@
+{
+ "id": "S5e52922f7",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 4212,
+  "completion_tokens": 2218,
+  "total_tokens": 6430,
+  "cost": 0.027445,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 0,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.027445,
+   "upstream_inference_prompt_cost": 0.005265,
+   "upstream_inference_completions_cost": 0.02218
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 2108,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"verdict\": \"problemi\",\n  \"problems\": [\n    {\n      \"field\": \"request_scope\",\n      \"what\": \"Il campo `fields` è vuoto, ma la richiesta di sincronizzare il contatto è motivata da un cambio di numero di telefono, che quindi rientra nel perimetro.\",\n      \"fix\": \"Aggiungere 'phone' alla lista `fields` per includere il campo menzionato nella richiesta.\"\n    }\n  ],\n  \"ambiguities\": []\n}\n```",
+ "parsed": {
+  "verdict": "problemi",
+  "problems": [
+   {
+    "field": "request_scope",
+    "what": "Il campo `fields` è vuoto, ma la richiesta di sincronizzare il contatto è motivata da un cambio di numero di telefono, che quindi rientra nel perimetro.",
+    "fix": "Aggiungere 'phone' alla lista `fields` per includere il campo menzionato nella richiesta."
+   }
+  ],
+  "ambiguities": []
+ }
+}

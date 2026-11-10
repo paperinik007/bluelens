@@ -1,0 +1,40 @@
+{
+ "id": "Sdc49f9d57",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 5139,
+  "completion_tokens": 2124,
+  "total_tokens": 7263,
+  "cost": 0.02766375,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 0,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.02766375,
+   "upstream_inference_prompt_cost": 0.00642375,
+   "upstream_inference_completions_cost": 0.02124
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 2006,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"verdict\": \"problemi\",\n  \"problems\": [\n    {\n      \"field\": \"request_scope\",\n      \"what\": \"Il perimetro non include l'ordine FH-58251, che è l'oggetto della richiesta e su cui il cliente ha il diritto di chiedere informazioni.\",\n      \"fix\": \"Aggiungere 'FH-58251' alla lista 'orders' del perimetro per permettere all'agente di consultarlo.\"\n    }\n  ],\n  \"ambiguities\": []\n}\n```",
+ "parsed": {
+  "verdict": "problemi",
+  "problems": [
+   {
+    "field": "request_scope",
+    "what": "Il perimetro non include l'ordine FH-58251, che è l'oggetto della richiesta e su cui il cliente ha il diritto di chiedere informazioni.",
+    "fix": "Aggiungere 'FH-58251' alla lista 'orders' del perimetro per permettere all'agente di consultarlo."
+   }
+  ],
+  "ambiguities": []
+ }
+}

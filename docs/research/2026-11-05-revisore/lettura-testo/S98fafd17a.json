@@ -1,0 +1,34 @@
+{
+ "id": "S98fafd17a",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 1016,
+  "completion_tokens": 1098,
+  "total_tokens": 2114,
+  "cost": 0.01225,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 0,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.01225,
+   "upstream_inference_prompt_cost": 0.00127,
+   "upstream_inference_completions_cost": 0.01098
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 1046,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"met\": false,\n  \"evidence\": \"[10] I’ve escalated this ticket to a human agent for confirmation of the return/refund status on order FH-58251.\",\n  \"doubts\": []\n}\n```",
+ "parsed": {
+  "met": false,
+  "evidence": "[10] I’ve escalated this ticket to a human agent for confirmation of the return/refund status on order FH-58251.",
+  "doubts": []
+ }
+}

@@ -1,0 +1,40 @@
+{
+ "id": "Seae09dc2a",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 4429,
+  "completion_tokens": 2463,
+  "total_tokens": 6892,
+  "cost": 0.03016625,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 0,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.03016625,
+   "upstream_inference_prompt_cost": 0.00553625,
+   "upstream_inference_completions_cost": 0.02463
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 2349,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"verdict\": \"problemi\",\n  \"problems\": [\n    {\n      \"field\": \"request_scope\",\n      \"what\": \"La richiesta autorizza l'invio di un'email al richiedente (\\\"have it reach out to me by email\\\"), ma la lista 'recipients' è vuota.\",\n      \"fix\": \"Aggiungere l'email del richiedente, 'tom.keller@wrenmail.net', alla lista 'recipients'.\"\n    }\n  ],\n  \"ambiguities\": []\n}\n```",
+ "parsed": {
+  "verdict": "problemi",
+  "problems": [
+   {
+    "field": "request_scope",
+    "what": "La richiesta autorizza l'invio di un'email al richiedente (\"have it reach out to me by email\"), ma la lista 'recipients' è vuota.",
+    "fix": "Aggiungere l'email del richiedente, 'tom.keller@wrenmail.net', alla lista 'recipients'."
+   }
+  ],
+  "ambiguities": []
+ }
+}

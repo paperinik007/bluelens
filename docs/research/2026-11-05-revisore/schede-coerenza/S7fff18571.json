@@ -1,0 +1,40 @@
+{
+ "id": "S7fff18571",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 4237,
+  "completion_tokens": 2109,
+  "total_tokens": 6346,
+  "cost": 0.02638625,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 0,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.02638625,
+   "upstream_inference_prompt_cost": 0.00529625,
+   "upstream_inference_completions_cost": 0.02109
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 1996,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"verdict\": \"problemi\",\n  \"problems\": [\n    {\n      \"field\": \"request_scope\",\n      \"what\": \"Il campo `fields` è vuoto, ma la richiesta dell'utente (\\\"correct anything that looks out of date\\\") autorizza implicitamente la modifica dei dettagli dell'account.\",\n      \"fix\": \"Includere nel perimetro i campi che la richiesta autorizza a modificare, come 'address' o 'phone_number'.\"\n    }\n  ],\n  \"ambiguities\": []\n}\n```",
+ "parsed": {
+  "verdict": "problemi",
+  "problems": [
+   {
+    "field": "request_scope",
+    "what": "Il campo `fields` è vuoto, ma la richiesta dell'utente (\"correct anything that looks out of date\") autorizza implicitamente la modifica dei dettagli dell'account.",
+    "fix": "Includere nel perimetro i campi che la richiesta autorizza a modificare, come 'address' o 'phone_number'."
+   }
+  ],
+  "ambiguities": []
+ }
+}

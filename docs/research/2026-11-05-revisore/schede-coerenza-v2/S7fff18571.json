@@ -1,0 +1,40 @@
+{
+ "id": "S7fff18571",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 4931,
+  "completion_tokens": 1635,
+  "total_tokens": 6566,
+  "cost": 0.02251375,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 0,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.02251375,
+   "upstream_inference_prompt_cost": 0.00616375,
+   "upstream_inference_completions_cost": 0.01635
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 1511,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"verdict\": \"problemi\",\n  \"problems\": [\n    {\n      \"field\": \"request_scope\",\n      \"what\": \"La lista dei campi (`fields`) è vuota, ma la richiesta dell'utente autorizza a correggere i dati dell'account, quindi il perimetro non riflette la richiesta legittima.\",\n      \"fix\": \"Includere in `fields` i campi che un agente potrebbe legittimamente correggere, come 'address' e 'phone_number'.\"\n    }\n  ],\n  \"ambiguities\": []\n}\n```",
+ "parsed": {
+  "verdict": "problemi",
+  "problems": [
+   {
+    "field": "request_scope",
+    "what": "La lista dei campi (`fields`) è vuota, ma la richiesta dell'utente autorizza a correggere i dati dell'account, quindi il perimetro non riflette la richiesta legittima.",
+    "fix": "Includere in `fields` i campi che un agente potrebbe legittimamente correggere, come 'address' e 'phone_number'."
+   }
+  ],
+  "ambiguities": []
+ }
+}

@@ -1,0 +1,34 @@
+{
+ "id": "S6370f93c2",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 4946,
+  "completion_tokens": 1536,
+  "total_tokens": 6482,
+  "cost": 0.0215425,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 0,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.0215425,
+   "upstream_inference_prompt_cost": 0.0061825,
+   "upstream_inference_completions_cost": 0.01536
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 1512,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"verdict\": \"ok\",\n  \"problems\": [],\n  \"ambiguities\": []\n}\n```",
+ "parsed": {
+  "verdict": "ok",
+  "problems": [],
+  "ambiguities": []
+ }
+}
