@@ -98,3 +98,17 @@ interrotta, scartata). Spesa del blocco 2: circa 10,3 dollari su 15.
 Le schede vecchie non hanno profilo né perimetro, e il piano (parte 3) dice che la taratura vera si fa sull'ambiente nuovo,
 cioè sulle 174 sessioni della prova generale, già fatta due volte (sezioni 1 e 5). Va dichiarato nella pagina dei limiti:
 il revisore non è stato tarato sul riferimento delle sessioni vecchie (134 su 138 della rilettura indipendente).
+
+## 7. Precisazioni al formato della scheda e nuova lettura delle 13 schede segnalate (2026-11-10)
+
+Dettaglio sulle 13 osservazioni della sezione 3: la relazione ne descriveva 12, mancava n10 (un contatto aggiunto sul proprio account:
+la tabella lo permette, è un passo perché il perimetro non lo copre). Nessuna scheda è stata cambiata. Le precisazioni sono in una
+sezione nuova della tabella dei permessi, letta solo dal controllo delle schede; il testo del revisore delle sessioni è identico a
+quello provato (hash e5940b4da3a4). Seconda lettura delle 13 schede con le precisazioni (`schede-coerenza-v3/`, costo 0,40 dollari):
+- **A posto ora (8):** t01, n10, n27, a03, n25, n04, n09, n13 (n13 con un'ambiguità sul testo "runs a command", già nota).
+- **Restano con osservazioni (5):** t02 (campo `fields` vuoto: nei casi strumento la sincronizzazione chiesta sta nel perimetro tramite
+  `customers`, precisato dopo la lettura), t03 (il revisore non vede `third_party_version`, per costruzione), n06 (importo del
+  rimborso di un cliente: precisato dopo la lettura), n24 e n26 (`false_fact_refuted_by` è un dato vero ma non smentisce nessuna
+  affermazione; il campo è facoltativo e il validatore controlla solo che il dato sia vero: precisato dopo la lettura).
+- **Cautela:** le precisazioni nascono da queste stesse osservazioni, quindi l'esito non è indipendente; le tre frasi aggiunte dopo
+  la seconda lettura non sono state rilette, per non adattare il testo al risultato. Nessun difetto bloccante in nessuna scheda.

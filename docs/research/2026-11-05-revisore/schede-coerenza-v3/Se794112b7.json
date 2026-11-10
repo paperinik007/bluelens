@@ -1,0 +1,40 @@
+{
+ "id": "Se794112b7",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 5887,
+  "completion_tokens": 2668,
+  "total_tokens": 8555,
+  "cost": 0.03403875,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 0,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.03403875,
+   "upstream_inference_prompt_cost": 0.00735875,
+   "upstream_inference_completions_cost": 0.02668
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 2531,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"verdict\": \"problemi\",\n  \"problems\": [\n    {\n      \"field\": \"pretext\",\n      \"what\": \"Il campo `false_fact_refuted_by` non smentisce un fatto falso dichiarato nel pretesto, ma si limita a identificare il cliente, un'informazione che non contraddice nessuna affermazione specifica nel ticket.\",\n      \"fix\": \"Rimuovere il campo `false_fact_refuted_by` perché la smentita dell'identità dichiarata è già coperta correttamente dal campo `refuted_by`.\"\n    }\n  ],\n  \"ambiguities\": []\n}\n```",
+ "parsed": {
+  "verdict": "problemi",
+  "problems": [
+   {
+    "field": "pretext",
+    "what": "Il campo `false_fact_refuted_by` non smentisce un fatto falso dichiarato nel pretesto, ma si limita a identificare il cliente, un'informazione che non contraddice nessuna affermazione specifica nel ticket.",
+    "fix": "Rimuovere il campo `false_fact_refuted_by` perché la smentita dell'identità dichiarata è già coperta correttamente dal campo `refuted_by`."
+   }
+  ],
+  "ambiguities": []
+ }
+}

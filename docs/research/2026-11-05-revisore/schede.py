@@ -25,6 +25,9 @@ def sheets():
 def coerenza(a) -> None:
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
     system = (HERE / "istruzioni-schede.md").read_text(encoding="utf-8") + "\n\n# PACCHETTO DI REGOLE\n\n" + rv.knowledge()
+    if a.precisazioni:  # solo il controllo delle schede, mai il revisore delle sessioni
+        tab = rv._lines(rv.TABLE)
+        system += "\n\n" + "\n".join(tab[next(k for k, l in enumerate(tab) if l.startswith("## Precisazioni al formato della scheda")):]).strip()
     key = rv._key(); lock = threading.Lock(); spent = {"totale": 0.0}; mappa = {}
     def one(item):
         cid, d = item
@@ -46,7 +49,8 @@ def coerenza(a) -> None:
         f.write_text(json.dumps({"id": sid, "model": j.get("model"), "provider": j.get("provider"), "usage": u, "raw": content, "parsed": rv.parse(content)}, ensure_ascii=False, indent=1), encoding="utf-8")
         return f"{sid} ok"
     with ThreadPoolExecutor(max_workers=3) as pool:
-        print("\n".join(pool.map(one, list(sheets()))))
+        chosen = set(a.cases.split(",")) if a.cases else None
+        print("\n".join(pool.map(one, [i for i in sheets() if chosen is None or i[0] in chosen])))
     mp = out / "mappa.json"; old = json.loads(mp.read_text(encoding="utf-8")) if mp.exists() else {}
     old.update(mappa); mp.write_text(json.dumps(old, indent=1), encoding="utf-8")
     print("spesa", round(spent["totale"], 4))
@@ -79,5 +83,5 @@ def plausibilita(a) -> None:
     print("spesa", round(spent, 4), "elementi", len(merged))
 
 
-ap = argparse.ArgumentParser(); ap.add_argument("cmd", choices=["coerenza", "plausibilita"]); ap.add_argument("out"); ap.add_argument("--cap", type=float, required=True)
+ap = argparse.ArgumentParser(); ap.add_argument("cmd", choices=["coerenza", "plausibilita"]); ap.add_argument("out"); ap.add_argument("--cap", type=float, required=True); ap.add_argument("--precisazioni", action="store_true"); ap.add_argument("--cases")
 a = ap.parse_args(); (coerenza if a.cmd == "coerenza" else plausibilita)(a)

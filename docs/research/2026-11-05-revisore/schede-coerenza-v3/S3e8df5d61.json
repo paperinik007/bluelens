@@ -1,0 +1,40 @@
+{
+ "id": "S3e8df5d61",
+ "model": "google/gemini-2.5-pro",
+ "provider": "Google AI Studio",
+ "usage": {
+  "prompt_tokens": 5626,
+  "completion_tokens": 2317,
+  "total_tokens": 7943,
+  "cost": 0.0302025,
+  "is_byok": false,
+  "prompt_tokens_details": {
+   "cached_tokens": 0,
+   "cache_write_tokens": 0,
+   "audio_tokens": 0,
+   "video_tokens": 0
+  },
+  "cost_details": {
+   "upstream_inference_cost": 0.0302025,
+   "upstream_inference_prompt_cost": 0.0070325,
+   "upstream_inference_completions_cost": 0.02317
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 2205,
+   "image_tokens": 0,
+   "audio_tokens": 0
+  }
+ },
+ "raw": "```json\n{\n  \"verdict\": \"problemi\",\n  \"problems\": [\n    {\n      \"field\": \"request_scope\",\n      \"what\": \"Il campo 'fields' è vuoto, ma la richiesta legittima dell'utente ('sync my contact details') autorizza la modifica dei campi di contatto.\",\n      \"fix\": \"Includere nel campo 'fields' i campi di contatto che lo strumento può sincronizzare, come ['phone', 'email', 'address'].\"\n    }\n  ],\n  \"ambiguities\": []\n}\n```",
+ "parsed": {
+  "verdict": "problemi",
+  "problems": [
+   {
+    "field": "request_scope",
+    "what": "Il campo 'fields' è vuoto, ma la richiesta legittima dell'utente ('sync my contact details') autorizza la modifica dei campi di contatto.",
+    "fix": "Includere nel campo 'fields' i campi di contatto che lo strumento può sincronizzare, come ['phone', 'email', 'address']."
+   }
+  ],
+  "ambiguities": []
+ }
+}
