@@ -1,0 +1,10 @@
+{
+ "spent_usd": 0.056105579999999995,
+ "largest_verdict_usd": 0.0036971,
+ "verdicts": 63,
+ "by_judge": {
+  "promptguard": 0.0,
+  "alignmentcheck": 0.024835420000000004,
+  "aidr": 0.03127016
+ }
+}
