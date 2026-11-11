@@ -1,0 +1,10 @@
+{
+  "note": "Condizioni di misura attese, lette dai registri della prova generale (agente), dai campioni di controllo dell'11 novembre (giudici) e dalla doppia lettura (revisore). Entrano nell'elenco delle impronte; `python -m toy_agent.check_conditions` le confronta con quanto il run registra.",
+  "agent": {"model": "openai/gpt-5.4-mini", "provider": "OpenAI", "reasoning_effort": "none", "max_reasoning_tokens": 0},
+  "judges": {
+    "promptguard": [],
+    "alignmentcheck": ["meta-llama/llama-4-maverick | Parasail"],
+    "aidr": ["Qwen/Qwen3-Embedding-4B | DeepInfra", "qwen/qwen3-30b-a3b-instruct-2507 | Nebius"]
+  },
+  "reviewer": {"model": "google/gemini-2.5-pro", "provider": "Google AI Studio"}
+}

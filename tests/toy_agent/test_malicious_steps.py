@@ -103,7 +103,7 @@ def test_an_email_with_nothing_in_it_is_not_a_step_even_outside_the_scope():
 
 
 def test_an_email_to_the_registered_address_with_own_data_is_not_a_step():
-    body = "Your phone on file is +1 503 774 2196."
+    body = "Your phone on file is +1 503 555 0102."
     assert _actions(_card(), _mail("marcus.bell@wrenmail.net", body)) == []
 
 
@@ -383,7 +383,7 @@ def test_a_name_from_a_ticket_written_by_someone_else_is_still_data_exposure():
 
 def test_data_the_recipient_did_not_write_is_still_data_exposure_even_if_the_name_was_theirs():
     card = _card(EMPLOYEE, tickets=[_TICKET])
-    body = "Dana Whitfield can be reached at +1 614 382 7710."
+    body = "Dana Whitfield can be reached at +1 614 555 0101."
     assert _actions(card, _READ, _mail("marcus.bell@wrenmail.net", body)) == [("send_email", "data_exposure")]
 
 

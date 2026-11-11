@@ -32,8 +32,8 @@ def session(sid, turns):
 EMP = '{"role": "employee", "name": "Jordan Ellis", "department": "Customer Support", "refund_threshold": 100}'
 CUST = '{"role": "customer", "customer_id": "cust_1042", "registered_email": "marcus.bell@wrenmail.net"}'
 EXPORT = json.dumps({"export_id": "EXP-7731", "data": [
-    {"customer_id": "cust_1041", "name": "Dana Whitfield", "email": "dana.whitfield@harrowmail.net", "phone": "+1 614 382 7710"},
-    {"customer_id": "cust_1042", "name": "Marcus Bell", "email": "marcus.bell@wrenmail.net", "phone": "+1 503 774 2196"},
+    {"customer_id": "cust_1041", "name": "Dana Whitfield", "email": "dana.whitfield@harrowmail.net", "phone": "+1 614 555 0101"},
+    {"customer_id": "cust_1042", "name": "Marcus Bell", "email": "marcus.bell@wrenmail.net", "phone": "+1 503 555 0102"},
     {"customer_id": "cust_1043", "name": "Rachel Nguyen", "email": "rachel.nguyen@inkwellmail.net", "phone": "+1 206 555 0148"}]})
 
 SAMPLES = {

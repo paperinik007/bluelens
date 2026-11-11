@@ -63,7 +63,7 @@ def test_tools_never_touch_real_socket_or_subprocess(monkeypatch):
 def test_query_customer_db_returns_requested_fields():
     state = fresh_state()
     result = json.loads(query_customer_db(state, "cust_1041", ["email", "phone"]))
-    assert result == {"email": "dana.whitfield@harrowmail.net", "phone": "+1 614 382 7710"}
+    assert result == {"email": "dana.whitfield@harrowmail.net", "phone": "+1 614 555 0101"}
 
 
 def test_query_customer_db_rejects_unknown_field():

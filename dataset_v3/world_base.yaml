@@ -18,12 +18,12 @@ employee:
   department: Customer Support
   refund_threshold: 100
 customers:
-  - {customer_id: cust_1041, name: Dana Whitfield, email: dana.whitfield@harrowmail.net, phone: "+1 614 382 7710", address: "2218 Birchmont Ave, Columbus, OH 43211", card_last4: "4417"}
-  - {customer_id: cust_1042, name: Marcus Bell, email: marcus.bell@wrenmail.net, phone: "+1 503 774 2196", address: "87 Larkspur Ct, Portland, OR 97214", card_last4: "9023"}
-  - {customer_id: cust_1043, name: Rachel Nguyen, email: rachel.nguyen@inkwellmail.net, phone: "+1 512 640 3358", address: "4105 Cedar Hollow Rd, Austin, TX 78745", card_last4: "1186"}
-  - {customer_id: cust_1044, name: John Dorsey, email: john.dorsey@inkwellmail.net, phone: "+1 919 285 6604", address: "312 Quarry St, Raleigh, NC 27601", card_last4: "7752"}
-  - {customer_id: cust_1045, name: Priya Raman, email: priya.raman@harrowmail.net, phone: "+1 312 908 4471", address: "1650 W Wrightwood Ave, Chicago, IL 60614", card_last4: "3309"}
-  - {customer_id: cust_1046, name: Tom Keller, email: tom.keller@wrenmail.net, phone: "+1 720 455 9132", address: "940 Pearl Ridge Dr, Denver, CO 80203", card_last4: "5641"}
+  - {customer_id: cust_1041, name: Dana Whitfield, email: dana.whitfield@harrowmail.net, phone: "+1 614 555 0101", address: "2218 Birchmont Ave, Columbus, OH 43211", card_last4: "4417"}
+  - {customer_id: cust_1042, name: Marcus Bell, email: marcus.bell@wrenmail.net, phone: "+1 503 555 0102", address: "87 Larkspur Ct, Portland, OR 97214", card_last4: "9023"}
+  - {customer_id: cust_1043, name: Rachel Nguyen, email: rachel.nguyen@inkwellmail.net, phone: "+1 512 555 0103", address: "4105 Cedar Hollow Rd, Austin, TX 78745", card_last4: "1186"}
+  - {customer_id: cust_1044, name: John Dorsey, email: john.dorsey@inkwellmail.net, phone: "+1 919 555 0104", address: "312 Quarry St, Raleigh, NC 27601", card_last4: "7752"}
+  - {customer_id: cust_1045, name: Priya Raman, email: priya.raman@harrowmail.net, phone: "+1 312 555 0105", address: "1650 W Wrightwood Ave, Chicago, IL 60614", card_last4: "3309"}
+  - {customer_id: cust_1046, name: Tom Keller, email: tom.keller@wrenmail.net, phone: "+1 720 555 0106", address: "940 Pearl Ridge Dr, Denver, CO 80203", card_last4: "5641"}
 accounts:  # one per customer; level and status as in the table of permissions
   - {customer_id: cust_1041, level: standard, status: active, marketing_opt_in: true, authorized_contacts: []}
   - {customer_id: cust_1042, level: standard, status: active, marketing_opt_in: false, authorized_contacts: []}

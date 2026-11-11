@@ -1,0 +1,155 @@
+{
+ "seed": 678815705,
+ "python": "3.14.3",
+ "algorithm": "SHA-256 of 'seed:case_id', least-loaded wave first",
+ "strata": {
+  "benign | other": [
+   "v3_b01",
+   "v3_b02",
+   "v3_b03",
+   "v3_b04",
+   "v3_b05",
+   "v3_b06",
+   "v3_b07",
+   "v3_b08",
+   "v3_b09",
+   "v3_b10",
+   "v3_b11",
+   "v3_b12",
+   "v3_b13",
+   "v3_b14",
+   "v3_b15",
+   "v3_b16",
+   "v3_b17",
+   "v3_b18"
+  ],
+  "benign | tool": [
+   "v3_b19",
+   "v3_b20",
+   "v3_b21"
+  ],
+  "malicious | agent x none": [
+   "v3_a01",
+   "v3_a02",
+   "v3_a03"
+  ],
+  "malicious | content x disguised_injection": [
+   "v3_n16",
+   "v3_n17",
+   "v3_n18",
+   "v3_n19"
+  ],
+  "malicious | content x explicit": [
+   "v3_c01",
+   "v3_c02",
+   "v3_c03",
+   "v3_c05"
+  ],
+  "malicious | content x override": [
+   "v3_n20",
+   "v3_n21",
+   "v3_n22",
+   "v3_n23"
+  ],
+  "malicious | content x pretext": [
+   "v3_n24",
+   "v3_n25",
+   "v3_n26",
+   "v3_n27"
+  ],
+  "malicious | request x disguised_injection": [
+   "v3_n01",
+   "v3_n02",
+   "v3_n03",
+   "v3_n04"
+  ],
+  "malicious | request x explicit": [
+   "v3_n13",
+   "v3_n14",
+   "v3_n15"
+  ],
+  "malicious | request x override": [
+   "v3_n05",
+   "v3_n06",
+   "v3_n07",
+   "v3_n08"
+  ],
+  "malicious | request x pretext": [
+   "v3_n09",
+   "v3_n10",
+   "v3_n11",
+   "v3_n12"
+  ],
+  "malicious | tool x none": [
+   "v3_t01",
+   "v3_t02",
+   "v3_t03"
+  ]
+ },
+ "waves": {
+  "1": [
+   "v3_a02",
+   "v3_b03",
+   "v3_b04",
+   "v3_b09",
+   "v3_b13",
+   "v3_b16",
+   "v3_b17",
+   "v3_b19",
+   "v3_c01",
+   "v3_c03",
+   "v3_n01",
+   "v3_n05",
+   "v3_n12",
+   "v3_n15",
+   "v3_n19",
+   "v3_n21",
+   "v3_n26",
+   "v3_n27",
+   "v3_t01"
+  ],
+  "2": [
+   "v3_a01",
+   "v3_b01",
+   "v3_b02",
+   "v3_b06",
+   "v3_b14",
+   "v3_b15",
+   "v3_b18",
+   "v3_b20",
+   "v3_c02",
+   "v3_n03",
+   "v3_n04",
+   "v3_n07",
+   "v3_n09",
+   "v3_n11",
+   "v3_n14",
+   "v3_n16",
+   "v3_n18",
+   "v3_n23",
+   "v3_n25",
+   "v3_t03"
+  ],
+  "3": [
+   "v3_a03",
+   "v3_b05",
+   "v3_b07",
+   "v3_b08",
+   "v3_b10",
+   "v3_b11",
+   "v3_b12",
+   "v3_b21",
+   "v3_c05",
+   "v3_n02",
+   "v3_n06",
+   "v3_n08",
+   "v3_n10",
+   "v3_n13",
+   "v3_n17",
+   "v3_n20",
+   "v3_n22",
+   "v3_n24",
+   "v3_t02"
+  ]
+ }
+}
