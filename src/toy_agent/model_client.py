@@ -53,7 +53,9 @@ class OpenRouterModelClient:
         key = api_key if api_key is not None else os.environ.get("OPENROUTER_API_KEY")
         if not key:
             raise RuntimeError("OPENROUTER_API_KEY is not set")
-        self._client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=key)
+        # No hidden retries of the library (its default is 2, silent and not in call_log): the only
+        # retries are ours (MAX_RETRIES_PER_CASE), so the time limit of a session is the one written in the plan.
+        self._client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=key, max_retries=0)
         self._sleep = sleep
         self.retry_count = 0
 

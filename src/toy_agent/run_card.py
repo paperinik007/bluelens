@@ -70,25 +70,52 @@ def main() -> None:
     args = parser.parse_args()
 
     key = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("AGENT_OPENROUTER_API_KEY")
-    args.out.mkdir(parents=True, exist_ok=True)
-    for path in args.cards:
-        card = load_card(path)
-        for n in range(1, args.sessions + 1):
-            target = args.out / f"{card['case_id']}_{n}.json"
+    conditions = {"model": args.model, "provider": args.provider, "reasoning_effort": args.reasoning_effort,
+                  "request_timeout_s": args.timeout, "max_turns": 8}
+    stopped = run_cards(
+        [load_card(path) for path in args.cards], lambda: OpenRouterModelClient(
+            model=args.model, api_key=key, reasoning_effort=args.reasoning_effort,
+            provider=args.provider, request_timeout_s=args.timeout),
+        args.sessions, args.out, conditions)
+    if stopped:
+        raise SystemExit(3)
+
+
+MAX_CONSECUTIVE_MODEL_ERRORS = 3
+
+
+def run_cards(cards: list[dict], make_client, sessions: int, out: Path, conditions: dict | None = None,
+              max_consecutive_errors: int = MAX_CONSECUTIVE_MODEL_ERRORS) -> bool:
+    """All sessions of the cards, saved one by one. A saved session is never redone. After `max_consecutive_errors`
+    sessions in a row that ended in a model error (or raised), it stops and returns True: a lasting failure (a key
+    over its limit, a provider down) must not use up every session of the wave as an "error" (plan, part 13, additions)."""
+    out.mkdir(parents=True, exist_ok=True)
+    in_a_row = 0
+    for card in cards:
+        for n in range(1, sessions + 1):
+            target = out / f"{card['case_id']}_{n}.json"
             if target.exists():
                 continue  # a saved session is never redone
-            client = OpenRouterModelClient(
-                model=args.model, api_key=key, reasoning_effort=args.reasoning_effort,
-                provider=args.provider, request_timeout_s=args.timeout,
-            )
+            client = make_client()
             try:
                 record = run_card(card, client)
             except Exception as exc:  # class name only: the message may carry the key
                 print(f"FAILED {target.name}: {exc.__class__.__name__}", flush=True)
+                in_a_row += 1
+                if in_a_row >= max_consecutive_errors:
+                    print(f"STOP: {in_a_row} sessions in a row failed", flush=True)
+                    return True
                 continue
             record["call_log"] = client.call_log
+            if conditions is not None:
+                record["conditions"] = conditions  # what the agent was asked to be, next to what answered (call_log)
             target.write_text(json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8")
             print(target, flush=True)
+            in_a_row = in_a_row + 1 if record["transcript"].get("stop_reason") == "model_error" else 0
+            if in_a_row >= max_consecutive_errors:
+                print(f"STOP: {in_a_row} sessions in a row ended in a model error", flush=True)
+                return True
+    return False
 
 
 if __name__ == "__main__":

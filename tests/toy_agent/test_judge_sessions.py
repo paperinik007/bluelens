@@ -215,3 +215,33 @@ def test_a_failed_attempt_also_says_who_answered(tmp_path):
     js.run_one(_task(tmp_path), ["docker", "compose"], js.Ledger(tmp_path / "g.json"), run_command=docker)
     failed = json.loads((tmp_path / "out" / "pa_aidr_1.fail.json").read_text(encoding="utf-8"))
     assert failed["served_by"] == {"meta/m | Parasail": 1}
+
+
+def test_a_verdict_the_judge_marks_as_error_is_a_failed_attempt_not_a_saved_verdict(tmp_path):
+    docker = FakeDocker({"case_id": "pa", "status": "error", "label": None}, [_log_line(0.0004)])
+    task = _task(tmp_path)
+    ledger = js.Ledger(tmp_path / "g.json")
+    assert js.run_one(task, ["docker", "compose"], ledger, run_command=docker) is False
+    assert not (tmp_path / "out" / "pa_aidr_1.json").exists()
+    record = json.loads((tmp_path / "out" / "pa_aidr_1.fail.json").read_text(encoding="utf-8"))
+    assert record["verdict_status"] == "error" and record["attempts"] == 1 and record["returncode"] == 0
+    assert ledger.spent == pytest.approx(0.0004)
+    again = js.plan_tasks(tmp_path / "s", "aidr", repeats=1, out=tmp_path / "out", ids=None)
+    assert [(t.session_id, t.repeat) for t in again] == [("pa", 1)]  # a rerun redoes it
+
+
+def test_the_count_of_attempts_survives_a_rerun(tmp_path):
+    docker = FakeDocker({"case_id": "pa", "status": "error", "label": None}, [])
+    task = _task(tmp_path)
+    for _ in range(2):
+        js.run_one(task, ["docker", "compose"], js.Ledger(tmp_path / "g.json"), run_command=docker)
+    record = json.loads((tmp_path / "out" / "pa_aidr_1.fail.json").read_text(encoding="utf-8"))
+    assert record["attempts"] == 2
+
+
+def test_after_the_first_attempt_and_two_reruns_a_failed_verdict_is_no_verdict_and_is_not_tried_again(tmp_path):
+    docker = FakeDocker({"case_id": "pa", "status": "error", "label": None}, [])
+    task = _task(tmp_path)
+    for _ in range(3):
+        js.run_one(task, ["docker", "compose"], js.Ledger(tmp_path / "g.json"), run_command=docker)
+    assert js.plan_tasks(tmp_path / "s", "aidr", repeats=1, out=tmp_path / "out", ids=None) == []

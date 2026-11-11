@@ -18,6 +18,8 @@ from typing import Optional
 
 from .orchestrator import CommandRunner, default_command_runner
 
+MAX_ATTEMPTS = 3  # the first attempt and 2 reruns
+
 
 @dataclass(frozen=True)
 class JudgeConfig:
@@ -140,8 +142,13 @@ def plan_tasks(sessions: Path, judge: str, repeats: int, out: Path, ids: Optiona
     for repeat in range(1, repeats + 1):
         for path in paths:
             target = Path(out) / f"{path.stem}_{judge}_{repeat}.json"
-            if not target.exists():
-                tasks.append(Task(path.stem, judge, repeat, path, target))
+            if target.exists():
+                continue
+            fail = target.with_suffix(".fail.json")
+            # first attempt plus at most 2 reruns (plan, part 13, point 5): after that the session is "no verdict"
+            if fail.exists() and int(json.loads(fail.read_text(encoding="utf-8")).get("attempts", 1)) >= MAX_ATTEMPTS:
+                continue
+            tasks.append(Task(path.stem, judge, repeat, path, target))
     return tasks
 
 
@@ -165,15 +172,25 @@ def run_one(task: Task, compose: list[str], ledger: Ledger, run_command: Command
         cost, calls, unknown = cost_of_log(tail.stdout.decode(errors="replace"))
         served = served_by(tail.stdout.decode(errors="replace"))
     ledger.add(task.judge, cost)
-    if res.returncode != 0 or res.timed_out or res.failed_to_start:
+    fail_path = task.out_path.with_suffix(".fail.json")
+    attempts = 1
+    if fail_path.exists():  # the count of attempts survives a rerun: the plan allows at most 2 reruns
+        attempts = int(json.loads(fail_path.read_text(encoding="utf-8")).get("attempts", 1)) + 1
+    process_failed = res.returncode != 0 or res.timed_out or res.failed_to_start
+    verdict = None
+    if not process_failed:
+        verdict = json.loads(res.stdout.decode())
+    # A verdict the judge itself marks as an error (provider down, unreadable answer) is a failed attempt, not a verdict:
+    # the evaluations exit 0 with status "error", so without this a rerun would skip it and the circuit breaker would never trip.
+    if process_failed or verdict.get("status") != "ok":
         # why it failed, so a failure is never just a count (the evaluation prints only exception class names)
         task.out_path.parent.mkdir(parents=True, exist_ok=True)
-        task.out_path.with_suffix(".fail.json").write_text(json.dumps({
+        fail_path.write_text(json.dumps({
             "session_id": task.session_id, "judge": task.judge, "repeat": task.repeat, "returncode": res.returncode,
             "timed_out": res.timed_out, "failed_to_start": res.failed_to_start, "cost_usd": cost, "served_by": served,
-            "stderr_tail": res.stderr.decode(errors="replace")[-2000:]}, indent=1), encoding="utf-8")
+            "attempts": attempts, "verdict_status": None if verdict is None else verdict.get("status"),
+            "verdict": verdict, "stderr_tail": res.stderr.decode(errors="replace")[-2000:]}, indent=1), encoding="utf-8")
         return False
-    verdict = json.loads(res.stdout.decode())
     task.out_path.parent.mkdir(parents=True, exist_ok=True)
     task.out_path.write_text(json.dumps({
         "session_id": task.session_id, "judge": task.judge, "repeat": task.repeat, "verdict": verdict,

@@ -322,3 +322,9 @@ def test_a_failed_attempt_is_recorded_with_its_duration_and_error_class(monkeypa
     }
     assert client.call_log[1]["error"] is None
     assert client.call_log[1]["duration_s"] == 1.0
+
+
+def test_the_library_does_not_retry_silently(monkeypatch):
+    """The session time limit in the plan counts only our own retries: the library default (2) is switched off."""
+    client = OpenRouterModelClient(model="openai/gpt-5.4-mini-20260317", api_key="sk-test")
+    assert client._client.max_retries == 0

@@ -16,6 +16,7 @@ class _Script:
     def __init__(self, *replies):
         self._replies = list(replies)
         self.retry_count = 0
+        self.call_log = []
 
     def complete(self, messages, tools):
         return self._replies.pop(0)
@@ -65,3 +66,41 @@ def test_the_session_is_independent_of_the_card_file():
     before = yaml.safe_dump(card)
     run_card(card, _Script(_say("ok")))
     assert yaml.safe_dump(card) == before
+
+
+class _Failing:
+    """A client whose every call fails like a provider outage: the loop ends the session with a model error."""
+
+    def __init__(self):
+        self.retry_count = 0
+        self.call_log = []
+
+    def complete(self, messages, tools):
+        raise RuntimeError("provider down")
+
+
+def _cards(n):
+    base = load_card(CASES_DIR / "v3_n01.yaml")
+    return [dict(base, case_id=f"x{i}") for i in range(n)]
+
+
+def test_after_three_sessions_in_a_row_ending_in_a_model_error_it_stops(tmp_path):
+    from toy_agent.run_card import run_cards
+    stopped = run_cards(_cards(5), _Failing, 1, tmp_path)
+    assert stopped is True
+    assert len(list(tmp_path.glob("*.json"))) == 3  # the three failed sessions are saved, no more are started
+
+
+def test_a_good_session_resets_the_count_of_errors_in_a_row(tmp_path):
+    from toy_agent.run_card import run_cards
+    clients = iter([_Failing(), _Failing(), _Script(_say("Done.")), _Failing(), _Failing()])
+    stopped = run_cards(_cards(5), lambda: next(clients), 1, tmp_path)
+    assert stopped is False and len(list(tmp_path.glob("*.json"))) == 5
+
+
+def test_the_session_file_records_the_conditions_it_was_asked_for(tmp_path):
+    from toy_agent.run_card import run_cards
+    cond = {"model": "m", "provider": "p", "reasoning_effort": "none", "request_timeout_s": 30.0, "max_turns": 8}
+    run_cards(_cards(1), lambda: _Script(_say("Done.")), 1, tmp_path, cond)
+    saved = json.loads(next(tmp_path.glob("*.json")).read_text(encoding="utf-8"))
+    assert saved["conditions"] == cond

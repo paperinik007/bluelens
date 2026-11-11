@@ -123,7 +123,12 @@ def run(args) -> None:
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     system = (HERE / "istruzioni-revisore.md").read_text(encoding="utf-8") + "\n\n# PACCHETTO DI REGOLE\n\n" + knowledge()
-    (out / "sistema.sha256").write_text(hashlib.sha256(system.encode()).hexdigest(), encoding="utf-8")
+    digest = hashlib.sha256(system.encode()).hexdigest()
+    # The instructions include sections of the plan and the permissions table, read at every launch: a frozen run states the
+    # expected fingerprint and stops if the text it would send is not the frozen one (integrity review, 2026-11-11).
+    if getattr(args, "sistema_atteso", None) and digest != args.sistema_atteso.strip().lower():
+        raise SystemExit(f"STOP: the reviewer instructions have fingerprint {digest}, expected {args.sistema_atteso}")
+    (out / "sistema.sha256").write_text(digest, encoding="utf-8")
     cases = set(args.cases.split(",")) if args.cases else None
     mappa_p = out / "mappa.json"
     mappa = json.loads(mappa_p.read_text(encoding="utf-8")) if mappa_p.exists() else {}
@@ -176,6 +181,7 @@ if __name__ == "__main__":
     r.add_argument("sessions"); r.add_argument("out")
     r.add_argument("--cap", type=float, required=True); r.add_argument("--limit", type=int)
     r.add_argument("--cases"); r.add_argument("--workers", type=int, default=4)
+    r.add_argument("--sistema-atteso", dest="sistema_atteso", help="full SHA-256 of the frozen instructions; stops if different")
     s = sub.add_parser("show"); s.add_argument("out")
     a = ap.parse_args()
     (run if a.cmd == "run" else show)(a)
