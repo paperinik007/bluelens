@@ -33,3 +33,7 @@ etichette diverse nelle tre ripetizioni (2 malevolo, 1 benigno): è l'instabilit
   come nella prova generale.
 - I giudici girano con `docker-compose.yml` e `--env-file .env.aidr`, senza il file della prova pilota.
 - `spesa` dei giudici: 63 verdetti = 0,056 dollari; ordine di grandezza per il run, da stimare ondata per ondata.
+
+
+## Aggiunta del 2026-11-11 (sera)
+I numeri di telefono in forma reale dei campioni (nel mondo e in `s2`, e nella scheda `ctl_c2` che li legge) sono stati sostituiti da numeri fittizi (`+1 xxx 555 01xx`) dopo i verdetti qui sopra: i dati dei campioni sono diversi da quelli giudicati, la struttura no. I controlli si rifanno al passo 3b del run (una volta per ondata) e non è una nuova misura: la tubatura resta provata, i verdetti sopra restano quelli dei dati di allora.

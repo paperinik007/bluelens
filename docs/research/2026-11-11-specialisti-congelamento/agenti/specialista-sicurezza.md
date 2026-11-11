@@ -12,7 +12,10 @@ BlueLens misura tre giudici (PromptGuard 2, AlignmentCheck di LlamaFirewall, aid
 Fuori dal tuo ambito: statistica e disegno sperimentale (altro specialista), riproducibilità tecnica (altro specialista).
 
 ## Cosa leggere, in ordine
-`docs/design/2026-10-11-sfere-giudici.md`; piano del run (parti 3, 5, 6, 7) e il mondo base `docs/design/2026-10-19-mondo-base.md`; le schede in `dataset_v3/cases/` (campiona almeno una per luogo e forma, tutte quelle che il testo mette in dubbio); `dataset_v3/controls/`; la sezione 3 di `docs/research/2026-11-05-revisore/RELAZIONE.md` (plausibilità: 30 malevoli su 37 e 4 benigni su 21 sembrano un test); README della prova generale; pagina dei limiti. Verifica sul repository.
+`docs/design/2026-10-11-sfere-giudici.md`; piano del run (parti 3, 5, 6, 7) e il mondo base `docs/design/2026-10-19-mondo-base.md`; le schede in `dataset_v3/cases/` (campiona almeno una per luogo e forma, tutte quelle che il testo mette in dubbio); `dataset_v3/controls/`; la sezione 3 di `docs/research/2026-11-05-revisore/RELAZIONE.md` (plausibilità: 30 malevoli su 37 e 4 benigni su 21 sembrano un test); README della prova generale; pagina dei limiti. Leggi anche la tabella "Ambito atteso per giudice" del piano (parte 6) e la sezione "Aggiunte dell'11 novembre" della parte 13. Verifica sul repository.
+
+## Verifica richiesta dall'11 novembre (aggiunta dopo la prova di confronto sullo specialista di metodologia)
+Le sfere fissano tutti i denominatori. Costruisci tu, dalle schede, la tabella caso per giudice (PromptGuard, AlignmentCheck, aidr) con dentro/fuori sfera per la lettura larga e per la stretta, e confrontala con il piano: per aidr il piano dà 34 casi con la lettura larga (forma o almeno un'azione), 28 contando le sole azioni; i 6 di differenza sono n05, n06, n17, n20, n21, n23; fuori sfera n09, n10, t03. Dì se l'assegnazione dei 37 casi alle sfere è fedele alle dichiarazioni dei produttori e a `sfere-giudici.md`.
 
 ## Come ragioni
 - Chiediti: un giudice può ottenere un buon punteggio senza riconoscere un attacco? (plausibilità, lunghezza, lessico, struttura, differenze sistematiche tra malevoli e benigni.)

@@ -51,6 +51,12 @@ chi ha anche costruito il resto del banco di prova; il proprietario può decider
 12 sessioni (stima 1 ora). Non dimostra che il criterio scritto nella scheda sia giusto: dimostra che due lettori lo applicano
 allo stesso modo.
 
+**Estensione dell'11 novembre (decisione del proprietario): gli altri quattro casi "solo testo".** Stessa procedura (`lettura_testo.py`,
+stesso modello e fornitore, criterio `text_steps` della scheda) su n03, n09, n12, n13: 12 sessioni, **12 su 12 concordi con la mia
+lettura del 2026-10-22, nessuna sessione compie il passo, nessun dubbio dichiarato dal revisore**. Costo 0,103 dollari (uscita in
+`lettura-testo-2/`). Vale la stessa cautela: dimostra che due lettori applicano allo stesso modo il criterio della scheda, non che il
+criterio sia giusto; entrambi i lettori sono modelli.
+
 ## 3. Lettura alla cieca delle 58 schede
 
 - Plausibilità (un lotto da 15 alla volta, senza sapere cosa è benigno): realismo medio **4,29 su 5 per i benigni, 2,16 per i
