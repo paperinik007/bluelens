@@ -64,3 +64,42 @@ def test_the_frozen_expected_file_names_agent_judges_and_reviewer():
     from pathlib import Path
     expected = json.loads((Path(__file__).resolve().parents[2] / "dataset_v3" / "condizioni_attese.json").read_text(encoding="utf-8"))
     assert set(expected) >= {"agent", "judges", "reviewer"} and set(expected["judges"]) == {"promptguard", "alignmentcheck", "aidr"}
+
+
+def test_a_judge_with_expected_pairs_and_no_record_of_who_answered_is_a_problem(tmp_path):
+    (tmp_path / "s_aidr_1.json").write_text(json.dumps({"judge": "aidr", "served_by": {}}), encoding="utf-8")
+    (tmp_path / "s_promptguard_1.json").write_text(json.dumps({"judge": "promptguard", "served_by": {}}), encoding="utf-8")
+    problems = cc.check_verdicts(tmp_path, {"aidr": ["a | B"], "promptguard": []})
+    assert len(problems) == 1 and "s_aidr_1" in problems[0] and "log not read" in problems[0]  # a local judge expects no pairs
+
+
+def test_the_reviewer_instructions_fingerprint_is_checked_when_the_expected_file_names_it(tmp_path):
+    (tmp_path / "S1.json").write_text(json.dumps({"model": "g", "provider": "G"}), encoding="utf-8")
+    expected = {"model": "g", "provider": "G", "instructions_sha256": "abc"}
+    assert "fingerprint None" in cc.check_reviewer(tmp_path, expected)[0]  # no sistema.sha256 saved
+    (tmp_path / "sistema.sha256").write_text("abd", encoding="utf-8")
+    assert "fingerprint 'abd'" in cc.check_reviewer(tmp_path, expected)[0]
+    (tmp_path / "sistema.sha256").write_text("abc", encoding="utf-8")
+    assert cc.check_reviewer(tmp_path, expected) == []
+
+
+def test_generation_records_must_name_the_dated_version_and_provider(tmp_path):
+    sessions = tmp_path / "s"; sessions.mkdir()
+    (sessions / "a_1.json").write_text(json.dumps({"call_log": [
+        {"generation_id": "g1", "error": None}, {"generation_id": "g2", "error": None},
+        {"generation_id": "g3", "error": None}, {"generation_id": "g4", "error": None}, {"generation_id": None, "error": "x"}]}), encoding="utf-8")
+    gens = tmp_path / "gens.json"
+    gens.write_text(json.dumps({
+        "g1": {"model": "m-20260317", "provider_name": "P"},
+        "g2": {"model": "m-OTHER", "provider_name": "P"},
+        "g3": {"error": "HTTP 404"}}), encoding="utf-8")
+    problems = cc.check_generations(sessions, gens, {"version": "m-20260317", "provider": "P"})
+    assert len(problems) == 3
+    assert any("'m-OTHER'" in p for p in problems) and any("HTTP 404" in p for p in problems) and any("g4" in p and "not fetched" in p for p in problems)
+
+
+def test_the_frozen_expected_file_names_the_dated_version_and_the_instructions_fingerprint():
+    from pathlib import Path
+    expected = json.loads((Path(__file__).resolve().parents[2] / "dataset_v3" / "condizioni_attese.json").read_text(encoding="utf-8"))
+    assert expected["agent"]["version"] == "openai/gpt-5.4-mini-20260317"
+    assert len(expected["reviewer"]["instructions_sha256"]) == 64

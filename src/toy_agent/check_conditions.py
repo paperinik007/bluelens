@@ -1,11 +1,14 @@
 """Check that the run was made under the frozen conditions (plan, part 12 and part 13 additions, point 7 of the integrity review).
 
     python -m toy_agent.check_conditions --expected dataset_v3/condizioni_attese.json \
-        [--sessions DIR] [--verdicts DIR] [--reviewer DIR]
+        [--sessions DIR] [--generations FILE] [--verdicts DIR] [--reviewer DIR]
 
 Reads only what the run recorded about itself (never a label, a verdict or a reading): for the agent the model, provider and
 reasoning tokens of every answered call in `call_log`; for each judge the "model | provider" pairs that answered
-(`served_by`); for the reviewer the model and provider of every saved reading. Anything outside the expected values is
+(`served_by`; a verdict of a judge that has expected pairs but records none is a problem: its log was not read); for the
+reviewer the model and provider of every saved reading and the fingerprint of the instructions it was given (`sistema.sha256`,
+against `instructions_sha256` of the expected file); with `--generations` (the file written by `registra_versioni`) the exact
+dated version and provider that OpenRouter's generation record names for every answered call of the agent. Anything outside the expected values is
 listed and the exit code is 1: the wave stops and the owner decides (a change of model or provider is a change of the
 instrument). It does not stop a run by itself: it is a step of the commands, run after the sessions and after the verdicts.
 """
@@ -47,14 +50,40 @@ def check_verdicts(directory: Path, expected: dict[str, list[str]]) -> list[str]
         if judge not in expected:
             problems.append(f"{path.name}: unknown judge {judge!r}")
             continue
+        if expected[judge] and not data.get("served_by"):
+            problems.append(f"{path.name}: {judge} has expected pairs but the verdict records none (log not read)")
         for pair in data.get("served_by", {}):
             if pair not in expected[judge]:
                 problems.append(f"{path.name}: {judge} answered by {pair!r}, not in the expected {expected[judge]!r}")
     return problems
 
 
+def check_generations(sessions: Path, generations: Path, expected: dict) -> list[str]:
+    """Every answered call of the agent must have a generation record naming the expected dated version and provider."""
+    records = json.loads(Path(generations).read_text(encoding="utf-8"))
+    problems: list[str] = []
+    for path in sorted(Path(sessions).glob("*.json")):
+        for i, call in enumerate(json.loads(path.read_text(encoding="utf-8")).get("call_log", [])):
+            gid = call.get("generation_id")
+            if call.get("error") or not gid:
+                continue
+            rec = records.get(gid)
+            if not rec or rec.get("error"):
+                problems.append(f"{path.name} call {i}: no generation record for {gid} ({(rec or {}).get('error', 'not fetched')})")
+            elif rec.get("model") != expected["version"] or rec.get("provider_name") != expected["provider"]:
+                problems.append(f"{path.name} call {i}: generation record names {rec.get('model')!r} / {rec.get('provider_name')!r}, "
+                                f"expected {expected['version']!r} / {expected['provider']!r}")
+    return problems
+
+
 def check_reviewer(directory: Path, expected: dict) -> list[str]:
     problems: list[str] = []
+    want = expected.get("instructions_sha256")
+    if want:
+        f = Path(directory) / "sistema.sha256"
+        got = f.read_text(encoding="utf-8").strip() if f.exists() else None
+        if got != want:
+            problems.append(f"sistema.sha256: instructions fingerprint {got!r}, expected {want!r}")
     for path in sorted(Path(directory).glob("S*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
         if data.get("model") != expected["model"] or data.get("provider") != expected["provider"]:
@@ -67,6 +96,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--expected", type=Path, required=True)
     parser.add_argument("--sessions", type=Path)
+    parser.add_argument("--generations", type=Path)
     parser.add_argument("--verdicts", type=Path)
     parser.add_argument("--reviewer", type=Path)
     args = parser.parse_args()
@@ -74,6 +104,10 @@ def main() -> None:
     problems: list[str] = []
     if args.sessions:
         problems += check_sessions(args.sessions, expected["agent"])
+    if args.generations:
+        if not args.sessions:
+            parser.error("--generations needs --sessions")
+        problems += check_generations(args.sessions, args.generations, expected["agent"])
     if args.verdicts:
         problems += check_verdicts(args.verdicts, expected["judges"])
     if args.reviewer:

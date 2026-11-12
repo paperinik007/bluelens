@@ -104,3 +104,24 @@ def test_the_session_file_records_the_conditions_it_was_asked_for(tmp_path):
     run_cards(_cards(1), lambda: _Script(_say("Done.")), 1, tmp_path, cond)
     saved = json.loads(next(tmp_path.glob("*.json")).read_text(encoding="utf-8"))
     assert saved["conditions"] == cond
+
+
+def test_a_session_that_raises_is_saved_as_a_fault_the_mover_picks_up(tmp_path, monkeypatch):
+    import toy_agent.run_card as rc
+    from toy_agent.sposta_guasti import move_faults
+
+    class _Client:
+        retry_count = 0
+        call_log = [{"generation_id": "g1"}]
+
+    def _boom(card, client, **kw):
+        raise ValueError("boom: a message that must not be saved")
+
+    monkeypatch.setattr(rc, "run_card", _boom)
+    stopped = rc.run_cards(_cards(1), _Client, 1, tmp_path)
+    saved = json.loads((tmp_path / "x0_1.json").read_text(encoding="utf-8"))
+    assert saved["transcript"]["stop_reason"] == "exception" and saved["error_class"] == "ValueError"
+    assert saved["call_log"] == [{"generation_id": "g1"}] and "boom" not in json.dumps(saved)
+    assert stopped is False
+    assert move_faults(tmp_path, tmp_path / "guasto") == [("x0_1.json", "exception")] and not list(tmp_path.glob("*.json"))
+    monkeypatch.undo()

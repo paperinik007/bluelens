@@ -101,6 +101,13 @@ def run_cards(cards: list[dict], make_client, sessions: int, out: Path, conditio
                 record = run_card(card, client)
             except Exception as exc:  # class name only: the message may carry the key
                 print(f"FAILED {target.name}: {exc.__class__.__name__}", flush=True)
+                # Saved as a fault (not silently dropped, not retried at every relaunch): `sposta_guasti` moves it with the others
+                # and the single regeneration of the plan applies to it too.
+                target.write_text(json.dumps({
+                    "case_id": card["case_id"], "error_class": exc.__class__.__name__,
+                    "transcript": {"session_id": None, "turns": [], "stop_reason": "exception"},
+                    "call_log": getattr(client, "call_log", []), "conditions": conditions}, indent=2, ensure_ascii=False),
+                    encoding="utf-8")
                 in_a_row += 1
                 if in_a_row >= max_consecutive_errors:
                     print(f"STOP: {in_a_row} sessions in a row failed", flush=True)
