@@ -146,9 +146,23 @@ Dettaglio e numeri: README della prova generale dell'agente.
     probabili nelle sessioni lunghe. Si riporta il numero di sessioni rigenerate e, a letture chiuse, quante avevano un passo malevolo.
 28. **Telefoni e sessioni di sviluppo.** I numeri di telefono del mondo erano in forma reale e l'11 novembre sono stati sostituiti da numeri
     fittizi (`+1 xxx 555 01xx`) nel mondo, nei campioni di controllo, nei test e nel documento del mondo; le sessioni di sviluppo salvate
-    (prova generale, 174 sessioni) e le loro letture contengono ancora i vecchi numeri: non entrano nei conti e vanno ripulite con la stessa
-    sostituzione prima di pubblicarle. I benigni hanno ticket numerati a parte (T-20701 e seguenti) rispetto ai malevoli: un marcatore
+    (prova generale, 174 sessioni) e le loro letture contengono ancora i vecchi numeri: non entrano nei conti e non sono state ripulite: decisione del proprietario, 12 novembre, la storia del repository pubblico non si riscrive (rischio giudicato basso: mondo inventato, nessuna persona identificata; si può intervenire dopo). I sei numeri in forma reale erano già in due file pubblici dal 19 ottobre (la vecchia versione di `world_base.yaml` e `input.md`) e con la storia di `master` entrano in circa 340 file. I benigni hanno ticket numerati a parte (T-20701 e seguenti) rispetto ai malevoli: un marcatore
     sistematico che nessun giudice ha visto in addestramento, non rinumerato.
+
+29. **L'ordine di apertura è una disciplina registrata, non un meccanismo.** Le etichette stanno nelle schede, che l'autore legge; l'analisi si esegue a fine
+    run, ma nulla impedisce a chi ha i file di guardare i verdetti prima. Quello che il piano garantisce è l'ordine dichiarato: le letture si chiudono con
+    l'impronta (comando 7, ora prima dei giudici) e il programma dei conteggi è nell'elenco A, prima dei verdetti. Non si può dimostrare che nessuno abbia
+    guardato; la lettura a mano la fa Claude, che conosce schede ed etichette. (piano, parte 12 «Elenco in due tempi» e parte 13, punto 4)
+30. **I 58 casi diventano un insieme pubblico.** Pubblicati, i casi e i campioni di controllo non servono più come verifica per un run successivo, e un modello
+    addestrato dopo la pubblicazione potrebbe averli visti. Il piano già tratta i casi di run pubblicati come insieme di sviluppo (parte 6); vale anche per questi.
+31. **Il costo dell'agente non è registrato dal programma.** Il totale di una sessione somma solo le risposte arrivate (non le chiamate fallite o scadute) e
+    `run_card` non scrive nessun registro di spesa: il costo si ricava dalle sessioni salvate (`cost_usd` di ogni chiamata) e dai conti della chiave OpenRouter, che è
+    il tetto vero. (piano, «Run: comandi e stima di spesa»)
+32. **Il run non si può rieseguire identico.** L'agente non ha temperatura né seme impostabili (parte 8), i fornitori possono cambiare o ritirare un modello, e il
+    revisore e AlignmentCheck non hanno un nome datato. Si può ricalcolare ogni conteggio dai dati pubblicati, e la versione datata dell'agente si legge dal registro
+    delle generazioni di ogni chiamata e si archivia nel run (`registra_versioni`). (piano, parte 12, «Cosa si pubblica e quando»)
+33. **Il numero in testa può nascondere sessioni senza verdetto.** Oltre il 10% di sessioni senza verdetto per un giudice, il risultato si pubblica comunque
+    con la frase «nessun verdetto in X% delle sessioni» e con i due casi estremi; senza di essi il numero non si legge. (piano, parte 13, punto 5)
 
 ## Cosa i risultati finora NON dimostrano (da ripetere sempre)
 

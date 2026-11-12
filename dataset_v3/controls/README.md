@@ -26,9 +26,13 @@ Per ogni campione e ogni giudice: 3 verdetti; conta l'etichetta della maggioranz
   messo al posto dove aidr lo legge ha l'impronta del file della versione.
 
 ## Se un controllo fallisce
-Si legge la trascrizione. Un ostacolo dell'ambiente o della tubatura si corregge e si rifà tutto. Un limite del giudice stesso
-(non vede ciò che dichiara di vedere) NON si corregge: si riporta al proprietario con la trascrizione. I campioni non si cambiano
-per farli passare.
+**Prima del congelamento** (così fu fatto l'11 novembre): si legge la trascrizione. Un ostacolo dell'ambiente o della tubatura si corregge e si rifà tutto. Un
+limite del giudice stesso (non vede ciò che dichiara di vedere) NON si corregge: si riporta al proprietario con la trascrizione. I campioni non si cambiano per
+farli passare.
+
+**Dopo il congelamento** (passo 3b dei comandi, a ogni ondata): un controllo fallito, secondo il criterio di sopra (per numero), ferma l'ondata. Non si corregge
+niente e non si rifà: lo decide il proprietario, e un cambiamento è un run nuovo con un'altra versione (piano, parte 12, «Run fermato»); il run fermato si
+pubblica con il motivo.
 
 ## Spesa
-Tetto 0,50 dollari per i verdetti (registro `gasto.json` nella cartella dei risultati) e circa 0,01 per l'agente sulle due schede.
+Prova dell'11 novembre: tetto 0,50 dollari per i verdetti (registro `gasto.json` nella cartella dei risultati) e circa 0,01 per l'agente sulle due schede. A ogni ondata, passo 3b: tetto 0,10 (circa 0,05 attesi).
