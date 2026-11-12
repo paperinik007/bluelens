@@ -1,0 +1,82 @@
+{
+ "gen-1794471727-tSoCmgYTqV5YbIQlezeq": {
+  "model": "openai/gpt-5.4-mini-20260317",
+  "provider_name": "OpenAI",
+  "created_at": "2026-11-12T08:22:07.374Z",
+  "native_tokens_reasoning": 0,
+  "finish_reason": "tool_calls",
+  "upstream_id": "resp_0fecca5f72713cb0016af5772fed0087d18c4ec6e118e121c5"
+ },
+ "gen-1794471728-zfRhcBHtJRBRHlfEva7i": {
+  "model": "openai/gpt-5.4-mini-20260317",
+  "provider_name": "OpenAI",
+  "created_at": "2026-11-12T08:22:08.889Z",
+  "native_tokens_reasoning": 0,
+  "finish_reason": "stop",
+  "upstream_id": "resp_07b696cb1bdc6ee0016af57731413887d19d4a9338cd92e6ad"
+ },
+ "gen-1794471730-dRPFsiIk1ZHUMk2ms786": {
+  "model": "openai/gpt-5.4-mini-20260317",
+  "provider_name": "OpenAI",
+  "created_at": "2026-11-12T08:22:10.417Z",
+  "native_tokens_reasoning": 0,
+  "finish_reason": "tool_calls",
+  "upstream_id": "resp_05b468747f68866b016af57732d21087d1896b91d04d0926aa"
+ },
+ "gen-1794471731-UW7HJiFcEvBfSLo4kwkm": {
+  "model": "openai/gpt-5.4-mini-20260317",
+  "provider_name": "OpenAI",
+  "created_at": "2026-11-12T08:22:11.791Z",
+  "native_tokens_reasoning": 0,
+  "finish_reason": "stop",
+  "upstream_id": "resp_0928b459f5f6c48f016af57734040087d189cd8afb8ce55082"
+ },
+ "gen-1794471733-L4kFTFzHfkeELaBts9Be": {
+  "model": "openai/gpt-5.4-mini-20260317",
+  "provider_name": "OpenAI",
+  "created_at": "2026-11-12T08:22:13.239Z",
+  "native_tokens_reasoning": 0,
+  "finish_reason": "tool_calls",
+  "upstream_id": "resp_025bccc8da614a66016af5773571c087d18b166a529856bcb5"
+ },
+ "gen-1794471734-pr5j9m0mLLsfWzcBZwqn": {
+  "model": "openai/gpt-5.4-mini-20260317",
+  "provider_name": "OpenAI",
+  "created_at": "2026-11-12T08:22:14.448Z",
+  "native_tokens_reasoning": 0,
+  "finish_reason": "stop",
+  "upstream_id": "resp_0701f94f9a4b7e03016af577369f4887d1bbfdf016cbd69e26"
+ },
+ "gen-1794471735-UQE3s6YlW0vQiGx0mzJa": {
+  "model": "openai/gpt-5.4-mini-20260317",
+  "provider_name": "OpenAI",
+  "created_at": "2026-11-12T08:22:15.694Z",
+  "native_tokens_reasoning": 0,
+  "finish_reason": "stop",
+  "upstream_id": "resp_0267e0c8de73272b016af57737df9087d1ad65135d69c961e7"
+ },
+ "gen-1794471737-gMW9KkXQWQ5pw0q3qmW5": {
+  "model": "openai/gpt-5.4-mini-20260317",
+  "provider_name": "OpenAI",
+  "created_at": "2026-11-12T08:22:17.276Z",
+  "native_tokens_reasoning": 0,
+  "finish_reason": "stop",
+  "upstream_id": "resp_026f3e23ffe23f84016af5773970b087d19640cbbc4bff1588"
+ },
+ "gen-1794471738-9yTxFGVqePdw2f15pIEm": {
+  "model": "openai/gpt-5.4-mini-20260317",
+  "provider_name": "OpenAI",
+  "created_at": "2026-11-12T08:22:18.815Z",
+  "native_tokens_reasoning": 0,
+  "finish_reason": "tool_calls",
+  "upstream_id": "resp_09459f24ea0e7f1d016af5773affa887d1abe230322e7abddd"
+ },
+ "gen-1794471740-9MafzBzdPpB8igvtnYwz": {
+  "model": "openai/gpt-5.4-mini-20260317",
+  "provider_name": "OpenAI",
+  "created_at": "2026-11-12T08:22:20.119Z",
+  "native_tokens_reasoning": 0,
+  "finish_reason": "stop",
+  "upstream_id": "resp_09849f8786ba9850016af5773c505c87d198f023d08109a3d9"
+ }
+}
