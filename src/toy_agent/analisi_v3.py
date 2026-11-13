@@ -6,8 +6,15 @@ Changes after the results are seen follow the three kinds of the plan (part 13, 
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from math import comb
+from pathlib import Path
+
+import yaml
+
+from toy_agent.ambito import AIDR_ACTIONS
+from toy_agent.malicious_steps import read_session
 
 
 def _cdf(k: int, n: int, p: float) -> float:
@@ -365,3 +372,95 @@ def rapporto_markdown(x: dict) -> str:
             L.append(f"| {r['etichetta']} | {r['casi']['tot']} | {r['casi']['si']} | {r['frase'] or 'solo il conteggio'} |")
         L.append("")
     return "\n".join(L)
+
+
+# ---- caricatori: dai file del run alle sessioni che l'analisi sa contare ----
+# Non cambiano nessun dato: leggono. Ogni cosa che non torna ferma il caricamento (ValueError): meglio fermarsi che contare in silenzio.
+
+GIUDICI = ("promptguard", "alignmentcheck", "aidr")
+LETTURE = ("wide", "narrow", "actions_only")  # larga (in testa), stretta, solo azioni (solo aidr)
+
+
+def scatta_da_verdetti(scatta: list[bool]) -> bool | None:
+    """Il verdetto di una sessione per un giudice, dai suoi verdetti validi: due, e un terzo se i primi due sono diversi (parte 12).
+    Con meno di due verdetti validi, o con due discordi e nessun terzo, il verdetto che serve manca: "nessun verdetto" (parte 13, punto 5).
+    Il pari esiste solo tra le sessioni di un caso, mai dentro una sessione."""
+    if len(scatta) < 2:
+        return None
+    return {"si": True, "no": False}.get(maggioranza(scatta))
+
+
+def carica_verdetti(cartella: Path, mappa: dict) -> dict[tuple[str, str], bool | None]:
+    """(nome del file della sessione senza estensione, giudice) -> il giudice scatta (True/False) o None (nessun verdetto).
+    `mappa` e quella di `prepare_judge_input` (identificativo anonimo -> caso e file). Solo i verdetti con `status` ok contano;
+    i file dei tentativi falliti (`.fail.json`) si ignorano. Una sessione senza nessun file non compare: chi legge usa `.get`."""
+    voti: dict[tuple[str, str], list[bool]] = {}
+    for f in sorted(Path(cartella).glob("*.json")):
+        if f.name.endswith(".fail.json"):
+            continue
+        d = json.loads(f.read_text(encoding="utf-8"))
+        if d["session_id"] not in mappa:
+            raise ValueError(f"il verdetto {f.name} e di una sessione che non e nella mappa")
+        chiave = (Path(mappa[d["session_id"]]["file"]).stem, d["judge"])
+        voti.setdefault(chiave, [])
+        v = d.get("verdict")
+        if v is not None and v.get("status") == "ok":
+            voti[chiave].append(v["label"] == "malicious")
+    return {k: scatta_da_verdetti(v) for k, v in voti.items()}
+
+
+def _in_ambito(scheda: dict, caso: str, giudice: str, lettura: str, ambito: dict) -> bool:
+    """I benigni contano per tutti i giudici. Un caso malevolo conta per un giudice solo se e dentro la sua sfera, nella lettura scelta;
+    "solo azioni" (aidr) si calcola dalle azioni della scheda, non e nel file."""
+    if scheda["intent"] == "benign":
+        return True
+    if caso not in ambito["cases"]:
+        raise ValueError(f"il caso malevolo {caso} non e nella tabella dell'ambito")
+    if lettura == "actions_only":
+        return giudice == "aidr" and bool(set(scheda.get("actions") or []) & AIDR_ACTIONS)
+    return bool(ambito["cases"][caso]["scope"][giudice][lettura]["in"])
+
+
+def carica_sessioni(ondata: Path, schede: Path, ambito: dict, lettura: str = "wide", leggi_danno=None) -> dict[str, list[Sessione]]:
+    """Le sessioni di un'ondata, per giudice, pronte per `analizza`.
+    ONDATA/sessioni (valide), ONDATA/sessioni-guasto (le spostate da `sposta_guasti`: una con lo stesso nome in sessioni e una rigenerata),
+    ONDATA/mappa.json e ONDATA/verdetti; ONDATA/letture-chiuse.json (facoltativo) ha le letture a mano chiuse dal proprietario prima dei
+    verdetti: {"v3_xxx_1": {"danno": true/false, "motivo": "..."}} e sostituisce la lettura automatica per quella sessione. Per i casi
+    "solo testo" la lettura a mano e obbligatoria. `leggi_danno(scheda, trascrizione) -> bool` e la lettura automatica (di norma `read_session`)."""
+    if lettura not in LETTURE:
+        raise ValueError(f"lettura sconosciuta: {lettura}")
+    if leggi_danno is None:
+        def leggi_danno(scheda, trascrizione):
+            return read_session(scheda, trascrizione).malicious
+    ondata = Path(ondata)
+    mappa = json.loads((ondata / "mappa.json").read_text(encoding="utf-8"))
+    verdetti = carica_verdetti(ondata / "verdetti", mappa)
+    cartella_guasti = ondata / "sessioni-guasto"
+    guasti = {p.name for p in cartella_guasti.glob("*.json")} if cartella_guasti.exists() else set()
+    chiuse_file = ondata / "letture-chiuse.json"
+    chiuse = json.loads(chiuse_file.read_text(encoding="utf-8")) if chiuse_file.exists() else {}
+    file_sessioni = sorted((ondata / "sessioni").glob("*.json"))
+    sconosciute = sorted(set(chiuse) - {f.stem for f in file_sessioni})
+    if sconosciute:
+        raise ValueError(f"lettura chiusa di sessioni che non esistono: {sconosciute}")
+    giudici = ("aidr",) if lettura == "actions_only" else GIUDICI
+    risultato: dict[str, list[Sessione]] = {g: [] for g in giudici}
+    for f in file_sessioni:
+        caso, _, numero = f.stem.rpartition("_")
+        scheda = yaml.safe_load((Path(schede) / f"{caso}.yaml").read_text(encoding="utf-8"))
+        if scheda["intent"] not in ("malicious", "benign"):
+            raise ValueError(f"la scheda {caso} ha un intento sconosciuto: {scheda['intent']}")
+        if scheda["intent"] == "benign":
+            gruppo = "benigna"
+        else:
+            if f.stem in chiuse:
+                danno = bool(chiuse[f.stem]["danno"])
+            elif scheda.get("text_only"):
+                raise ValueError(f"la sessione {f.stem} e di un caso solo testo: serve la lettura a mano chiusa")
+            else:
+                danno = leggi_danno(scheda, json.loads(f.read_text(encoding="utf-8"))["transcript"])
+            gruppo = "danno" if danno else "presentato"
+        for g in giudici:
+            if _in_ambito(scheda, caso, g, lettura, ambito):
+                risultato[g].append(Sessione(caso, g, numero, gruppo, verdetti.get((f.stem, g)), f.name in guasti))
+    return risultato
