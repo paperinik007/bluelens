@@ -528,3 +528,116 @@ def test_a_closed_reading_that_matches_no_session_stops_the_loading(tmp_path):
     (ond / "letture-chiuse.json").write_text(json.dumps({"v3_a01_9": {"danno": True, "motivo": "refuso"}}), encoding="utf-8")
     with pytest.raises(ValueError):
         a.carica_sessioni(ond, schede, _tre(), leggi_danno=_danno)
+
+
+# ---- le ondate sommate e la scrittura su file ----
+
+def _S(caso, giudice="aidr", n="1", gruppo="presentato", scatta=True):
+    return a.Sessione(caso, giudice, n, gruppo, scatta)
+
+
+def test_the_waves_of_a_run_are_summed_per_judge():
+    o1 = {"aidr": [_S("c1")], "promptguard": [_S("c1", "promptguard")]}
+    o2 = {"aidr": [_S("c2")], "promptguard": [_S("c2", "promptguard")]}
+    out = a.unisci_ondate([o1, o2])
+    assert [s.caso for s in out["aidr"]] == ["c1", "c2"]
+    assert [s.caso for s in out["promptguard"]] == ["c1", "c2"]
+
+
+def test_the_same_case_in_two_waves_stops_the_sum():
+    with pytest.raises(ValueError):
+        a.unisci_ondate([{"aidr": [_S("c1")]}, {"aidr": [_S("c1", n="2")]}])
+
+
+def test_waves_that_do_not_have_the_same_judges_stop_the_sum():
+    with pytest.raises(ValueError):
+        a.unisci_ondate([{"aidr": [_S("c1")]}, {"aidr": [_S("c2")], "promptguard": []}])
+
+
+def test_a_sum_of_no_waves_is_refused():
+    with pytest.raises(ValueError):
+        a.unisci_ondate([])
+
+
+def test_the_report_and_the_json_are_written_from_the_same_calculation(tmp_path):
+    x = _analisi()
+    md, js = a.scrivi_uscite(x, tmp_path, "aidr-larga")
+    assert (md.name, js.name) == ("aidr-larga.md", "aidr-larga.json")
+    assert md.read_text(encoding="utf-8") == a.rapporto_markdown(x)
+    assert json.loads(js.read_text(encoding="utf-8")) == json.loads(json.dumps(x))
+
+
+def test_the_files_have_the_same_bytes_on_every_machine_so_their_fingerprint_can_be_compared(tmp_path):
+    md, js = a.scrivi_uscite(_analisi(), tmp_path, "r")
+    assert b"\r" not in md.read_bytes() and b"\r" not in js.read_bytes()
+
+
+def test_an_output_that_already_exists_is_never_overwritten(tmp_path):
+    a.scrivi_uscite(_analisi(), tmp_path, "r")
+    with pytest.raises(FileExistsError):
+        a.scrivi_uscite(_analisi(), tmp_path, "r")
+
+
+def test_when_one_of_the_two_files_already_exists_the_other_is_not_written(tmp_path):
+    (tmp_path / "r.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(FileExistsError):
+        a.scrivi_uscite(_analisi(), tmp_path, "r")
+    assert not (tmp_path / "r.md").exists()
+
+
+def _ambito_tutti():
+    return _ambito(promptguard=(True, True), alignmentcheck=(True, True), aidr=(True, True))
+
+
+def test_the_run_writes_one_report_and_one_json_per_judge_and_per_reading(tmp_path):
+    ond, schede = _ondata(tmp_path)
+    out = tmp_path / "out"
+    files = a.analizza_ondate([ond], schede, _ambito_tutti(), out, leggi_danno=_danno)
+    nomi = sorted(p.name for p in files)
+    # larga e stretta: tre giudici; solo azioni: solo aidr; ognuna con un .md e un .json
+    assert nomi == sorted(f"{g}-{lett}.{ext}" for g, lett in [
+        ("promptguard", "larga"), ("alignmentcheck", "larga"), ("aidr", "larga"),
+        ("promptguard", "stretta"), ("alignmentcheck", "stretta"), ("aidr", "stretta"),
+        ("aidr", "solo-azioni")] for ext in ("md", "json"))
+    assert sorted(p.name for p in out.iterdir()) == nomi
+
+
+def test_each_json_names_its_judge_and_its_reading(tmp_path):
+    ond, schede = _ondata(tmp_path)
+    out = tmp_path / "out"
+    a.analizza_ondate([ond], schede, _ambito_tutti(), out, leggi_danno=_danno)
+    pg = json.loads((out / "promptguard-larga.json").read_text(encoding="utf-8"))
+    assert (pg["giudice"], pg["lettura"]) == ("PromptGuard", "larga")
+    az = json.loads((out / "aidr-solo-azioni.json").read_text(encoding="utf-8"))
+    assert (az["giudice"], az["lettura"]) == ("aidr", "solo azioni")
+
+
+def test_a_case_listed_in_two_waves_stops_the_run_and_writes_nothing(tmp_path):
+    ond, schede = _ondata(tmp_path)
+    out = tmp_path / "out"
+    with pytest.raises(ValueError):
+        a.analizza_ondate([ond, ond], schede, _ambito_tutti(), out, leggi_danno=_danno)
+    assert not out.exists() or not list(out.iterdir())
+
+
+def test_an_existing_output_stops_the_whole_run_before_writing_any_file(tmp_path):
+    ond, schede = _ondata(tmp_path)
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "aidr-stretta.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(FileExistsError):
+        a.analizza_ondate([ond], schede, _ambito_tutti(), out, leggi_danno=_danno)
+    assert [p.name for p in out.iterdir()] == ["aidr-stretta.json"]
+
+
+def test_the_command_line_runs_the_whole_chain_and_prints_only_file_names(tmp_path, capsys):
+    ond, schede = _ondata(tmp_path)
+    ambito_file = tmp_path / "ambito.json"
+    ambito_file.write_text(json.dumps(_ambito_tutti()), encoding="utf-8")
+    out = tmp_path / "out"
+    rc = a.main([str(ond), "--schede", str(schede), "--ambito", str(ambito_file), "--out", str(out)], leggi_danno=_danno)
+    assert rc == 0
+    stampato = capsys.readouterr().out
+    assert "aidr-larga.md" in stampato and "aidr-larga.json" in stampato
+    assert "Frase d'apertura" not in stampato
+    assert (out / "aidr-larga.md").exists()

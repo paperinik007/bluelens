@@ -6,6 +6,7 @@ Changes after the results are seen follow the three kinds of the plan (part 13, 
 """
 from __future__ import annotations
 
+import argparse
 import json
 from dataclasses import dataclass
 from math import comb
@@ -464,3 +465,83 @@ def carica_sessioni(ondata: Path, schede: Path, ambito: dict, lettura: str = "wi
             if _in_ambito(scheda, caso, g, lettura, ambito):
                 risultato[g].append(Sessione(caso, g, numero, gruppo, verdetti.get((f.stem, g)), f.name in guasti))
     return risultato
+
+
+# ---- le ondate sommate, la scrittura su file e la riga di comando ----
+
+NOMI_GIUDICE = {"promptguard": "PromptGuard", "alignmentcheck": "AlignmentCheck", "aidr": "aidr"}
+NOMI_LETTURA = {"wide": "larga", "narrow": "stretta", "actions_only": "solo azioni"}
+
+
+def unisci_ondate(ondate: list[dict[str, list[Sessione]]]) -> dict[str, list[Sessione]]:
+    """Le ondate di un run si sommano. Un caso sta in una sola ondata (`ondate.json`): se ne compare in due, o se le ondate non hanno
+    gli stessi giudici, qualcosa non torna e si ferma, invece di sommare in silenzio."""
+    if not ondate:
+        raise ValueError("nessuna ondata da sommare")
+    giudici = set(ondate[0])
+    if any(set(o) != giudici for o in ondate):
+        raise ValueError("le ondate non hanno gli stessi giudici")
+    somma: dict[str, list[Sessione]] = {g: [] for g in ondate[0]}
+    ondata_del_caso: dict[str, int] = {}
+    for i, o in enumerate(ondate):
+        for caso in {s.caso for ss in o.values() for s in ss}:
+            if caso in ondata_del_caso:
+                raise ValueError(f"il caso {caso} compare in due ondate")
+            ondata_del_caso[caso] = i
+        for g, ss in o.items():
+            somma[g].extend(ss)
+    return somma
+
+
+def scrivi_uscite(x: dict, cartella: Path, base: str) -> tuple[Path, Path]:
+    """Scrive il rapporto (`base`.md) e il JSON (`base`.json) dello stesso calcolo. Non sovrascrive mai: un'uscita esistente ferma tutto
+    (una correzione si pubblica prima e dopo, parte 13, «modifiche dopo aver visto i risultati»). Stessi byte su ogni macchina (a capo
+    `\\n`), cosi l'impronta si puo confrontare."""
+    cartella = Path(cartella)
+    md, js = cartella / f"{base}.md", cartella / f"{base}.json"
+    esistenti = [p.name for p in (md, js) if p.exists()]
+    if esistenti:
+        raise FileExistsError(f"l'uscita esiste gia, non si sovrascrive: {', '.join(esistenti)}")
+    testi = ((md, rapporto_markdown(x)), (js, json.dumps(x, ensure_ascii=False, indent=2) + "\n"))
+    cartella.mkdir(parents=True, exist_ok=True)
+    for p, testo in testi:
+        with open(p, "x", encoding="utf-8", newline="\n") as f:
+            f.write(testo)
+    return md, js
+
+
+def analizza_ondate(ondate: list[Path], schede: Path, ambito: dict, out: Path, leggi_danno=None) -> list[Path]:
+    """Dalle ondate del run ai file: per ogni lettura (larga, stretta, solo azioni) e per ogni giudice, un rapporto e un JSON.
+    Tutto si calcola prima di scrivere e se un solo file di uscita esiste gia non se ne scrive nessuno."""
+    lavori = []
+    for lettura in LETTURE:
+        per_giudice = unisci_ondate([carica_sessioni(o, schede, ambito, lettura, leggi_danno) for o in ondate])
+        for g, sessioni in per_giudice.items():
+            base = f"{g}-{NOMI_LETTURA[lettura].replace(' ', '-')}"
+            lavori.append((base, analizza(NOMI_GIUDICE[g], sessioni, lettura=NOMI_LETTURA[lettura])))
+    out = Path(out)
+    esistenti = [f"{base}.{ext}" for base, _ in lavori for ext in ("md", "json") if (out / f"{base}.{ext}").exists()]
+    if esistenti:
+        raise FileExistsError(f"le uscite esistono gia, non si sovrascrivono: {', '.join(esistenti)}")
+    files: list[Path] = []
+    for base, x in lavori:
+        files.extend(scrivi_uscite(x, out, base))
+    return files
+
+
+def main(argv: list[str] | None = None, leggi_danno=None) -> int:
+    p = argparse.ArgumentParser(prog="python -m toy_agent.analisi_v3",
+                                description="Conteggi e rapporti del run: un rapporto e un JSON per giudice e per lettura.")
+    p.add_argument("ondate", nargs="+", type=Path, help="le cartelle delle ondate del run (sessioni, verdetti, mappa.json)")
+    p.add_argument("--schede", type=Path, required=True, help="la cartella delle schede dei casi")
+    p.add_argument("--ambito", type=Path, required=True, help="dataset_v3/ambito.json")
+    p.add_argument("--out", type=Path, required=True, help="la cartella delle uscite (non si sovrascrive nulla)")
+    args = p.parse_args(argv)
+    ambito = json.loads(args.ambito.read_text(encoding="utf-8"))
+    for f in analizza_ondate(args.ondate, args.schede, ambito, args.out, leggi_danno):
+        print(f)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
