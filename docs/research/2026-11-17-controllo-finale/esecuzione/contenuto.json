@@ -1,0 +1,76 @@
+{
+ "commit": "63780f18b2ecaae282cd4ff29d80bbedd87c0916",
+ "base_delle_differenze": "e2325fb",
+ "parti": [
+  {
+   "titolo": "DIFFERENZE: git diff da e2325fb (testo visto dal council) a HEAD",
+   "caratteri": 57576,
+   "sha256": "44b33573c71dfd2a77a41e8bb3be158ec4951d1536155794ac24a4b88dc9d79b"
+  },
+  {
+   "titolo": "ELENCO A (BOZZA, vista compatta)",
+   "caratteri": 7318,
+   "sha256": "b9a8c8388e19643b7e92efca303726966a92693fcfdc611fe2abebf43f6a8bec"
+  },
+  {
+   "titolo": "PROGRAMMI NUOVI: src/toy_agent/analisi_v3.py",
+   "caratteri": 35819,
+   "sha256": "d7da32a5c92c6cca610af06bb809ac4c14d060c4603a7e0f0529d2e608dfa552"
+  },
+  {
+   "titolo": "PROGRAMMI NUOVI: src/toy_agent/elenco_a.py",
+   "caratteri": 17331,
+   "sha256": "c9019541e8b37b74d8a7507d3f28f7c2d9141369847d831d8f145b1b69693b15"
+  },
+  {
+   "titolo": "PROGRAMMI NUOVI: src/toy_agent/registra_versioni.py",
+   "caratteri": 3836,
+   "sha256": "5f65b3815442e2b0b01828d00f6cd8ba663a948799aa137ed4f166b91af8e19f"
+  },
+  {
+   "titolo": "NOMI DEI TEST (il codice dei test non è incollato)",
+   "caratteri": 10912,
+   "sha256": "6bad76836578f232f587853d199002549e8e83eea7a9ff5bd7f27a937ba0cef9"
+  },
+  {
+   "titolo": "PIANO COMPLETO a HEAD: docs/design/2026-10-11-piano-run-v3.md",
+   "caratteri": 172681,
+   "sha256": "a9ce68e3a46e8ed9776f64b66c0f28b9e9627fa6c75f799a92baba763ed3f92a"
+  },
+  {
+   "titolo": "PAGINA DEI LIMITI GIÀ DICHIARATI: docs/design/2026-11-05-limiti-dichiarati-run-v3.md",
+   "caratteri": 18747,
+   "sha256": "86c9879ffe03ddf3bdfbaed8be99f1dc806b3ce2ec0bf520031246fe8c6d1d8a"
+  },
+  {
+   "titolo": "PRINCIPI DEL PROGETTO: SPIRIT.md",
+   "caratteri": 7417,
+   "sha256": "85934a7173f5313478a12268f18e50b6aaf6babe8d06797fc54818c167dae6df"
+  },
+  {
+   "titolo": "GIÀ VALUTATO: docs/research/2026-11-12-council-congelamento.md",
+   "caratteri": 4923,
+   "sha256": "6140f548168b0aa55eed017be35d8368c091f093ea07e6c6e8d8b9bd1efea49c"
+  },
+  {
+   "titolo": "GIÀ VALUTATO: docs/research/2026-11-12-lettura-coerenza.md",
+   "caratteri": 4003,
+   "sha256": "b46401a1a6f1ea1b6b00ffc14dc9b98010515902bc7c679456a7bec3570288ee"
+  },
+  {
+   "titolo": "GIÀ VALUTATO: docs/research/2026-11-11-specialisti-congelamento/VALUTAZIONE-metodologia.md",
+   "caratteri": 9493,
+   "sha256": "28de2070c8a64f81735a55bf97137d64a5f45234951545aacd850c5406c60c33"
+  },
+  {
+   "titolo": "GIÀ VALUTATO: docs/research/2026-11-11-specialisti-congelamento/VALUTAZIONE-sicurezza-integrita.md",
+   "caratteri": 8935,
+   "sha256": "f50b6785d44b30a288c9e231cc1a628a924ed7401754fc2aebf59b265285c1c2"
+  },
+  {
+   "titolo": "GIÀ VALUTATO: docs/research/2026-11-12-prova-comandi-nuovi/ESITO.md",
+   "caratteri": 4387,
+   "sha256": "6eaa33886d8d94fb87201c7a095917f8dd20849cc1d07bfa6c380dc8fbcd164a"
+  }
+ ]
+}
