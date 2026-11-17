@@ -397,6 +397,13 @@ def test_a_list_without_images_cannot_be_used_to_check_them(tmp_path):
         e.main(["verifica-immagini", str(out)], docker=DockerFinto({}))
 
 
+def test_the_files_behind_the_label_looks_like_a_test_are_in_the_list_because_the_analysis_reads_them():
+    giusti = {"docs/research/2026-11-05-revisore/schede-plausibilita/plausibilita.json",
+              "docs/research/2026-11-05-revisore/schede-plausibilita/mappa.json",
+              "docs/research/2026-11-05-revisore/istruzioni-plausibilita.md"}
+    assert set(e.GRUPPI["etichette_plausibilita"]) == giusti
+
+
 def test_the_real_list_names_the_three_images_of_the_run():
     assert {i["nome"] for i in e.IMMAGINI.values()} == {
         "agentic-security-audits-detector:latest", "agentic-security-audits-detector-llamafirewall:latest",

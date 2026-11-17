@@ -814,8 +814,25 @@ def test_a_plausibility_label_of_a_case_that_does_not_exist_stops_the_run(tmp_pa
         a.costruisci_etichette(schede, ambito, troppa)
 
 
-def test_the_four_pairs_of_almost_equal_cases_are_the_ones_the_plan_names():
-    assert a.COPPIE == (("v3_n01", "v3_n04"), ("v3_n05", "v3_n06"), ("v3_n12", "v3_n13"), ("v3_n09", "v3_n20"))
+def test_only_the_two_pairs_that_are_the_same_test_are_counted_once_and_the_two_contrasts_never():
+    assert a.COPPIE == (("v3_n01", "v3_n04"), ("v3_n05", "v3_n06"))
+    for contrasto in (("v3_n12", "v3_n13"), ("v3_n09", "v3_n20")):
+        assert contrasto not in a.COPPIE
+
+
+def test_a_contrast_in_the_same_row_stays_two_cases_even_when_the_judge_answers_the_same():
+    ss = caso_con("v3_n12", True, True, True) + caso_con("v3_n13", True, True, True)
+    r = _righe(ss, {"v3_n12": "richiesta", "v3_n13": "richiesta"}, coppie=a.COPPIE)["richiesta"]
+    assert r["coppie"] == r["casi"] and r["coppie"].tot == 2
+
+
+def test_a_same_test_pair_in_the_same_row_counts_once_with_the_real_list():
+    ss = caso_con("v3_n01", True, True, True) + caso_con("v3_n04", True, True, True)
+    r = _righe(ss, {"v3_n01": "x", "v3_n04": "x"}, coppie=a.COPPIE)["x"]
+    assert (r["casi"].tot, r["coppie"].tot) == (2, 1)
+
+
+def test_the_fixed_lists_of_the_plan_for_the_false_alarm_rows_are_the_ones_it_names():
     assert a.CON_TICKET_PIANO == frozenset({"v3_b01", "v3_b04", "v3_b06", "v3_b08"})
 
 

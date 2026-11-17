@@ -28,6 +28,9 @@ GRUPPI: dict[str, list[str]] = {
                   "docs/design/2026-10-19-mondo-base.md", "docs/design/2026-10-11-sfere-giudici.md",
                   "docs/design/2026-11-05-limiti-dichiarati-run-v3.md"],
     "istruzioni": [f"{REV}/istruzioni-revisore.md", f"{REV}/istruzioni-schede.md"],
+    # the label «sembra un test» that `analisi_v3` reads (plan, part 13, point 8): fixed before the verdicts, so it is in the list
+    "etichette_plausibilita": [f"{REV}/istruzioni-plausibilita.md", f"{REV}/schede-plausibilita/plausibilita.json",
+                               f"{REV}/schede-plausibilita/mappa.json"],
     "programmi": ["src/toy_agent/analisi_v3.py", "tests/toy_agent/test_analisi_v3.py", "src/toy_agent/elenco_a.py",
                   "tests/toy_agent/test_elenco_a.py", "src/toy_agent/ondate.py", "src/toy_agent/ambito.py",
                   "src/toy_agent/check_conditions.py", "src/toy_agent/sposta_guasti.py", "src/toy_agent/registra_versioni.py",
