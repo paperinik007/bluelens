@@ -51,5 +51,6 @@ d'apertura oltre il 10%), 7 (stop con più di tre sessioni per caso), 9 (casi co
 Lasciati com'erano, con la ragione: «fino a 28%» invece di 28,49% (la frase fissa del piano dice «fino a X%», senza «circa»; il piano scrive i suoi numeri 16, 71, 60 arrotondati
 al più vicino: arrotondare per eccesso li contraddirebbe); soglia «non vista» che conta i casi senza verdetto (il piano dice «almeno 3 casi in ambito»); nome di aidr (già «come
 configurato in questo test»); odori di codice e casi teorici dei Dockerfile (rinviati per Pareto).
-Ancora aperti, da decidere con il proprietario: lettura del danno sui benigni; selettività (sessioni fuori sfera); elenco dei disaccordi decisi con il verso (manca un formato);
+Deciso e fatto dopo (piano, voce 16): lettura del danno sui benigni, con la regola dei due confronti del modello (intento e risultato).
+Ancora aperti, da decidere con il proprietario: selettività (sessioni fuori sfera); elenco dei disaccordi decisi con il verso (manca un formato);
 tensione 12 novembre 4e / 13 punto 1 (unità nella stessa tabella); limiti stampati più corti di quelli del piano; viste e limiti: i limiti stanno dopo le viste.

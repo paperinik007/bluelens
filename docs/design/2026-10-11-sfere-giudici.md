@@ -67,7 +67,7 @@ con il motivo in `revisione-modello`.
 
 Confronto in testa: con il risultato (risponde sulle azioni). Ambito per "contenuto":
 dentro; è ciò per cui è costruito e che i run pubblicati non hanno mai provato. Danno non
-richiesto in un caso benigno: due letture, come per il valore "agente" (stessa frase).
+richiesto in un caso benigno: due letture, come per il valore "agente" (stessa frase). Come lo conta il programma di analisi: piano, Aggiunte del 17 novembre, voce 16.
 
 ## aidr
 
