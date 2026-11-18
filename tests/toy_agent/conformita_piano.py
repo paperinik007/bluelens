@@ -10,8 +10,14 @@ dicono come si passa dai verdetti ai numeri e coperta da almeno una regola o da 
 LIMITE, scritto qui: la scansione delle voci parte dalla parte 13 e arriva a «Controlli sul piano». Le regole che il conteggio usa e che stanno
 in parti precedenti (parte 6 regola 6 sul segnale presentato, parte 7 su errori e ripetizioni, parte 11 sui casi «agente») sono registrate a
 mano (S6a-c, P7, P11): se ne nasce una nuova in quelle parti, nessun controllo la vede da solo. Una regola nuova va aggiunta qui quando si scrive.
+
+COSA LA MATRICE NON PROVA (lettura a freddo del 18 novembre, `docs/research/2026-11-18-lettura-a-freddo/`): controlla che la citazione del piano
+esista e che i test nominati esistano. NON controlla che quei test fallirebbero se la regola fosse rotta: una voce con test banali risulta «coperta».
+Il caso trovato: il piano fissava «4 casi non bastano a dire che…», il codice scriveva «Pochi casi non bastano…» e la voce passava. Le voci di cui il
+revisore a freddo ha mostrato che il test prova meno della regola portano, in `NOTE_DEBOLI`, la nota scritta di cosa NON provano: una voce con nota
+non va letta come «provata». Una voce con molte regole (13.8, 8b) risulta coperta anche con una sola citazione.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 PIANO = "docs/design/2026-10-11-piano-run-v3.md"
 
@@ -210,6 +216,16 @@ REGOLE: tuple[Regola, ...] = (
       ["test_the_closed_hand_readings_leave_a_trace_with_the_fingerprint_of_the_file", "test_without_a_closed_readings_file_the_trace_says_so"]),
     R("17.12", "Aggiunte 17 novembre, voce 12", "Per giudice il rapporto riporta i tentativi falliti",
       ["test_errors_repeats_lost_verdicts_and_third_verdicts_are_counted_per_judge", "test_the_verdict_problems_are_in_the_data_and_in_the_report"]),
+    R("17.15", "Aggiunte 17 novembre, voce 15", "Correzioni dalla lettura a freddo del 18 novembre",
+      ["test_the_closure_follows_every_static_import_in_the_package_also_inside_functions",
+       "test_the_programs_group_is_completed_by_the_closure_and_the_check_sees_a_change_in_an_imported_module",
+       "test_the_real_programs_group_is_closed_and_holds_the_modules_the_numbers_pass_through",
+       "test_an_empty_folder_or_a_session_without_call_log_is_a_problem_not_a_silent_pass",
+       "test_the_extremes_count_the_expected_cases_with_no_session_and_compare_the_whole_count_not_only_the_recognised",
+       "test_a_benign_case_with_a_ticket_and_no_session_stays_in_the_total_and_is_named",
+       "test_over_the_threshold_the_opening_sentence_carries_the_two_extremes_of_the_attempt",
+       "test_more_than_three_valid_sessions_for_a_case_stop_the_program_instead_of_being_counted",
+       "test_the_harm_result_lists_also_the_cases_not_recognised_and_says_the_agreement_does_not_hold_for_new_cases"]),
     R("17.14", "Aggiunte 17 novembre, voce 14", "Regole del piano che il rapporto non applicava, trovate dalla matrice di conformità",
       ["test_the_groups_table_says_on_how_many_distinct_cases_each_row_rests", "test_the_harm_result_has_the_two_extreme_readings_of_the_missing_verdicts",
        "test_the_views_carry_the_harm_result_box_by_box_and_say_not_proven_where_nobody_does_the_step",
@@ -238,3 +254,29 @@ ESCLUSE: dict[tuple[str, str], str] = {
                                                      "il programma non sovrascrive mai, quindi restano le due uscite",
     ("Buchi trovati nella revisione in blocco", "4"): "tempo scaduto dell'agente: limite del run, non un conteggio",
 }
+
+
+# Lettura a freddo del 18 novembre: test aggiunti alle voci toccate dalle correzioni e voci il cui test prova meno della regola.
+TEST_AGGIUNTI: dict[str, tuple[str, ...]] = {
+    "B1c": ("test_more_than_three_valid_sessions_for_a_case_stop_the_program_instead_of_being_counted",),
+    "17.10": ("test_the_extremes_count_the_expected_cases_with_no_session_and_compare_the_whole_count_not_only_the_recognised",
+              "test_a_benign_case_with_a_ticket_and_no_session_stays_in_the_total_and_is_named"),
+    "A11.5": ("test_the_harm_result_lists_also_the_cases_not_recognised_and_says_the_agreement_does_not_hold_for_new_cases",),
+    "13.5c": ("test_the_extremes_count_the_expected_cases_with_no_session_and_compare_the_whole_count_not_only_the_recognised",),
+    "13.5d": ("test_over_the_threshold_the_opening_sentence_carries_the_two_extremes_of_the_attempt",),
+}
+
+NOTE_DEBOLI: dict[str, str] = {
+    "13.3c": "DEBOLE: il test controlla solo i nomi dei file; «nessuna classifica» non e provata per esecuzione.",
+    "13.6a": "DEBOLE: il test riguarda i falsi allarmi, non il confronto del tentativo con l'intento dopo un rifiuto.",
+    "13.8": "DEBOLE: il test cerca parole scritte dallo stesso codice; la voce ha piu regole e basta una citazione per coprirla.",
+    "13.9": "DEBOLE: il test blocca il nome debole del prodotto, non la regola per intero (nome di aidr e limiti del piano, riga ~971).",
+    "A11.8b-a": "DEBOLE: i test provano solo «nessun tasso unico»; «divisi per luogo» non e provato (la vista per forma somma richiesta e contenuto).",
+    "A12.2": "DEBOLE: il test non guarda la sezione dei limiti, che sta dopo le viste.",
+    "A12.4e": "DEBOLE: il test controlla solo i titoli; la tabella dei gruppi mette «Casi distinti» accanto alle sessioni (voce 13.1 del piano: tensione "
+              "tra 12.4e e 13.1, da decidere).",
+    "A11.6": "PARZIALE: la frase sull'accordo e ora nel rapporto; l'elenco dei disaccordi decisi con il verso della decisione NON c'e (serve un formato "
+             "del file delle letture chiuse, da decidere).",
+}
+REGOLE = tuple(replace(r, test=r.test + TEST_AGGIUNTI.get(r.id, ()),
+                       nota=" ".join(x for x in (r.nota, NOTE_DEBOLI.get(r.id, "")) if x)) for r in REGOLE)

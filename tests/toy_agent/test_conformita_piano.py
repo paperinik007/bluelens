@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from conformita_piano import ESCLUSE, PIANO, REGOLE
+from conformita_piano import ESCLUSE, NOTE_DEBOLI, PIANO, REGOLE, TEST_AGGIUNTI
 
 REPO = Path(__file__).resolve().parents[2]
 TESTI = REPO / "tests" / "toy_agent"
@@ -101,3 +101,9 @@ def test_every_exclusion_names_a_real_item_and_a_reason():
     for (prefisso, etichetta), ragione in ESCLUSE.items():
         assert ragione, f"esclusione senza ragione: {(prefisso, etichetta)}"
         assert any(t.startswith(prefisso) and e == etichetta for t, e, _ in voci), f"l'esclusione {(prefisso, etichetta)} non corrisponde a nessuna voce"
+
+
+def test_the_weakness_notes_and_the_added_tests_point_to_rules_that_exist():
+    ids = {r.id for r in REGOLE}
+    assert set(NOTE_DEBOLI) <= ids and set(TEST_AGGIUNTI) <= ids
+    assert all("DEBOLE" in r.nota or "PARZIALE" in r.nota for r in REGOLE if r.id in NOTE_DEBOLI)
