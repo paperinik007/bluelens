@@ -1,0 +1,65 @@
+{
+ "commit": "70cd94aa828197b05a497fa07f41a487f4befdcf",
+ "parti": [
+  {
+   "titolo": "ANALISI DI CLAUDE",
+   "caratteri": 4118,
+   "sha256": "32804ae62cec33efbe902504f1fc7b92d70ec012ac9325d76c7c44ff4e1f5b3f"
+  },
+  {
+   "titolo": "PIANO, parte sulla copertura (righe 372-376)",
+   "caratteri": 267,
+   "sha256": "faac06b98ebf0a90b9c5ad91b449b38c561bf1164ce7d25c0025f4adebf5fdd1"
+  },
+  {
+   "titolo": "PIANO, parte sul dataset: «selettività senza casi in più» (righe 396-404)",
+   "caratteri": 614,
+   "sha256": "fa22b767f1334cfbc78e92340418c01194097a7b865e4a038e81dbe91bf71573"
+  },
+  {
+   "titolo": "PIANO, tabella dell'ambito atteso per giudice (righe 651-660)",
+   "caratteri": 1086,
+   "sha256": "55060cf0c5f847fab83230d9eddda57222605aba1b8461163ab4f775ebb28e91"
+  },
+  {
+   "titolo": "PIANO, parte 13 punto 3: affermazioni ammesse (righe 1563-1567)",
+   "caratteri": 398,
+   "sha256": "31e57aeaa6999b71ffd923e16f6f0d956f182704be3cdb822f301b1e12fcd391"
+  },
+  {
+   "titolo": "PIANO, Aggiunte del 12 novembre, punto 6: modifiche dopo aver visto i risultati",
+   "caratteri": 1492,
+   "sha256": "0eb320c89f8dc53f49cfd0bede242b88adfd5930ddf7e3c19ca26028d507324d"
+  },
+  {
+   "titolo": "PIANO, Aggiunte del 17 novembre, voce 7: cosa si scrive dopo il congelamento",
+   "caratteri": 780,
+   "sha256": "a01b4bccf5229b51730b91b9cadbe422ceb49a772b5e7f878bb5d3799635f6a9"
+  },
+  {
+   "titolo": "PAGINA DELLE SFERE, riga 47 (PromptGuard, forma esplicita)",
+   "caratteri": 228,
+   "sha256": "eb2c41e0426efebd7abcc1901b7af32065589d3c7da92c2da8da994a3eeeb942"
+  },
+  {
+   "titolo": "CODICE analisi_v3.py: appartenenza di un caso alla sfera di un giudice",
+   "caratteri": 684,
+   "sha256": "4860d6caf93713b1f7c341d01983e6e6af60fffe19c0e2f9624066a696ee2d12"
+  },
+  {
+   "titolo": "CODICE analisi_v3.py: dove si scartano le sessioni fuori sfera",
+   "caratteri": 234,
+   "sha256": "b23fb4198df754487d54489367126e12cfc67977d81838bc3c74d8440432b832"
+  },
+  {
+   "titolo": "PRINCIPI DEL PROGETTO (SPIRIT.md, per intero)",
+   "caratteri": 7417,
+   "sha256": "85934a7173f5313478a12268f18e50b6aaf6babe8d06797fc54818c167dae6df"
+  },
+  {
+   "titolo": "LA TUA DOMANDA",
+   "caratteri": 960,
+   "sha256": "c4b003405d069afa2f72b69e003f0dc1636aa72818640cf9effa06766cddf244"
+  }
+ ]
+}
