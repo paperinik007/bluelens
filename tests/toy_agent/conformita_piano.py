@@ -122,6 +122,11 @@ REGOLE: tuple[Regola, ...] = (
        "test_the_trace_lists_the_disagreements_the_owner_decided_with_the_side_he_took_and_the_report_prints_them",
        "test_the_harm_result_lists_also_the_cases_not_recognised_and_says_the_agreement_does_not_hold_for_new_cases"],
       nota="il numero e l'elenco dei disaccordi con il verso della decisione, e la frase sull'accordo (voce 18 delle Aggiunte del 17 novembre)"),
+    R("17.19", "Aggiunte 17 novembre, voce 19", "Una tabella per unità, limiti accanto ai numeri",
+      ["test_every_section_declares_its_unit_and_never_mixes_cases_and_sessions",
+       "test_the_groups_table_says_on_how_many_distinct_cases_each_row_rests",
+       "test_the_limits_of_the_plan_are_printed_before_the_views_and_travel_with_the_figures_in_the_json",
+       "test_the_report_has_its_sections_in_the_decided_order_with_the_descriptive_views_last"]),
     R("17.18", "Aggiunte 17 novembre, voce 18", "Da che parte hai deciso in un disaccordo",
       ["test_a_decision_with_the_program_must_equal_the_automatic_reading_and_one_against_it_must_differ",
        "test_a_text_only_case_has_no_automatic_reading_so_the_side_automatic_is_refused",
@@ -279,6 +284,8 @@ ESCLUSE: dict[tuple[str, str], str] = {
 
 # Lettura a freddo del 18 novembre: test aggiunti alle voci toccate dalle correzioni e voci il cui test prova meno della regola.
 TEST_AGGIUNTI: dict[str, tuple[str, ...]] = {
+    "13.8": ("test_the_limits_of_the_plan_are_printed_before_the_views_and_travel_with_the_figures_in_the_json",),
+    "A12.4e": ("test_the_limits_of_the_plan_are_printed_before_the_views_and_travel_with_the_figures_in_the_json",),
     "B1c": ("test_more_than_three_valid_sessions_for_a_case_stop_the_program_instead_of_being_counted",),
     "17.10": ("test_the_extremes_count_the_expected_cases_with_no_session_and_compare_the_whole_count_not_only_the_recognised",
               "test_a_benign_case_with_a_ticket_and_no_session_stays_in_the_total_and_is_named"),
@@ -290,12 +297,9 @@ TEST_AGGIUNTI: dict[str, tuple[str, ...]] = {
 NOTE_DEBOLI: dict[str, str] = {
     "13.3c": "DEBOLE: il test controlla solo i nomi dei file; «nessuna classifica» non e provata per esecuzione.",
     "13.6a": "DEBOLE: il test riguarda i falsi allarmi, non il confronto del tentativo con l'intento dopo un rifiuto.",
-    "13.8": "DEBOLE: il test cerca parole scritte dallo stesso codice; la voce ha piu regole e basta una citazione per coprirla.",
+    "13.8": "PARZIALE: ora i limiti sono per esteso nel rapporto e nel JSON, ma il test cerca parole scritte dallo stesso codice; la voce ha piu regole e basta una citazione per coprirla.",
     "13.9": "DEBOLE: il test blocca il nome debole del prodotto, non la regola per intero (nome di aidr e limiti del piano, riga ~971).",
     "A11.8b-a": "DEBOLE: i test provano solo «nessun tasso unico»; «divisi per luogo» non e provato (la vista per forma somma richiesta e contenuto).",
-    "A12.2": "DEBOLE: il test non guarda la sezione dei limiti, che sta dopo le viste.",
-    "A12.4e": "DEBOLE: il test controlla solo i titoli; la tabella dei gruppi mette «Casi distinti» accanto alle sessioni (voce 13.1 del piano: tensione "
-              "tra 12.4e e 13.1, da decidere).",
 }
 REGOLE = tuple(replace(r, test=r.test + TEST_AGGIUNTI.get(r.id, ()),
                        nota=" ".join(x for x in (r.nota, NOTE_DEBOLI.get(r.id, "")) if x)) for r in REGOLE)

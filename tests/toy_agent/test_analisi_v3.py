@@ -316,7 +316,7 @@ def test_the_analysis_is_plain_data_that_goes_to_json_and_back_unchanged():
 def test_the_report_has_its_sections_in_the_decided_order_with_the_descriptive_views_last():
     md = a.rapporto_markdown(_analisi())
     pos = [md.index(t) for t in ("## Frase d'apertura", "## 1. Risultati principali", "## 2. I gruppi di sessioni",
-                                  "## 3. Sessioni senza verdetto", "## 4. Viste descrittive")]
+                                  "## 3. Sessioni senza verdetto", "## 4. Limiti", "## 5. Viste descrittive")]
     assert pos == sorted(pos)
 
 
@@ -330,13 +330,18 @@ def test_every_section_declares_its_unit_and_never_mixes_cases_and_sessions():
     assert "## 1. Risultati principali (unità: casi, con le sessioni accanto)" in md
     assert "## 2. I gruppi di sessioni (unità: sessioni con verdetto)" in md
     assert "## 3. Sessioni senza verdetto e sessioni rigenerate (unità: sessioni)" in md
-    assert "## 4. Viste descrittive, mai in testa (unità: casi)" in md
+    assert "## 4. Limiti scritti accanto ai numeri" in md
+    assert "## 5. Viste descrittive, mai in testa (unità: casi)" in md
+    # one unit per table: the groups table counts sessions, the table of the distinct cases has its own title with its unit
+    tabella = md.split("## 2. I gruppi di sessioni")[1].split("**Casi distinti dietro ogni gruppo")[0]
+    assert "Casi distinti" not in tabella
+    assert "**Casi distinti dietro ogni gruppo (unità: casi;" in md and "| Gruppo | Casi distinti |" in md
 
 
 def test_the_three_groups_table_says_whether_firing_is_right_and_never_calls_a_benign_alarm_recognised():
     md = a.rapporto_markdown(_analisi())
     tabella = md.split("## 2. I gruppi di sessioni")[1].split("## 3.")[0]
-    assert "| Gruppo | Casi distinti | Sessioni con verdetto | Il giudice scatta | Scattare è |" in tabella
+    assert "| Gruppo | Sessioni con verdetto | Il giudice scatta | Scattare è |" in tabella
     assert "un falso allarme" in tabella
     assert "riconosciut" not in tabella
 
@@ -1242,7 +1247,7 @@ def test_the_groups_table_says_on_how_many_distinct_cases_each_row_rests():
     g = a.tre_gruppi(ss)
     assert (g["danno"]["casi"], g["benigna"]["casi"], g["presentato"]["casi"]) == (2, 1, 0)
     md = a.rapporto_markdown(a.analizza("G", ss))
-    assert "| Gruppo | Casi distinti | Sessioni con verdetto | Il giudice scatta | Scattare è |" in md
+    assert "| Gruppo | Casi distinti |" in md and "| Gruppo | Sessioni con verdetto |" in md
 
 
 def test_the_distinct_cases_of_a_group_count_only_the_sessions_with_a_verdict():
@@ -1296,7 +1301,7 @@ def test_the_published_sentence_never_names_a_product_alone_next_to_a_number(tmp
 
 def test_the_limits_are_written_next_to_the_numbers():
     md = a.rapporto_markdown(_analisi())
-    sezione = md.split("## 5. Limiti")[1]
+    sezione = md.split("## 4. Limiti")[1].split("## 5.")[0]
     for parola in ("un agente", "un run", "casi costruiti", "un solo messaggio", "ambiente giocattolo", "policy dell'agente",
                    "pagina dei limiti", "prevalenza"):
         assert parola in sezione
@@ -1427,7 +1432,7 @@ def test_loading_reads_the_harm_also_on_benign_sessions_wide_reading_counts_it_t
 
 
 def test_the_fixed_limits_say_that_cases_outside_the_sphere_are_in_no_count_and_an_alarm_there_is_not_an_error():
-    sezione = a.rapporto_markdown(_analisi()).split("## 5. Limiti")[1]
+    sezione = a.rapporto_markdown(_analisi()).split("## 4. Limiti")[1].split("## 5.")[0]
     assert "fuori dalla sfera di un giudice non entrano in nessun conteggio" in sezione
     assert "Un allarme fuori sfera non è un errore del giudice" in sezione
 
@@ -1484,3 +1489,11 @@ def test_the_trace_lists_the_disagreements_the_owner_decided_with_the_side_he_to
     md = a.rapporto_markdown(a.analizza("G", caso_con("c1", True, True), letture_chiuse=[info]))
     assert "disaccordi decisi dal proprietario, ondata ondata: 2 (con il programma: 1; con il revisore: 0; con la lettura a mano: 1)" in md
     assert "v3_a01_1: decisione «danno sì», da parte: automatico" in md
+
+
+def test_the_limits_of_the_plan_are_printed_before_the_views_and_travel_with_the_figures_in_the_json():
+    x = _analisi()
+    sezione = a.rapporto_markdown(x).split("## 4. Limiti")[1].split("## 5.")[0]
+    for parola in ("la fa Claude Code", "tarato sulla nostra lettura", "rifiuta gran parte degli attacchi", "22 parole contro 49", "CodeShield"):
+        assert parola in sezione
+    assert x["limiti"] == list(a.LIMITI_FISSI) and json.loads(json.dumps(x))["limiti"] == list(a.LIMITI_FISSI)
