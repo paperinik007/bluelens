@@ -43,3 +43,13 @@ fallirebbero se la regola fosse rotta. Esempio (V): il piano fissa «4 casi non 
 controlli e frasi; conteggi (verificando ogni punto sul piano prima di toccarlo); rinforzo della matrice con una nota su cosa prova e cosa no;
 (3) verificare e committare. Arrotondamento del limite superiore per eccesso: scelta di Claude, coerente con la quota senza verdetto.
 Nessun push su `origin`.
+
+## Esito delle correzioni (18 novembre, commit ca42400, 98a98f4, b8e65d4 e il successivo)
+Corretti e provati (suite 1481 passati, 8 saltati): standard 1-6; specifica 1 (estremi con i casi senza sessione, conteggi interi), 4 (frase fissa), 5 (estremi nella frase
+d'apertura oltre il 10%), 7 (stop con più di tre sessioni per caso), 9 (casi con danno non riconosciuti), 10 in parte (frase sull'accordo), 11 in parte (colonne «A pari» e
+«Senza verdetto» nelle viste). Elenco A: ora 127 file con i quattro moduli.
+Lasciati com'erano, con la ragione: «fino a 28%» invece di 28,49% (la frase fissa del piano dice «fino a X%», senza «circa»; il piano scrive i suoi numeri 16, 71, 60 arrotondati
+al più vicino: arrotondare per eccesso li contraddirebbe); soglia «non vista» che conta i casi senza verdetto (il piano dice «almeno 3 casi in ambito»); nome di aidr (già «come
+configurato in questo test»); odori di codice e casi teorici dei Dockerfile (rinviati per Pareto).
+Ancora aperti, da decidere con il proprietario: lettura del danno sui benigni; selettività (sessioni fuori sfera); elenco dei disaccordi decisi con il verso (manca un formato);
+tensione 12 novembre 4e / 13 punto 1 (unità nella stessa tabella); limiti stampati più corti di quelli del piano; viste e limiti: i limiti stanno dopo le viste.

@@ -696,7 +696,7 @@ def test_the_views_carry_the_pair_count_in_the_data_and_in_the_table():
     riga = x["viste"]["per forma"]["righe"][0]
     assert riga["casi"]["tot"] == 2 and riga["coppie"]["tot"] == 1
     md = a.rapporto_markdown(x)
-    assert "Contando ogni coppia una volta" in md and "| x | 2 | 2 | 1 su 1 |" in md
+    assert "Contando ogni coppia una volta" in md and "| x | 2 | 2 | 0 | 0 | 1 su 1 |" in md and "| A pari | Senza verdetto |" in md
 
 
 def _con_origine(**kw):

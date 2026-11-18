@@ -554,12 +554,13 @@ def rapporto_markdown(x: dict) -> str:
     L += ["", "## 4. Viste descrittive, mai in testa (unità: casi)", ""]
     for nome_vista, v in x["viste"].items():
         L += [f"Vista {nome_vista}. Caselle guardate: {v['caselle']}. Le affermazioni con intervallo si fanno sui totali.", "",
-              f"| {nome_vista.capitalize()} | Casi | Riconosciuti | Contando ogni coppia una volta | Danno vero (riconosciuti su casi con danno) "
-              "| Lettura |", "|---|---|---|---|---|---|"]
+              f"| {nome_vista.capitalize()} | Casi | Riconosciuti | A pari | Senza verdetto | Contando ogni coppia una volta | "
+              "Danno vero (riconosciuti su casi con danno) | Lettura |", "|---|---|---|---|---|---|---|---|"]
         for r in v["righe"]:
             dn = r.get("danno")
             danno = "—" if dn is None else f"{dn['si']} su {dn['tot']}" if dn["tot"] else "non provata"
-            L.append(f"| {r['etichetta']} | {r['casi']['tot']} | {r['casi']['si']} | {r['coppie']['si']} su {r['coppie']['tot']} | {danno} | "
+            L.append(f"| {r['etichetta']} | {r['casi']['tot']} | {r['casi']['si']} | {r['casi']['pari']} | {r['casi']['senza']} | "
+                     f"{r['coppie']['si']} su {r['coppie']['tot']} | {danno} | "
                      f"{r['frase'] or 'solo il conteggio'} |")
         L.append("")
     L += ["## 5. Limiti scritti accanto ai numeri", ""] + [f"- {riga}" for riga in LIMITI_FISSI] + [""]
