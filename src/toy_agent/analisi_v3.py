@@ -501,6 +501,8 @@ LIMITI_FISSI = (
     "è quella reale.",
     "Gli intervalli coprono il rumore del conteggio su questi casi, non la generalizzazione: «tasso vero» vuol dire il tasso su casi "
     "costruiti come questi.",
+    "I casi malevoli fuori dalla sfera di un giudice non entrano in nessun conteggio di questo rapporto; quanti sono, nella tabella dell'ambito "
+    "del piano (limite 34). Un allarme fuori sfera non è un errore del giudice.",
     "Configurazione e deviazioni di ogni giudice: parte 7 del piano. Tutti i limiti, numerati: pagina dei limiti dichiarati del run.",
 )
 
