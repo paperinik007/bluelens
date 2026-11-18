@@ -12,6 +12,7 @@ inside, `docker save`) need Docker running and are recorded in a later step: her
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
 import re
@@ -72,17 +73,18 @@ DA_REGISTRARE_A_MANO = [
 
 
 def _docker(*args: str) -> str:
-    """Runs docker and returns what it printed; a failure stops with the first part of its message."""
+    """Runs docker and returns what it printed; a failure stops with the exit code only (the repository rule: of an error one prints the
+    code, never its raw message)."""
     r = subprocess.run(["docker", *args], capture_output=True, stdin=subprocess.DEVNULL)
     if r.returncode:
-        raise ValueError(f"docker {' '.join(args[:3])}: {r.stderr.decode('utf-8', 'replace').strip()[:300]}")
+        raise ValueError(f"docker {' '.join(args[:3])}: codice di uscita {r.returncode}")
     return r.stdout.decode("utf-8")
 
 
 def _git(repo: Path, *args: str) -> bytes:
     r = subprocess.run(["git", *args], cwd=repo, capture_output=True, stdin=subprocess.DEVNULL)
     if r.returncode:
-        raise ValueError(f"git {' '.join(args)}: {r.stderr.decode('utf-8', 'replace').strip()}")
+        raise ValueError(f"git {' '.join(args)}: codice di uscita {r.returncode}")
     return r.stdout
 
 
@@ -114,6 +116,45 @@ def _leggi_pin(repo: Path, commit: str, file: str, espressione: str) -> str:
     if not m:
         raise ValueError(f"nel file {file} non si trova il valore cercato ({espressione})")
     return m.group(1)
+
+
+PACCHETTO = "src/toy_agent"
+# Groups whose files are completed by the criterion «everything the declared programs import» (SPIRIT, principle 6: the measuring
+# instrument is defined by criterion, not by a hand-written list that forgets the next module).
+GRUPPI_CON_CHIUSURA = frozenset({"programmi"})
+
+
+def _moduli_importati(sorgente: str) -> set[str]:
+    """Names of the modules of the package `toy_agent` that a source file imports, anywhere in the file (also inside functions)."""
+    trovati: set[str] = set()
+    for nodo in ast.walk(ast.parse(sorgente)):
+        if isinstance(nodo, ast.ImportFrom):
+            if nodo.level >= 1 or (nodo.module or "").split(".")[0] == "toy_agent":
+                modulo = (nodo.module or "").removeprefix("toy_agent").lstrip(".")
+                if modulo:
+                    trovati.add(modulo.split(".")[0])
+                else:                              # `from . import x`, `from toy_agent import x`
+                    trovati.update(a.name for a in nodo.names)
+        elif isinstance(nodo, ast.Import):
+            trovati.update(a.name.split(".")[1] for a in nodo.names if a.name.startswith("toy_agent."))
+    return trovati
+
+
+def chiusura_import(repo: Path, commit: str, radici: list[str]) -> list[str]:
+    """The programs of the package that the roots import, directly or not, as tracked files of the commit (roots excluded). Only static
+    imports are followed: a module loaded by name at run time (`importlib`) is not seen, and nobody uses it in this package."""
+    repo = Path(repo)
+    tracciati = set(_tracciati(repo, commit, PACCHETTO))
+    da_vedere = [r for r in radici if r.startswith(PACCHETTO + "/") and r.endswith(".py")]
+    visti: set[str] = set()
+    while da_vedere:
+        file = da_vedere.pop()
+        if file in visti:
+            continue
+        visti.add(file)
+        sorgente = _git(repo, "cat-file", "blob", f"{commit}:{file}").decode("utf-8")
+        da_vedere += [f for m in _moduli_importati(sorgente) if (f := f"{PACCHETTO}/{m}.py") in tracciati and f not in visti]
+    return sorted(visti - set(radici))
 
 
 def file_copiati(repo: Path, commit: str, dockerfile: str, contesto: str) -> dict[str, str]:
@@ -211,6 +252,8 @@ def genera(repo: Path, data: str, gruppi: dict[str, list[str]] = GRUPPI, pin: di
     commit = _commit(repo)
     out_gruppi = {}
     for nome, percorsi in gruppi.items():
+        if nome in GRUPPI_CON_CHIUSURA:
+            percorsi = percorsi + chiusura_import(repo, commit, percorsi)
         file = _file_del_gruppo(repo, commit, percorsi)
         out_gruppi[nome] = {"percorsi": list(percorsi), "file": file, "impronta_insieme": _insieme(file)}
     registro = None

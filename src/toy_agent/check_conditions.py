@@ -62,8 +62,15 @@ def check_generations(sessions: Path, generations: Path, expected: dict) -> list
     """Every answered call of the agent must have a generation record naming the expected dated version and provider."""
     records = json.loads(Path(generations).read_text(encoding="utf-8"))
     problems: list[str] = []
-    for path in sorted(Path(sessions).glob("*.json")):
-        for i, call in enumerate(json.loads(path.read_text(encoding="utf-8")).get("call_log", [])):
+    files = sorted(Path(sessions).glob("*.json"))
+    if not files:
+        return [f"no session file in {sessions}: the check would pass without having checked anything"]
+    for path in files:
+        calls = json.loads(path.read_text(encoding="utf-8")).get("call_log")
+        if not calls:             # key missing or empty: nothing to check is a problem, not a pass
+            problems.append(f"{path.name}: no call_log (missing or empty), the dated version cannot be checked")
+            continue
+        for i, call in enumerate(calls):
             gid = call.get("generation_id")
             if call.get("error"):
                 continue          # a failed attempt names no model: not a problem

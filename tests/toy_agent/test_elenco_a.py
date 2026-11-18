@@ -413,3 +413,59 @@ def test_the_real_list_names_the_three_images_of_the_run():
     assert {i["nome"] for i in e.IMMAGINI.values()} == {
         "agentic-security-audits-detector:latest", "agentic-security-audits-detector-llamafirewall:latest",
         "agentic-security-audits-egress-proxy:latest"}
+
+
+# ---- il criterio «tutto ciò che i programmi dichiarati importano» (lettura a freddo del 18 novembre) ----
+
+def _repo_pacchetto(tmp_path):
+    repo = _repo(tmp_path)
+    _scrivi(repo, "src/toy_agent/__init__.py", b"")
+    _scrivi(repo, "src/toy_agent/a.py", b"from .b import x\nimport os\n")
+    _scrivi(repo, "src/toy_agent/b.py", b"from . import c\n")
+    _scrivi(repo, "src/toy_agent/c.py", b"def f():\n    from toy_agent.d import y\n    return y\n")
+    _scrivi(repo, "src/toy_agent/d.py", b"import toy_agent.g\n")
+    _scrivi(repo, "src/toy_agent/g.py", b"")
+    _scrivi(repo, "src/toy_agent/estraneo.py", b"")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "pacchetto")
+    return repo
+
+
+def test_the_closure_follows_every_static_import_in_the_package_also_inside_functions(tmp_path):
+    repo = _repo_pacchetto(tmp_path)
+    assert e.chiusura_import(repo, "HEAD", ["src/toy_agent/a.py"]) == [
+        "src/toy_agent/b.py", "src/toy_agent/c.py", "src/toy_agent/d.py", "src/toy_agent/g.py"]
+
+
+def test_the_programs_group_is_completed_by_the_closure_and_the_check_sees_a_change_in_an_imported_module(tmp_path):
+    repo = _repo_pacchetto(tmp_path)
+    x = e.genera(repo, "2026-11-18", gruppi={"programmi": ["src/toy_agent/a.py"]}, pin=PIN)
+    g = x["gruppi"]["programmi"]
+    assert "src/toy_agent/d.py" in g["file"] and "src/toy_agent/estraneo.py" not in g["file"]
+    assert "src/toy_agent/d.py" in g["percorsi"]
+    assert e.verifica(repo, x) == []
+    _scrivi(repo, "src/toy_agent/g.py", b"# cambiato\n")
+    _git(repo, "commit", "-q", "-am", "cambia g")
+    assert e.verifica(repo, x) == ["programmi: src/toy_agent/g.py cambiato"]
+
+
+def test_other_groups_are_not_completed_by_the_closure(tmp_path):
+    repo = _repo_pacchetto(tmp_path)
+    x = e.genera(repo, "2026-11-18", gruppi={"documenti": ["src/toy_agent/a.py"]}, pin=PIN)
+    assert list(x["gruppi"]["documenti"]["file"]) == ["src/toy_agent/a.py"]
+
+
+def test_the_real_programs_group_is_closed_and_holds_the_modules_the_numbers_pass_through():
+    from pathlib import Path
+    radice = Path(__file__).resolve().parents[2]
+    completo = e.GRUPPI["programmi"] + e.chiusura_import(radice, "HEAD", e.GRUPPI["programmi"])
+    for nome in ("orchestrator", "halvard", "schema", "run_case"):
+        assert f"src/toy_agent/{nome}.py" in completo
+    assert e.chiusura_import(radice, "HEAD", completo) == []
+
+
+def test_a_failure_of_git_reports_the_exit_code_and_never_its_raw_message(tmp_path):
+    repo = _repo(tmp_path)
+    with pytest.raises(ValueError) as exc:
+        e._git(repo, "cat-file", "blob", "HEAD:non_esiste_questo_file")
+    assert "codice di uscita" in str(exc.value) and "fatal" not in str(exc.value).lower()

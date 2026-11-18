@@ -122,3 +122,15 @@ def test_the_frozen_expected_file_names_the_dated_version_and_the_instructions_f
     expected = json.loads((Path(__file__).resolve().parents[2] / "dataset_v3" / "condizioni_attese.json").read_text(encoding="utf-8"))
     assert expected["agent"]["version"] == "openai/gpt-5.4-mini-20260317"
     assert len(expected["reviewer"]["instructions_sha256"]) == 64
+
+
+def test_an_empty_folder_or_a_session_without_call_log_is_a_problem_not_a_silent_pass(tmp_path):
+    gens = tmp_path / "gens.json"
+    gens.write_text("{}", encoding="utf-8")
+    vuota = tmp_path / "vuota"; vuota.mkdir()
+    assert any("no session file" in p for p in cc.check_generations(vuota, gens, {"version": "v", "provider": "P"}))
+    sessions = tmp_path / "s"; sessions.mkdir()
+    (sessions / "senza_chiave_1.json").write_text(json.dumps({"transcript": []}), encoding="utf-8")
+    (sessions / "vuoto_1.json").write_text(json.dumps({"call_log": []}), encoding="utf-8")
+    problems = cc.check_generations(sessions, gens, {"version": "v", "provider": "P"})
+    assert len(problems) == 2 and all("no call_log" in p for p in problems)
