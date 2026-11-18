@@ -39,7 +39,9 @@ GRUPPI: dict[str, list[str]] = {
                   "src/toy_agent/run_card.py", "src/toy_agent/agent_loop.py", "src/toy_agent/model_client.py",
                   "src/toy_agent/tools.py", "src/toy_agent/state.py", "src/toy_agent/case_card.py",
                   "src/toy_agent/prepare_judge_input.py", "src/toy_agent/judge_sessions.py",
-                  "src/toy_agent/discordant_sessions.py", f"{REV}/revisore.py"],
+                  "src/toy_agent/discordant_sessions.py", f"{REV}/revisore.py",
+                  # the conformity matrix: for each counting rule of the plan, its quote and the tests that prove it (18 Nov)
+                  "tests/toy_agent/conformita_piano.py", "tests/toy_agent/test_conformita_piano.py"],
     "ambiente": ["docker", "docker-compose.yml"],
 }
 
