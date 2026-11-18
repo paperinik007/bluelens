@@ -115,9 +115,19 @@ REGOLE: tuple[Regola, ...] = (
        "test_promptguard_in_the_narrow_reading_never_gets_a_single_rate_in_the_files"]),
     R("A11.8b-b", "punto 8b b", "4 casi non bastano a dire che il giudice distingue un ticket normale da uno con un attacco",
       ["test_the_report_says_four_benign_with_a_ticket_are_too_few_to_tell"]),
-    R("A11.6", "Aggiunte 11 novembre, punto 6", "I disaccordi decisi dal proprietario si riportano a parte", stato="procedurale",
-      nota="l'accordo tra lettura automatica e revisore e i disaccordi decisi si riportano da `confronta.py` e dal file delle letture chiuse, fuori da "
-           "`analisi_v3` (decisione del 17 novembre: il rapporto di analisi li cita soltanto); il programma mostra l'impronta del file delle letture"),
+    R("A11.6", "Aggiunte 11 novembre, punto 6", "I disaccordi decisi dal proprietario si riportano a parte",
+      ["test_a_decision_with_the_program_must_equal_the_automatic_reading_and_one_against_it_must_differ",
+       "test_a_text_only_case_has_no_automatic_reading_so_the_side_automatic_is_refused",
+       "test_an_unknown_side_or_a_reading_without_the_answer_stops_the_program",
+       "test_the_trace_lists_the_disagreements_the_owner_decided_with_the_side_he_took_and_the_report_prints_them",
+       "test_the_harm_result_lists_also_the_cases_not_recognised_and_says_the_agreement_does_not_hold_for_new_cases"],
+      nota="il numero e l'elenco dei disaccordi con il verso della decisione, e la frase sull'accordo (voce 18 delle Aggiunte del 17 novembre)"),
+    R("17.18", "Aggiunte 17 novembre, voce 18", "Da che parte hai deciso in un disaccordo",
+      ["test_a_decision_with_the_program_must_equal_the_automatic_reading_and_one_against_it_must_differ",
+       "test_a_text_only_case_has_no_automatic_reading_so_the_side_automatic_is_refused",
+       "test_an_unknown_side_or_a_reading_without_the_answer_stops_the_program",
+       "test_the_trace_lists_the_disagreements_the_owner_decided_with_the_side_he_took_and_the_report_prints_them",
+       "test_the_harm_result_lists_also_the_cases_not_recognised_and_says_the_agreement_does_not_hold_for_new_cases"]),
     R("A11.8b-c", "punto 8b c", "Accanto a ogni conteggio per forma la riga \"contando ogni coppia una volta: k su n\"",
       ["test_a_pair_inside_one_box_counts_once_when_both_cases_have_the_same_outcome",
        "test_only_the_two_pairs_that_are_the_same_test_are_counted_once_and_the_two_contrasts_never",
@@ -286,8 +296,6 @@ NOTE_DEBOLI: dict[str, str] = {
     "A12.2": "DEBOLE: il test non guarda la sezione dei limiti, che sta dopo le viste.",
     "A12.4e": "DEBOLE: il test controlla solo i titoli; la tabella dei gruppi mette «Casi distinti» accanto alle sessioni (voce 13.1 del piano: tensione "
               "tra 12.4e e 13.1, da decidere).",
-    "A11.6": "PARZIALE: la frase sull'accordo e ora nel rapporto; l'elenco dei disaccordi decisi con il verso della decisione NON c'e (serve un formato "
-             "del file delle letture chiuse, da decidere).",
 }
 REGOLE = tuple(replace(r, test=r.test + TEST_AGGIUNTI.get(r.id, ()),
                        nota=" ".join(x for x in (r.nota, NOTE_DEBOLI.get(r.id, "")) if x)) for r in REGOLE)

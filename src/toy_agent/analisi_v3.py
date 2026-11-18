@@ -576,6 +576,13 @@ def rapporto_markdown(x: dict) -> str:
     for lc in x.get("letture_chiuse", []):
         L.append(f"- letture a mano chiuse, ondata {lc['ondata']}: " +
                  (f"file con impronta SHA-256 {lc['file_sha256']}, {lc['sessioni']} sessioni" if lc["file_sha256"] else "nessun file"))
+        dis = lc.get("disaccordi") or []
+        if dis:
+            per_parte = {p: sum(1 for d in dis if d["da_parte"] == p) for p in DA_PARTE}
+            L.append(f"- disaccordi decisi dal proprietario, ondata {lc['ondata']}: {len(dis)} (con il programma: {per_parte['automatico']}; con il revisore: "
+                     f"{per_parte['revisore']}; con la lettura a mano: {per_parte['lettura a mano']})")
+            L += [f"  - {d['sessione']}: decisione «danno {'sì' if d['danno'] else 'no'}», da parte: {d['da_parte']}"
+                  for d in dis]
     L += ["", "## 4. Viste descrittive, mai in testa (unità: casi)", ""]
     for nome_vista, v in x["viste"].items():
         L += [f"Vista {nome_vista}. Caselle guardate: {v['caselle']}. Le affermazioni con intervallo si fanno sui totali.", "",
@@ -676,15 +683,51 @@ def riepilogo_verdetti(cartella: Path) -> dict[str, dict[str, int]]:
             for g in ok}
 
 
+DA_PARTE = ("automatico", "revisore", "lettura a mano")
+
+
+def _controlla_voce_chiusa(stem: str, voce: dict) -> None:
+    """The format of one closed reading: `danno` (bool), `motivo` (free text, optional). `da_parte` (optional) marks a disagreement the owner
+    decided and says the side he took: «automatico», «revisore» or «lettura a mano»."""
+    if "danno" not in voce:
+        raise ValueError(f"lettura chiusa {stem}: manca `danno`")
+    parte = voce.get("da_parte")
+    if parte is not None and parte not in DA_PARTE:
+        raise ValueError(f"lettura chiusa {stem}: da_parte deve essere tra {DA_PARTE}")
+
+
+def _lettura_chiusa(stem: str, voce: dict, scheda: dict, trascrizione: dict, leggi_danno) -> bool:
+    """The closed reading of a session, checked: «da parte dell'automatico» must equal what the program reads now, «da parte del revisore»
+    must differ from it (a decision against the program that agrees with it is not a decision against the program). A text-only case has
+    no automatic reading: «automatico» is refused there."""
+    _controlla_voce_chiusa(stem, voce)
+    danno = bool(voce["danno"])
+    parte = voce.get("da_parte")
+    if scheda.get("text_only"):
+        if parte == "automatico":
+            raise ValueError(f"lettura chiusa {stem}: un caso solo testo non ha una lettura automatica")
+        return danno
+    if parte in ("automatico", "revisore"):
+        automatica = bool(leggi_danno(scheda, trascrizione))
+        if (danno == automatica) != (parte == "automatico"):
+            raise ValueError(f"lettura chiusa {stem}: dice da_parte = {parte} ma la lettura automatica {'coincide' if danno == automatica else 'non coincide'}")
+    return danno
+
+
 def info_letture_chiuse(ondata: Path) -> dict:
     """Which closed hand readings an wave used: the SHA-256 of `letture-chiuse.json` (None if the file is absent) and how many sessions it
     reads by hand. The program cannot know the fingerprint registered before the verdicts, but it shows the one it used."""
     ondata = Path(ondata)
     f = ondata / "letture-chiuse.json"
     if not f.exists():
-        return {"ondata": ondata.name, "file_sha256": None, "sessioni": 0}
+        return {"ondata": ondata.name, "file_sha256": None, "sessioni": 0, "disaccordi": []}
     contenuto = f.read_bytes()
-    return {"ondata": ondata.name, "file_sha256": hashlib.sha256(contenuto).hexdigest(), "sessioni": len(json.loads(contenuto))}
+    voci = json.loads(contenuto)
+    for stem, voce in voci.items():
+        _controlla_voce_chiusa(stem, voce)
+    disaccordi = [{"sessione": stem, "danno": bool(v["danno"]), "da_parte": v["da_parte"]} for stem, v in sorted(voci.items())
+                  if v.get("da_parte") is not None]
+    return {"ondata": ondata.name, "file_sha256": hashlib.sha256(contenuto).hexdigest(), "sessioni": len(voci), "disaccordi": disaccordi}
 
 
 def casi_attesi(schede: Path, ambito: dict, giudice: str, lettura: str) -> tuple[set[str], set[str]]:
@@ -754,14 +797,14 @@ def carica_sessioni(ondata: Path, schede: Path, ambito: dict, lettura: str = "wi
         presentato, agente, benigno = True, False, scheda["intent"] == "benign"
         if benigno:
             trascrizione = json.loads(f.read_text(encoding="utf-8"))["transcript"]
-            danno = bool(chiuse[f.stem]["danno"]) if f.stem in chiuse else leggi_danno(scheda, trascrizione)
+            danno = _lettura_chiusa(f.stem, chiuse[f.stem], scheda, trascrizione, leggi_danno) if f.stem in chiuse else leggi_danno(scheda, trascrizione)
             gruppo = "danno" if danno else "benigna"
         else:
             trascrizione = json.loads(f.read_text(encoding="utf-8"))["transcript"]
             agente = scheda.get("where") == "agent"
             presentato = segnale_presentato(scheda.get("attack_location") or {"kind": "none"}, trascrizione)
             if f.stem in chiuse:
-                danno = bool(chiuse[f.stem]["danno"])
+                danno = _lettura_chiusa(f.stem, chiuse[f.stem], scheda, trascrizione, leggi_danno)
             elif scheda.get("text_only"):
                 raise ValueError(f"la sessione {f.stem} e di un caso solo testo: serve la lettura a mano chiusa")
             else:

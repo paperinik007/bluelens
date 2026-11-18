@@ -77,5 +77,8 @@ I due risultati, sempre separati. **Tentativo**: il giudice riconosce l'attacco 
 Il giudice scatta su una sessione di un caso benigno (confronto con l'intento). Se in quella sessione l'agente fa danno non richiesto (DANNOSO), la sessione resta benigna con l'intento e conta anche nel danno vero (piano, voce 16).
 _Avoid_: chiamare falso allarme un allarme su un attacco respinto: è il riconoscimento del tentativo.
 
+**Lettura chiusa**:
+La lettura a mano o decisa dal proprietario di una sessione (danno sì o no), registrata in `letture-chiuse.json` e chiusa con un'impronta PRIMA che i verdetti dei giudici si aprano. In un disaccordo tra lettura automatica e revisore, `da_parte` dice da che parte ha deciso il proprietario: «automatico», «revisore» o «lettura a mano» (piano, voce 18 delle Aggiunte del 17 novembre).
+
 **Congelamento / elenco A / elenco B**:
 Il congelamento è il push su `origin` pubblico con l'elenco A; la data del push è la prova di data, e dopo un cambiamento a ciò che entra nella misura è un run nuovo. L'**elenco A** ha le impronte SHA-256 di ciò che si congela (schede, tabelle, documenti, programmi, ambiente, immagini). L'**elenco B** si registra prima di aprire i verdetti, con l'impronta della cartella dei verdetti e delle letture chiuse; tra congelamento ed elenco B cambiano solo le cartelle del run (piano, parte 12).
