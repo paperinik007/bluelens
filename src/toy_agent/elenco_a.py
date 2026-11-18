@@ -34,7 +34,12 @@ GRUPPI: dict[str, list[str]] = {
     "programmi": ["src/toy_agent/analisi_v3.py", "tests/toy_agent/test_analisi_v3.py", "src/toy_agent/elenco_a.py",
                   "tests/toy_agent/test_elenco_a.py", "src/toy_agent/ondate.py", "src/toy_agent/ambito.py",
                   "src/toy_agent/check_conditions.py", "src/toy_agent/sposta_guasti.py", "src/toy_agent/registra_versioni.py",
-                  "src/toy_agent/malicious_steps.py", f"{REV}/confronta.py"],
+                  "src/toy_agent/malicious_steps.py", f"{REV}/confronta.py",
+                  # the chain that produces the sessions, the verdicts and the readings the numbers come from (external check, 17 Nov)
+                  "src/toy_agent/run_card.py", "src/toy_agent/agent_loop.py", "src/toy_agent/model_client.py",
+                  "src/toy_agent/tools.py", "src/toy_agent/state.py", "src/toy_agent/case_card.py",
+                  "src/toy_agent/prepare_judge_input.py", "src/toy_agent/judge_sessions.py",
+                  "src/toy_agent/discordant_sessions.py", f"{REV}/revisore.py"],
     "ambiente": ["docker", "docker-compose.yml"],
 }
 
@@ -56,6 +61,8 @@ IMMAGINI: dict[str, dict] = {
 DA_REGISTRARE_A_MANO = [
     "disegno del modello (pagina pubblicata, versione 34 o successiva): versione e impronta del testo pubblicato",
     "valori usati di .env.aidr e .env.llamafirewall (modelli e fornitori, mai le chiavi): li confronta check_conditions",
+    "PurpleLlama 4be64c3 (piano, parte 10) e documentario: nessun Dockerfile lo scarica; il codice eseguito e llamafirewall==1.0.3, "
+    "identificato dal pin letto dal Dockerfile e dall'identificativo dell'immagine",
     "immagini: identificativo, pip freeze e file copiati dentro si registrano con genera --con-immagini (Docker acceso)",
     "archivio docker save delle immagini: NON conservato (decisione del proprietario, 17 novembre: circa 14 GB, disco limitato); le "
     "immagini restano in Docker e il passo 3 del run si ferma se un identificativo cambia o l'immagine manca",

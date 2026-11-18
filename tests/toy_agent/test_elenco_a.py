@@ -211,6 +211,10 @@ def test_the_real_list_declares_the_programs_and_tables_the_plan_names():
                  "src/toy_agent/registra_versioni.py", "docs/research/2026-11-05-revisore/confronta.py",
                  "src/toy_agent/malicious_steps.py", "src/toy_agent/elenco_a.py"):
         assert nome in programmi
+    for nome in ("run_card", "agent_loop", "model_client", "tools", "state", "case_card", "prepare_judge_input", "judge_sessions",
+                 "discordant_sessions"):
+        assert f"src/toy_agent/{nome}.py" in programmi
+    assert "docs/research/2026-11-05-revisore/revisore.py" in programmi
     assert set(e.GRUPPI["tabelle_del_run"]) == {"dataset_v3/ondate.json", "dataset_v3/ambito.json", "dataset_v3/condizioni_attese.json"}
     assert "dataset_v3/cases" in e.GRUPPI["schede_e_mondo"] and "dataset_v3/controls" in e.GRUPPI["schede_e_mondo"]
 

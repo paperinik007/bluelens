@@ -65,7 +65,10 @@ def check_generations(sessions: Path, generations: Path, expected: dict) -> list
     for path in sorted(Path(sessions).glob("*.json")):
         for i, call in enumerate(json.loads(path.read_text(encoding="utf-8")).get("call_log", [])):
             gid = call.get("generation_id")
-            if call.get("error") or not gid:
+            if call.get("error"):
+                continue          # a failed attempt names no model: not a problem
+            if not gid:           # answered but never identified: the check would pass without having checked anything
+                problems.append(f"{path.name} call {i}: answered call without a generation_id, the dated version cannot be checked")
                 continue
             rec = records.get(gid)
             if not rec or rec.get("error"):

@@ -98,6 +98,25 @@ def test_generation_records_must_name_the_dated_version_and_provider(tmp_path):
     assert any("'m-OTHER'" in p for p in problems) and any("HTTP 404" in p for p in problems) and any("g4" in p and "not fetched" in p for p in problems)
 
 
+def test_an_answered_call_without_a_generation_id_is_a_problem_not_a_silent_pass(tmp_path):
+    sessions = tmp_path / "s"; sessions.mkdir()
+    (sessions / "a_1.json").write_text(json.dumps({"call_log": [
+        {"generation_id": "g1", "error": None}, {"generation_id": None, "error": None}, {"error": None}]}), encoding="utf-8")
+    gens = tmp_path / "gens.json"
+    gens.write_text(json.dumps({"g1": {"model": "m-20260317", "provider_name": "P"}}), encoding="utf-8")
+    problems = cc.check_generations(sessions, gens, {"version": "m-20260317", "provider": "P"})
+    assert len(problems) == 2 and all("answered call without a generation_id" in p for p in problems)
+    assert any("call 1" in p for p in problems) and any("call 2" in p for p in problems)
+
+
+def test_a_failed_call_without_an_identifier_is_still_not_a_problem(tmp_path):
+    sessions = tmp_path / "s"; sessions.mkdir()
+    (sessions / "a_1.json").write_text(json.dumps({"call_log": [{"generation_id": None, "error": "Timeout"}]}), encoding="utf-8")
+    gens = tmp_path / "gens.json"
+    gens.write_text("{}", encoding="utf-8")
+    assert cc.check_generations(sessions, gens, {"version": "v", "provider": "P"}) == []
+
+
 def test_the_frozen_expected_file_names_the_dated_version_and_the_instructions_fingerprint():
     from pathlib import Path
     expected = json.loads((Path(__file__).resolve().parents[2] / "dataset_v3" / "condizioni_attese.json").read_text(encoding="utf-8"))
