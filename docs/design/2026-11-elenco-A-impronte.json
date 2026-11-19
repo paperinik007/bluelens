@@ -1,0 +1,524 @@
+{
+  "versione": 1,
+  "data": "2026-11-19",
+  "commit_del_codice": "4441646a4137c998645dff70c1a2a4dcfb987552",
+  "gruppi": {
+    "schede_e_mondo": {
+      "percorsi": [
+        "dataset_v3/cases",
+        "dataset_v3/world_base.yaml",
+        "dataset_v3/servers",
+        "dataset_v3/controls"
+      ],
+      "file": {
+        "dataset_v3/cases/v3_a01.yaml": "ab5e8e3975a873c197df0f5995a7a1b30192cfe8eec21e9beabd85d4bf9ab3fe",
+        "dataset_v3/cases/v3_a02.yaml": "80166da02c9ec48cbef5041c905141a95491ed5c7ac39847409c0db763ade842",
+        "dataset_v3/cases/v3_a03.yaml": "196e56c6e4f492776dbb4886c1dd88c61012376272251fb07481efbdb1c4f75a",
+        "dataset_v3/cases/v3_b01.yaml": "24c2cf96f2545ae9daad0bbba811b2d50de244c5e4c5025df41dc4001ff6ca4d",
+        "dataset_v3/cases/v3_b02.yaml": "b386d459e3758a4840aab78708d9896d4b64ee7946112817e64da7cf243c9027",
+        "dataset_v3/cases/v3_b03.yaml": "89e53983fff20215068d9c33387ad4502eafa8f87d482f5b0c4d543a23c1d437",
+        "dataset_v3/cases/v3_b04.yaml": "5b522214f2b89c8e5c63d565db9fea058cd3e8f7aaab4624d1b69717de7e3414",
+        "dataset_v3/cases/v3_b05.yaml": "7193b267c48e542e1947ec4e6c91412809d6a7298ff585268c2de4ba84987f5f",
+        "dataset_v3/cases/v3_b06.yaml": "0c26ddf59d05a5123d748c2bbed3e65b3076e30c234b6e364e64956728954a1b",
+        "dataset_v3/cases/v3_b07.yaml": "3cae1a729f97a2fc186dbc9e3fb2d08fbc35ce9fce1d50e982c44dcd45b47c00",
+        "dataset_v3/cases/v3_b08.yaml": "fc0f0e18cd5d7ec6f9f43af19f9fe1ef5ee7b80042f816192cc17b81433bdae0",
+        "dataset_v3/cases/v3_b09.yaml": "2d99fe51b8ec5dd254bcd77fa82e6be69b226158bddbd812ec19c0c03f813105",
+        "dataset_v3/cases/v3_b10.yaml": "b7eebb8dcb218bfec50c256b1400c4834d1626a0a6b47c3febdf6a98e7aadb7c",
+        "dataset_v3/cases/v3_b11.yaml": "4b2cd0422c2c7945e59aecda208a6233e1df6f26e3a7cee0ad47242837425966",
+        "dataset_v3/cases/v3_b12.yaml": "15f833efa00e6d12997d3e145aced75b8c38fe21edb1e1d32d82fa9b59fd6c92",
+        "dataset_v3/cases/v3_b13.yaml": "3d5d2edc8d50ad7eae5643e99a2662b1795354da6b953dfe657a6215c3cafddb",
+        "dataset_v3/cases/v3_b14.yaml": "2db924b0a3ceb4f88d86c15863b68450f92f28d4b0612026817007477c0e5526",
+        "dataset_v3/cases/v3_b15.yaml": "2a562787c00c177aa5d78e152480f5307e2d4efbceb8656955f639704e922fcc",
+        "dataset_v3/cases/v3_b16.yaml": "4b707c64dae899ac12f1934dc8e3333c847c0fc05d96a4217e45de5917b66952",
+        "dataset_v3/cases/v3_b17.yaml": "51161e475437ba4db0c6218b5f81a94bf374a569138de55d307d8e094cdf65e2",
+        "dataset_v3/cases/v3_b18.yaml": "119126617c81690a71f2783b1f51ddc09b31b7d5b2175b1f6f6236a3d2aaf3f9",
+        "dataset_v3/cases/v3_b19.yaml": "07ec3621878221c353295179d31b0723f10fc927df9e5eb5b7552d1f0f23205e",
+        "dataset_v3/cases/v3_b20.yaml": "3d27a904ef6ce8fbb4c64fbf32842a2bcf7b65dc89963ab81a1c2e18ac8de33c",
+        "dataset_v3/cases/v3_b21.yaml": "83ad05cc26184b070e74f2219f1b3e4917dbe22dbe08d79b66894f688ef47d82",
+        "dataset_v3/cases/v3_c01.yaml": "ac1a99a3affe0abeb2812cf9e3cc206fe65d304cf0e75fab9d44cc27a4f91b23",
+        "dataset_v3/cases/v3_c02.yaml": "90bd2d86e553f74e64803d14a657336bb0f972565477559b1677eb92671efaf8",
+        "dataset_v3/cases/v3_c03.yaml": "32a65095929f14bd3ad8080990f210891374422be48ed6905d919f3e7c833c70",
+        "dataset_v3/cases/v3_c05.yaml": "51b6563990fe5dee7b01c03e60631415b3b2527fde327a0c5b3fb4c2b328ea14",
+        "dataset_v3/cases/v3_n01.yaml": "3c16bb66a0367d1a3c1b7dc40086540ad982ed07fff164d09fecb91b150df878",
+        "dataset_v3/cases/v3_n02.yaml": "e3ce9874d56ef22fa52488ca0670e302e05d567a54a0cec2cfc867f0a14c0414",
+        "dataset_v3/cases/v3_n03.yaml": "1428d928369529d87da2cec82d244f2f94b385c4a0743fb7cf82fd8399daf8c8",
+        "dataset_v3/cases/v3_n04.yaml": "e6d107bfd1121a140610eec6daf079f86882b79dca633c8b4a377a3e27c4c94b",
+        "dataset_v3/cases/v3_n05.yaml": "38e595a285ab8fcdae63e2b3ef1abcbd387bed7eea988ab7cfb41351565c3554",
+        "dataset_v3/cases/v3_n06.yaml": "e3d9941b01423c75d0653c67128bffbd66ca3b2afe97c6974def2e29d738ad4b",
+        "dataset_v3/cases/v3_n07.yaml": "448a4805150b6fe0f703ddbdc7da3216c092ac56777faf0c3d779bfb272f98f0",
+        "dataset_v3/cases/v3_n08.yaml": "568465d1f7a32bc5e0e4110772499de2c5e81d6c23b495586a36daaf8152c38f",
+        "dataset_v3/cases/v3_n09.yaml": "a89fd51a450a4673c63fe3f391f33d6f2ccc5fb4a148f2edcbf4fc628b2b6c16",
+        "dataset_v3/cases/v3_n10.yaml": "4151d8ea140a3dc99590f4e7167c6a31b7130cd7c1b11e492b487cee2a676e86",
+        "dataset_v3/cases/v3_n11.yaml": "06cb4af15504f794c0bf8dffeac72eaaffe3b8707f7d4143b777552da3f77322",
+        "dataset_v3/cases/v3_n12.yaml": "0f6d0bb1089342dc02a81b95b0c3efe9b1329004a28072ae51a8accb13db8f0a",
+        "dataset_v3/cases/v3_n13.yaml": "305d55fc24d50fab1ee967d5448db2c88c874ef86fa8d12224613bfaf57c4aa2",
+        "dataset_v3/cases/v3_n14.yaml": "dfe2cc0d855df01d384158d9ecc7d8419737580e03fe24cfa5c4ddc4666c9d07",
+        "dataset_v3/cases/v3_n15.yaml": "ab414724b0a30173e3b230050dce7a304edc9f479dbd075ba90fe4bd0bafbfbe",
+        "dataset_v3/cases/v3_n16.yaml": "5026a2e65e72e5e53025ad52b173eb971fdbe20c7e0cd7a6069ff56567b7ad52",
+        "dataset_v3/cases/v3_n17.yaml": "37587f6234b51ee760265a9626d2abf539bbec05aab699216c3b335ca8f77872",
+        "dataset_v3/cases/v3_n18.yaml": "6660da7aae83395ef200d268362bef640868113f3a98613c7c31598ba6490816",
+        "dataset_v3/cases/v3_n19.yaml": "4a79e0709ed424ab676b66610c6d32db4b50383891f031be596b910e3fb21c84",
+        "dataset_v3/cases/v3_n20.yaml": "b73eb5578339315bf778f27c396847d577037defb91109553650b5a6faf5c3db",
+        "dataset_v3/cases/v3_n21.yaml": "4f0ca59ca284d2c2a2824410333a8b6ded21d9702ded2934bfaf59f73190fc27",
+        "dataset_v3/cases/v3_n22.yaml": "641ecfa2d50dfd3aef34f4445c27a1be864fd138e38737ab8bdd5e5c341dd183",
+        "dataset_v3/cases/v3_n23.yaml": "34c373190ec204c08dbdd2476d4ce4f3a06dd05f058f7aa99eeffdd6190dc9f9",
+        "dataset_v3/cases/v3_n24.yaml": "23ab45687ca72bbd889bc0848e2a9e6b47c0bf4c8a83df05a3ccad65d12ddf69",
+        "dataset_v3/cases/v3_n25.yaml": "4bea9cb665d0ba997a23fdfbd306e72502402e5977b54b82cab8924093249426",
+        "dataset_v3/cases/v3_n26.yaml": "e863b37947d29441bd7000e4efdc6ab58f4a7771fb91a1311cb7aded3582a9fc",
+        "dataset_v3/cases/v3_n27.yaml": "a9c39f3c3bd40e7dbb0760f129572e91c957de43ca3a5cc6ec0fcde6e6b61982",
+        "dataset_v3/cases/v3_t01.yaml": "ef77cef7ac841d230b90815fd65a7dd139231385f65ee0a19e9c3f5930e4b29f",
+        "dataset_v3/cases/v3_t02.yaml": "b37765bc3d16073eada9eacd9a5e07ef85a400d30f8f528ebd69dda6929523dd",
+        "dataset_v3/cases/v3_t03.yaml": "50c70a622e3426ec8df8549a9adb320040fc5ad786c292cbbadb61a11321cce7",
+        "dataset_v3/controls/README.md": "6833cb194e8505d89189fc8023d16f1f151737ca6a461b140bced1f2f4e9afd8",
+        "dataset_v3/controls/cards/ctl_c1.yaml": "9a71c7c425c5522b1c06dbba318cdbeed4901b0cafcd63bf94eba6abf70be1d6",
+        "dataset_v3/controls/cards/ctl_c2.yaml": "08fd03766800826057fb652f79f4e5abb21b6677c8f65298d0aa6c9665aef19e",
+        "dataset_v3/controls/judge/c0a100000000000000000000000051aa.json": "a9bf481acb2628d030e451856211b3814b2b1422b851642106f29b781645eb53",
+        "dataset_v3/controls/judge/c0a2000000000000000000000000a2bb.json": "0e070e33cadb6b6798f6967cb2c14925a438ae706ef3ac21739ae22a64536ef4",
+        "dataset_v3/controls/judge/c0a3000000000000000000000000a3cc.json": "a18969c2331077154128c494c07f20b8b8b96148a0b784d08eca9a4db9eeb41e",
+        "dataset_v3/controls/judge/c0b1000000000000000000000000b1dd.json": "13708490c7cbf8fcbba03e4fa376293e97925fb528c321f10c11ac01c1820a17",
+        "dataset_v3/controls/judge/c0b2000000000000000000000000b2ee.json": "1ce5c94690a6e43eb1c45f8022ca7d51a6b0fcdb4ef8ae83cc8b2864edd50505",
+        "dataset_v3/controls/scrivi_campioni.py": "5b165b0885c7bd53fb024f75b92480e20fc2859898fd3ef6fbb3d36d7075d941",
+        "dataset_v3/servers/halvard_crm/compromised_data.py": "ecb28fd43f5f15e2c4a00738a4aa18c08bd6f06a0ee4db2b8014935a6262d863",
+        "dataset_v3/servers/halvard_crm/compromised_permissions.py": "2171fccd27471eafd6beee1c5dec15733f8a652439e507ef19433c7309c83066",
+        "dataset_v3/servers/halvard_crm/compromised_persistence.py": "aa3de24ef3fa7850d8a46b2f52dada1a4146835c5ea9d5c1ca80f20a9e3bbfe3",
+        "dataset_v3/servers/halvard_crm/honest.py": "42dfe9d16da517273a9ac8c3badb0aaef1ed00977243d7250101633e9ed01ebf",
+        "dataset_v3/world_base.yaml": "bbe00d88fbced104a7f4e9d3a78cf7bcf820d2a5b5cf91dad105fc8c869031e1"
+      },
+      "impronta_insieme": "51d9df8243c08511528d89a80c87f8598f259d64cbe75b53c90997345e0a84e7"
+    },
+    "tabelle_del_run": {
+      "percorsi": [
+        "dataset_v3/ondate.json",
+        "dataset_v3/ambito.json",
+        "dataset_v3/condizioni_attese.json"
+      ],
+      "file": {
+        "dataset_v3/ambito.json": "4d8980a6b635f9984ba35e4411f94ad65046f7b14cb7d3a6f092c887b789281b",
+        "dataset_v3/condizioni_attese.json": "53dac2889ce51c598487e3a7794896804385e70ffd75c1a4d843846f170fa5b4",
+        "dataset_v3/ondate.json": "d36bcdc5164246bf952bd4b56a807be340e4c412e357d0dfe67cbc2cf7e27ba1"
+      },
+      "impronta_insieme": "5f2696002267fab70504d9c9dc0e83a936daf24a11ab9e099f94b678d56bd095"
+    },
+    "documenti": {
+      "percorsi": [
+        "docs/design/2026-10-11-piano-run-v3.md",
+        "docs/design/2026-10-14-tabella-permessi-bozza.md",
+        "docs/design/2026-10-19-mondo-base.md",
+        "docs/design/2026-10-11-sfere-giudici.md",
+        "docs/design/2026-11-05-limiti-dichiarati-run-v3.md"
+      ],
+      "file": {
+        "docs/design/2026-10-11-piano-run-v3.md": "ca34731f0b8b7aa8103b092fd4ea2f99b6c0ac0e16a0e1f6c194c496870b4cc6",
+        "docs/design/2026-10-11-sfere-giudici.md": "854066b4cc8285311a92c1e9349d242b7bf2cfcbe30a69ee73b2ce6dac76fb25",
+        "docs/design/2026-10-14-tabella-permessi-bozza.md": "9dd2d60c2acbbadfff41569222f2e2c25a189aa5c21169921f8e83357f893dba",
+        "docs/design/2026-10-19-mondo-base.md": "bb54aa46f79463d2d373ad97a56636f56f04fc684223c51714dcc4b7e0c3813b",
+        "docs/design/2026-11-05-limiti-dichiarati-run-v3.md": "13ede25820db46e299c1ae431a00f078a5608779280a17625775387034c46900"
+      },
+      "impronta_insieme": "3c75fe1eb514d885f23c788b6b8eee0cf329331a03595dc1a7de5297e6a19aab"
+    },
+    "istruzioni": {
+      "percorsi": [
+        "docs/research/2026-11-05-revisore/istruzioni-revisore.md",
+        "docs/research/2026-11-05-revisore/istruzioni-schede.md"
+      ],
+      "file": {
+        "docs/research/2026-11-05-revisore/istruzioni-revisore.md": "f2abf2633a7edfbaee41ccf9d4910bee4f03d9f33050693fa9cc3e65b91d34e6",
+        "docs/research/2026-11-05-revisore/istruzioni-schede.md": "063d9a6a00c1b82149dd4893ecd3f4981801abe169d59af025788eec01d2fd16"
+      },
+      "impronta_insieme": "72ae73490bafc07ee5c054bf9f83b98d69201288cbd26eb64cb201d49dd83fc3"
+    },
+    "etichette_plausibilita": {
+      "percorsi": [
+        "docs/research/2026-11-05-revisore/istruzioni-plausibilita.md",
+        "docs/research/2026-11-05-revisore/schede-plausibilita/plausibilita.json",
+        "docs/research/2026-11-05-revisore/schede-plausibilita/mappa.json"
+      ],
+      "file": {
+        "docs/research/2026-11-05-revisore/istruzioni-plausibilita.md": "e4d2a129351362b2f37f5fa38cab93ef1d93cccd83414954b36a564480ebcaa8",
+        "docs/research/2026-11-05-revisore/schede-plausibilita/mappa.json": "018b417d0fe2c01f328bc4b11417f3ede5d1fa84105f372b3d5628a748a6c08a",
+        "docs/research/2026-11-05-revisore/schede-plausibilita/plausibilita.json": "8f84a215423fd7874be766a6d3018daa3758d10b79646a8b524019a721a8da14"
+      },
+      "impronta_insieme": "58d621340e115d19efaff7f8702a2a08472d05ca89194619aa5696d631e48ee7"
+    },
+    "programmi": {
+      "percorsi": [
+        "src/toy_agent/analisi_v3.py",
+        "tests/toy_agent/test_analisi_v3.py",
+        "src/toy_agent/elenco_a.py",
+        "tests/toy_agent/test_elenco_a.py",
+        "src/toy_agent/ondate.py",
+        "src/toy_agent/ambito.py",
+        "src/toy_agent/check_conditions.py",
+        "src/toy_agent/sposta_guasti.py",
+        "src/toy_agent/registra_versioni.py",
+        "src/toy_agent/malicious_steps.py",
+        "docs/research/2026-11-05-revisore/confronta.py",
+        "src/toy_agent/run_card.py",
+        "src/toy_agent/agent_loop.py",
+        "src/toy_agent/model_client.py",
+        "src/toy_agent/tools.py",
+        "src/toy_agent/state.py",
+        "src/toy_agent/case_card.py",
+        "src/toy_agent/prepare_judge_input.py",
+        "src/toy_agent/judge_sessions.py",
+        "src/toy_agent/discordant_sessions.py",
+        "docs/research/2026-11-05-revisore/revisore.py",
+        "tests/toy_agent/conformita_piano.py",
+        "tests/toy_agent/test_conformita_piano.py",
+        "src/toy_agent/halvard.py",
+        "src/toy_agent/orchestrator.py",
+        "src/toy_agent/run_case.py",
+        "src/toy_agent/schema.py"
+      ],
+      "file": {
+        "docs/research/2026-11-05-revisore/confronta.py": "d23539c3667dbfd97d66dac61c9dbc385586a947c2bda4f5ef4e62d754470460",
+        "docs/research/2026-11-05-revisore/revisore.py": "fddf0e6211e9c5331680dabf97293814bf3f34667761dc15381efb4b3d653d9c",
+        "src/toy_agent/agent_loop.py": "1b39fc56fdb8cc79e40a699be78fe9676538e92dd74f67f3dc86d34b78236000",
+        "src/toy_agent/ambito.py": "15208a3019980d001275ecddcd6588673a5c5e73044c4266c711a47e3e34c1ab",
+        "src/toy_agent/analisi_v3.py": "bdc73e350fdad443c89154f588c2a08b7b95f82289a2b396ad36ce2b2cf24fcb",
+        "src/toy_agent/case_card.py": "8fe2ec4e712a5786203ae197cbf3b37bd0e3af63eaf6a5e724b8fe214a704d2c",
+        "src/toy_agent/check_conditions.py": "5b4ebf07d0de01e932c0be5052b5ca283203a5a684102e1ea45736f5cc747d0f",
+        "src/toy_agent/discordant_sessions.py": "6b0b70ea08e354d6076c68785684c833e64289deb9571f9c5e2d08521ebab739",
+        "src/toy_agent/elenco_a.py": "aed58ae842e081d7c9ab88d4f74bbb469513b77f1e3a92a45da3e1b09f623efb",
+        "src/toy_agent/halvard.py": "b5668b28fcc3997588f7279a296011a1177b11cdbdc0953724afb58ad888dc2d",
+        "src/toy_agent/judge_sessions.py": "ee0114837ff46251b6ddef84683ebdbf774ecfba4a2114a7b33d520b48f7a59d",
+        "src/toy_agent/malicious_steps.py": "d8565af6cdafd801a802975bfbf8f962743f89014d294622eaffc70c17d869cb",
+        "src/toy_agent/model_client.py": "c920600ec09b2729ce19404d9011cbff4e09f365d6f6b3e3ffc2531a897bc1c3",
+        "src/toy_agent/ondate.py": "ade8723214584e341e11cc5231249d8cee04d7fd77b5656398b210339766264d",
+        "src/toy_agent/orchestrator.py": "d842ee29c9667e7266c2f247130b2d68fc1501f0e5aeff9fff4fd69e50d1ef41",
+        "src/toy_agent/prepare_judge_input.py": "2d5c105398a4b6e22c13b907bcd3cc9e1078394e699c6be71ed8ff07397afc74",
+        "src/toy_agent/registra_versioni.py": "5f65b3815442e2b0b01828d00f6cd8ba663a948799aa137ed4f166b91af8e19f",
+        "src/toy_agent/run_card.py": "10872665e75e4b64512d6e85199e4c5a34c8757ec9caf6a77a73660e93f35e4c",
+        "src/toy_agent/run_case.py": "cb6c62aeee70b4cf1f485a626b31fa310bc590004891af7b9517eb1225fa2396",
+        "src/toy_agent/schema.py": "c7c0d27003abccc12567f53f7d72851c9a639225a326e930a4b5d2bc177a6712",
+        "src/toy_agent/sposta_guasti.py": "a7848ded3560509301bd627495b9fc277d61cbab1d43f545cef6cbf31b0b4a0b",
+        "src/toy_agent/state.py": "968ae9b6428b02bf4432178216801f96f240d380e581b9cc2da870f07588e227",
+        "src/toy_agent/tools.py": "dc3285a9c2529317cee231a9ced2d0745c9664828c9ec02a5338b5765310425a",
+        "tests/toy_agent/conformita_piano.py": "346c728da9027951a34a17fe935cc2709a77e24bd74a6c0a34d9d4b6748fae46",
+        "tests/toy_agent/test_analisi_v3.py": "370caeafc444e13497141c8543b684e820875b6ca0c928de6ab91d77d9b0d437",
+        "tests/toy_agent/test_conformita_piano.py": "c9df23b5d5e6e321573918c7b1395ee670c68a7313bd6675ded695e39dbe88da",
+        "tests/toy_agent/test_elenco_a.py": "fe89f60db44a914196430a9ce15c2e71155cff5a1d24ff233cef0fee3a191e30"
+      },
+      "impronta_insieme": "6feb32eeaf6094302f650450cb96c98082417584d221b89ae5c9a57b0efae4f1"
+    },
+    "ambiente": {
+      "percorsi": [
+        "docker",
+        "docker-compose.yml"
+      ],
+      "file": {
+        "docker-compose.yml": "250de1fa6c7c2fa90162d292b9f95138fcb166f97558f55904741ad1d477c71f",
+        "docker/agent/Dockerfile": "6eded9c4ac846d408d69bb26ea1bb550af2e6057de2e4ca77b62155f406e567b",
+        "docker/agent/entrypoint.sh": "b3468e5c3f6e1920283c8014d438bf46772a50a12c8f5c37b140c233419eee8c",
+        "docker/detector-llamafirewall/Dockerfile": "906972f49a10bfda60dfcbf5dba1b472469c0a8f24c1f93a4bf65f61a5881614",
+        "docker/detector-llamafirewall/detector_adapter.pyproject.toml": "9f72a19b677f3f382259b2fdd41e3b8ebb471ff2d59cdebc24f22a9e86e6a98a",
+        "docker/detector-llamafirewall/entrypoint.sh": "6c5eb3d21c8179704d59ee7208c85a755a708f12741699c69f94a6a23f5f3af9",
+        "docker/detector-llamafirewall/run_adapter_tests.sh": "4e5fa48bc7b03041df6717a308baa7263ad89d92f0412352d1b4c4e1cb6e4c23",
+        "docker/detector/Dockerfile": "82f4c971b9f8a8afd0ea7119ecc6a8ab4566b42a603d7ba700fcd29a31515f2c",
+        "docker/detector/detector_adapter.pyproject.toml": "9f72a19b677f3f382259b2fdd41e3b8ebb471ff2d59cdebc24f22a9e86e6a98a",
+        "docker/detector/entrypoint.sh": "7d70ff7077479752880a052eb5fbf3736896b3f1faf55b5e9d49ea5907920559",
+        "docker/detector/run_adapter_tests.sh": "a62a6597fdbf82c61c1f9fc232811e996129385c5fdf17360b63a612497cf46a",
+        "docker/detector/source_registry.yaml": "dd67a0f1580b938b7e3b4cb2cfe9e0f7c594358f977f9cf6428bc7c1fb94fe26",
+        "docker/detector/verify_sourcelens.py": "46e125ab72cbd56f2acf370f92b3b196a3e62f7f7c7b95c6d7a9e0a569a55e89",
+        "docker/egress-proxy/Dockerfile": "3b17ddf973818570729a79c5bfeedff8891d9a887f7596ebd11e41a92a4df11f",
+        "docker/egress-proxy/squid.conf": "6e2fc0da786208681b54faa785aa186c1a050aa84064b31ce6c494fb27ca2c19"
+      },
+      "impronta_insieme": "4bd928db5109790d3d846a2d78173e33868722601d1a4da8f8c6b5d0e8b21d6d"
+    }
+  },
+  "pin_dei_produttori": {
+    "aidr_commit": "7fad14d2478707e68a09b8ecd9942dec8fde1614",
+    "llamafirewall_versione": "1.0.3"
+  },
+  "origine_dei_pin": {
+    "aidr_commit": {
+      "file": "docker/detector/Dockerfile",
+      "espressione": "git checkout ([0-9a-f]{40})"
+    },
+    "llamafirewall_versione": {
+      "file": "docker/detector-llamafirewall/Dockerfile",
+      "espressione": "llamafirewall==([0-9][0-9.]*[0-9])"
+    }
+  },
+  "immagini": {
+    "aidr": {
+      "nome": "agentic-security-audits-detector:latest",
+      "id": "sha256:1c2bff07ed71a2064b6172017b89768d653c7d7c38015bd0a9992344948f7fca",
+      "pip_freeze": [
+        "-e /opt/aidr-vendor",
+        "annotated-doc==0.0.5",
+        "annotated-types==0.8.0",
+        "anyio==4.16.0",
+        "attrs==26.1.0",
+        "certifi==2026.10.23",
+        "cffi==2.1.1",
+        "click==8.5.0",
+        "cryptography==50.0.2",
+        "# Editable install with no version control (detector-adapter==0.1.0)",
+        "-e /opt/detector_adapter",
+        "h11==0.16.0",
+        "httpcore==1.0.9",
+        "httpcore2==2.16.0",
+        "httpx==0.28.1",
+        "httpx-sse==0.4.3",
+        "httpx2==2.16.0",
+        "idna==3.20",
+        "iniconfig==2.3.1",
+        "jiter==0.18.0",
+        "jsonschema==4.26.0",
+        "jsonschema-specifications==2025.9.1",
+        "markdown-it-py==4.2.0",
+        "mcp==1.30.0",
+        "mcp-types==2.3.0",
+        "mdurl==0.1.2",
+        "numpy==2.4.6",
+        "openai==3.46.0",
+        "opentelemetry-api==1.45.2",
+        "packaging==26.3",
+        "pluggy==1.7.0",
+        "pycparser==3.12",
+        "pydantic==2.14.3",
+        "pydantic-settings==2.16.2",
+        "pydantic_core==2.50.4",
+        "Pygments==2.21.0",
+        "PyJWT==2.15.1",
+        "pytest==9.2.0",
+        "python-dotenv==1.2.4",
+        "python-multipart==0.0.33",
+        "PyYAML==6.0.3",
+        "referencing==0.37.0",
+        "rich==15.0.0",
+        "rpds-py==2026.9.1",
+        "shellingham==1.5.4",
+        "sniffio==1.3.1",
+        "sse-starlette==3.6.0",
+        "starlette==1.10.0",
+        "truststore==0.10.5",
+        "typer==0.27.3",
+        "typing-inspection==0.4.5",
+        "typing_extensions==4.16.0",
+        "uvicorn==0.54.0"
+      ],
+      "pip_freeze_sha256": "3ce88748f828cf94756495937f6c1c0572e5154b3bd94edc11b6c6c6a7a5d3d8",
+      "file_copiati": {
+        "/opt/aidr-vendor/aidr/data/source_registry.yaml": {
+          "sha256": "7e796ddc25e850afe08bc991ada3d8a294334cd8b09e0c69cfea3f3474d02829",
+          "da": "docker/detector/source_registry.yaml",
+          "rispetto_al_commit": "uguale con a capo di Windows"
+        },
+        "/opt/aidr-vendor/aidr/gauntlet/servers/support/support.py": {
+          "sha256": "11506dafe4400ead05075efa1e9e540941a4262025d4712bf7d8b71b2f8cfee6",
+          "da": "src/toy_agent/tools.py",
+          "rispetto_al_commit": "uguale con a capo di Windows"
+        },
+        "/opt/aidr-vendor/verify_sourcelens.py": {
+          "sha256": "46e125ab72cbd56f2acf370f92b3b196a3e62f7f7c7b95c6d7a9e0a569a55e89",
+          "da": "docker/detector/verify_sourcelens.py",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/detector_adapter/pyproject.toml": {
+          "sha256": "65efd1bd682d90b1029d35cb6baf3b57ef572588e3c5c89ac4666ad4494a1399",
+          "da": "docker/detector/detector_adapter.pyproject.toml",
+          "rispetto_al_commit": "uguale con a capo di Windows"
+        },
+        "/opt/detector_adapter/src/detector_adapter/__init__.py": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "da": "src/detector_adapter/__init__.py",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/detector_adapter/src/detector_adapter/vendors/__init__.py": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "da": "src/detector_adapter/vendors/__init__.py",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/detector_adapter/src/detector_adapter/vendors/aidr/__init__.py": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "da": "src/detector_adapter/vendors/aidr/__init__.py",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/detector_adapter/src/detector_adapter/vendors/aidr/adapter.py": {
+          "sha256": "b1f86324c34e35d826f20dbacc792dae611588e2a7dcfcc3906e9e9905a2efd4",
+          "da": "src/detector_adapter/vendors/aidr/adapter.py",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/detector_adapter/src/detector_adapter/vendors/aidr/evaluate_case.py": {
+          "sha256": "6a47a4295084d9e1538e3b678e0fe500e18e0c04e300c2a9d2fd36486a4628f2",
+          "da": "src/detector_adapter/vendors/aidr/evaluate_case.py",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/detector_adapter/src/detector_adapter/vendors/aidr/vendor_proxy.py": {
+          "sha256": "39cd35c164936d37904ba7822889999b27280dc2a33d8f226bb1531086764540",
+          "da": "src/detector_adapter/vendors/aidr/vendor_proxy.py",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/entrypoint.sh": {
+          "sha256": "7d70ff7077479752880a052eb5fbf3736896b3f1faf55b5e9d49ea5907920559",
+          "da": "docker/detector/entrypoint.sh",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/halvard_versions/compromised_data.py": {
+          "sha256": "7df2c430b5ce7ecded15e2ddef6ab144b7f75220d7085e3e1cf0c21cc2a1a6fc",
+          "da": "dataset_v3/servers/halvard_crm/compromised_data.py",
+          "rispetto_al_commit": "uguale con a capo di Windows"
+        },
+        "/opt/halvard_versions/compromised_permissions.py": {
+          "sha256": "ae27de0fee8651faff03d531e97b2fddbad5fd3a663a459e1fd72454f7fa9725",
+          "da": "dataset_v3/servers/halvard_crm/compromised_permissions.py",
+          "rispetto_al_commit": "uguale con a capo di Windows"
+        },
+        "/opt/halvard_versions/compromised_persistence.py": {
+          "sha256": "86f93ccbe4cb8993e17f48a0008dc572e177885527aa5ea706e98aeac1866f71",
+          "da": "dataset_v3/servers/halvard_crm/compromised_persistence.py",
+          "rispetto_al_commit": "uguale con a capo di Windows"
+        },
+        "/opt/halvard_versions/honest.py": {
+          "sha256": "42dfe9d16da517273a9ac8c3badb0aaef1ed00977243d7250101633e9ed01ebf",
+          "da": "dataset_v3/servers/halvard_crm/honest.py",
+          "rispetto_al_commit": "uguale"
+        }
+      }
+    },
+    "llamafirewall": {
+      "nome": "agentic-security-audits-detector-llamafirewall:latest",
+      "id": "sha256:2a4b5e938f04fe319fccefbd20de0cda20ac5a23bb83e025d28daa0cf8876ee4",
+      "pip_freeze": [
+        "annotated-types==0.8.0",
+        "anyio==4.16.0",
+        "certifi==2026.10.23",
+        "charset-normalizer==3.5.2",
+        "cuda-bindings==13.5.0",
+        "cuda-pathfinder==1.8.6",
+        "cuda-toolkit==13.2.2",
+        "# Editable install with no version control (detector-adapter==0.1.0)",
+        "-e /opt/detector_adapter",
+        "filelock==4.2.10",
+        "fsspec==2026.9.0",
+        "h11==0.16.0",
+        "hf-xet==1.8.0",
+        "httpcore==1.0.9",
+        "httpcore2==2.16.0",
+        "httpx==0.28.1",
+        "httpx2==2.16.0",
+        "huggingface_hub==0.36.2",
+        "idna==3.20",
+        "iniconfig==2.3.1",
+        "Jinja2==3.1.6",
+        "jiter==0.19.0",
+        "llamafirewall==1.0.3",
+        "MarkupSafe==3.0.4",
+        "mpmath==1.3.0",
+        "networkx==3.6.1",
+        "numpy==2.4.6",
+        "nvidia-cublas==13.4.1.3",
+        "nvidia-cuda-cccl==13.3.5.0.6",
+        "nvidia-cuda-cupti==13.2.86",
+        "nvidia-cuda-nvrtc==13.2.86",
+        "nvidia-cuda-runtime==13.2.86",
+        "nvidia-cudnn-cu13==9.26.0.51",
+        "nvidia-cufft==12.2.0.57",
+        "nvidia-cufile==1.17.1.22",
+        "nvidia-cusolver==12.2.0.11",
+        "nvidia-cusparse==12.7.10.12",
+        "nvidia-cusparselt-cu13==0.8.1",
+        "nvidia-nccl-cu13==2.30.7",
+        "nvidia-nvjitlink==13.5.37",
+        "nvidia-nvshmem-cu13==3.7.2",
+        "nvidia-nvtx==13.2.86",
+        "openai==3.49.0",
+        "packaging==26.3",
+        "pluggy==1.7.0",
+        "pydantic==2.14.3",
+        "pydantic_core==2.50.4",
+        "Pygments==2.21.0",
+        "pytest==9.2.0",
+        "PyYAML==6.0.3",
+        "regex==2026.11.9",
+        "requests==2.34.2",
+        "safetensors==0.8.0",
+        "sniffio==1.3.1",
+        "sympy==1.14.0",
+        "tokenizers==0.22.2",
+        "torch==2.15.0",
+        "tqdm==4.70.1",
+        "transformers==4.57.6",
+        "triton==3.9.0",
+        "truststore==0.10.5",
+        "typing-inspection==0.4.5",
+        "typing_extensions==4.16.0",
+        "urllib3==2.8.0"
+      ],
+      "pip_freeze_sha256": "2c067a37f132faa0e0e83c601b23464aed5b3b35dd429738fcf4800ab2f338aa",
+      "file_copiati": {
+        "/opt/detector_adapter/pyproject.toml": {
+          "sha256": "65efd1bd682d90b1029d35cb6baf3b57ef572588e3c5c89ac4666ad4494a1399",
+          "da": "docker/detector-llamafirewall/detector_adapter.pyproject.toml",
+          "rispetto_al_commit": "uguale con a capo di Windows"
+        },
+        "/opt/detector_adapter/src/detector_adapter/__init__.py": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "da": "src/detector_adapter/__init__.py",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/detector_adapter/src/detector_adapter/vendors/__init__.py": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "da": "src/detector_adapter/vendors/__init__.py",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/detector_adapter/src/detector_adapter/vendors/llamafirewall/__init__.py": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "da": "src/detector_adapter/vendors/llamafirewall/__init__.py",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/detector_adapter/src/detector_adapter/vendors/llamafirewall/adapter.py": {
+          "sha256": "3b96ca2f1c543d530cb548bbaff2dc14ca0c77656760c9f6f717e6e7b4b9c754",
+          "da": "src/detector_adapter/vendors/llamafirewall/adapter.py",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/detector_adapter/src/detector_adapter/vendors/llamafirewall/evaluate_case.py": {
+          "sha256": "a09eb41640bdf01f953f73e698876a93c6daa938932f955e7c5b6d436219f860",
+          "da": "src/detector_adapter/vendors/llamafirewall/evaluate_case.py",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/detector_adapter/src/detector_adapter/vendors/llamafirewall/evaluate_case_combined.py": {
+          "sha256": "eb41f6c038b2be04ab4376213e08f5e58328a294700624879b96eae6fb857a8e",
+          "da": "src/detector_adapter/vendors/llamafirewall/evaluate_case_combined.py",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/detector_adapter/src/detector_adapter/vendors/llamafirewall/evaluate_case_promptguard.py": {
+          "sha256": "7b581dec9cf9644fa4ab1be0ecc2027dbcdbacfbe766f3338007ecec1ca798db",
+          "da": "src/detector_adapter/vendors/llamafirewall/evaluate_case_promptguard.py",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/detector_adapter/src/detector_adapter/vendors/llamafirewall/openrouter_proxy.py": {
+          "sha256": "adda669ac48d60a5750f9d7cc7533ae52e89a85083bfcb6b85968af48d3b6d38",
+          "da": "src/detector_adapter/vendors/llamafirewall/openrouter_proxy.py",
+          "rispetto_al_commit": "uguale"
+        },
+        "/opt/entrypoint.sh": {
+          "sha256": "6c5eb3d21c8179704d59ee7208c85a755a708f12741699c69f94a6a23f5f3af9",
+          "da": "docker/detector-llamafirewall/entrypoint.sh",
+          "rispetto_al_commit": "uguale"
+        }
+      }
+    },
+    "proxy_in_uscita": {
+      "nome": "agentic-security-audits-egress-proxy:latest",
+      "id": "sha256:5957cd592929e9ec159f402eef3c1ace936d5208b5c2efdef014d3f98d8cbd89",
+      "pip_freeze": null,
+      "pip_freeze_sha256": null,
+      "file_copiati": {
+        "/etc/squid/squid.conf": {
+          "sha256": "b58a3fef7134fff447557b04c33e75a598bdd293273d8f04cf0a5e0995830bbb",
+          "da": "docker/egress-proxy/squid.conf",
+          "rispetto_al_commit": "uguale con a capo di Windows"
+        }
+      }
+    }
+  },
+  "da_registrare_a_mano": [
+    "disegno del modello (pagina pubblicata, versione 34 o successiva): versione e impronta del testo pubblicato",
+    "valori usati di .env.aidr e .env.llamafirewall (modelli e fornitori, mai le chiavi): li confronta check_conditions",
+    "PurpleLlama 4be64c3 (piano, parte 10) e documentario: nessun Dockerfile lo scarica; il codice eseguito e llamafirewall==1.0.3, identificato dal pin letto dal Dockerfile e dall'identificativo dell'immagine",
+    "archivio docker save delle immagini: NON conservato (decisione del proprietario, 17 novembre: circa 14 GB, disco limitato); le immagini restano in Docker e il passo 3 del run si ferma se un identificativo cambia o l'immagine manca"
+  ]
+}
