@@ -23,6 +23,9 @@ Una pagina per tenere il controllo del processo: raccolta dei risultati, verific
 5. Analisi a fine run; poi le viste dopo il congelamento, in file nuovi.
 6. Prima della pubblicazione: i risultati vanno ai produttori, con un tempo per rispondere («Produttori prima della pubblicazione»).
 
+## Se qualcosa cambia durante il run
+Il registro del run (`docs/run-v3/REGISTRO-DEL-RUN.md`) classifica ogni scarto in sei classi (ordinaria, run fermato, errata, vista nuova, regola di conteggio, run nuovo) e dice per ognuna chi decide, cosa si pubblica e cosa non si fa. I punti da verificare per momento stanno in `docs/run-v3/PUNTI-DA-VERIFICARE.md`; le lezioni imparate in `docs/run-v3/LEZIONI-IMPARATE.md`.
+
 ## Riutilizzo
 - Dopo il run si pubblicano insieme all'analisi: sessioni, verdetti, letture, registri dei giudici (ora nel backup privato). Si pubblica il sorgente, non le immagini.
 - «Riprodotto» vuol dire *ricalcolabile dai dati pubblicati*: il run non si può rieseguire identico (l'agente non ha temperatura né seme impostabili, i fornitori cambiano) e nessun documento lo promette.
