@@ -6,7 +6,8 @@ Una spunta si mette solo dopo aver visto l'esito del comando, non prima. I coman
 - [x] Piano e elenco A approvati per iscritto (`docs/design/2026-11-19-approvazione-del-proprietario.md`).
 - [x] `elenco_a verifica` e `verifica-immagini --a-fondo`: nessuna differenza.
 - [x] Impronta delle istruzioni del revisore invariata; nessuna chiave nei file e nella storia che esce.
-- [ ] `git status` senza file tracciati modificati; registro e documenti del run committati.
+- [x] `git status` senza file tracciati modificati; registro e documenti del run committati. (19 novembre: nessun file tracciato modificato; solo le bozze dell'elenco e i registri, volutamente non tracciati.)
+- [x] Push di prova verso `origin` (non pubblica): avanzamento semplice da `e45f210` a `acfb859`, account `paperinik007`, repository pubblico, nessun file sopra 0,3 MB; suite 1502 passati; impronta del revisore invariata.
 - [ ] Il proprietario dice «pubblica». Dopo il push: annotare la data e l'ora del push come prova di data.
 
 ## 2. Prima di ogni ondata
