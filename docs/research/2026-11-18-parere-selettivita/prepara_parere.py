@@ -1,6 +1,6 @@
 import hashlib, json, pathlib, subprocess
 
-REPO = pathlib.Path(r"C:\Users\salva\Documents\github\agentic-security-audits")
+REPO = pathlib.Path(__file__).resolve().parents[3]
 OUT = REPO / "docs/research/2026-11-18-parere-selettivita/esecuzione"
 OUT.mkdir(parents=True, exist_ok=True)
 

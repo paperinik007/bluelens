@@ -4,7 +4,7 @@ import pathlib
 import time
 import urllib.request
 
-A = pathlib.Path(r'C:\Users\salva\Documents\github\agentic-security-audits')
+A = pathlib.Path(__file__).resolve().parents[3]
 OUT = A / 'docs' / 'research' / '2026-11-11-specialisti-congelamento' / 'esecuzioni' / 'metodologia-esterna'
 OUT.mkdir(parents=True, exist_ok=True)
 MODEL = 'deepseek/deepseek-v3.2'
